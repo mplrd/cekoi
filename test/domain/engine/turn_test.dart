@@ -164,6 +164,29 @@ void main() {
       expect(intro.apply([const GameEvent.cardFound()]), intro);
       expect(intro.apply([const GameEvent.cardPassed()]), intro);
     });
+
+    test('un tour terminé ne peut pas être redémarré', () {
+      // Sans la garde de phase, un « démarrer » reçu sur le récapitulatif
+      // repasserait en jeu avec le paquet dans son état de fin de tour.
+      final summary = testGame().apply([
+        const GameEvent.turnStarted(),
+        const GameEvent.ticked(Duration(minutes: 1)),
+      ]);
+      expect(summary.phase, GamePhase.turnSummary);
+
+      expect(summary.apply([const GameEvent.turnStarted()]), summary);
+    });
+
+    test('un temps écoulé aberrant ne rend jamais un restant négatif', () {
+      // Un état relu du disque peut porter n'importe quoi : le calcul du
+      // temps restant est le dernier rempart avant l'affichage.
+      final game = testGame();
+      final corrupted = game.copyWith(
+        turn: game.turn!.copyWith(elapsed: const Duration(minutes: 5)),
+      );
+
+      expect(corrupted.remaining, Duration.zero);
+    });
   });
 
   group('R3.7 — mise en arrière-plan pendant un tour', () {
@@ -203,16 +226,85 @@ void main() {
       expect(state.remaining, const Duration(milliseconds: 500));
     });
 
-    test('la pause laisse le narrateur agir sans avancer le chrono', () {
-      // Le jeu est en pause parce que l'application est en arrière-plan :
-      // personne ne joue, mais l'état ne doit pas se corrompre pour autant.
-      final paused = testGame().apply([
+    test('mettre en pause hors du jeu ne change rien', () {
+      final intro = testGame();
+
+      expect(intro.apply([const GameEvent.paused()]), intro);
+      expect(intro.apply([const GameEvent.resumed()]), intro);
+    });
+
+    test('un tick en retard ne fait pas remonter le chrono', () {
+      // Après une reprise, un tick émis avant la pause peut encore arriver.
+      // Le voir rallonger le temps du narrateur serait pire que de l'ignorer.
+      final state = testGame().apply([
         const GameEvent.turnStarted(),
+        const GameEvent.ticked(Duration(seconds: 30)),
+        const GameEvent.ticked(Duration(seconds: 10)),
+      ]);
+
+      expect(state.remaining, const Duration(seconds: 30));
+    });
+  });
+
+  group('R3.8 — une pause gèle le tour entièrement', () {
+    GameState pausedGame() => testGame().apply([
+      const GameEvent.turnStarted(),
+      const GameEvent.paused(),
+    ]);
+
+    test('cas limite 13 : « Trouvé » en pause ne rapporte rien', () {
+      // Le chrono est arrêté : sans cette règle, valider une carte est un
+      // point gratuit, et rien n'empêche d'en valider dix.
+      final paused = pausedGame();
+
+      final after = paused.apply([
+        const GameEvent.cardFound(),
+        const GameEvent.cardFound(),
+        const GameEvent.cardFound(),
+      ]);
+
+      expect(after, paused);
+      expect(after.scoreOf('team-1'), 0);
+      expect(after.pile, hasLength(6));
+    });
+
+    test('« Passer » en pause ne bouge pas le paquet', () {
+      final paused = pausedGame();
+
+      expect(paused.apply([const GameEvent.cardPassed()]), paused);
+    });
+
+    test('canAct et canPass tombent à faux pendant la pause', () {
+      final paused = pausedGame();
+
+      expect(paused.isPaused, isTrue);
+      expect(paused.canAct, isFalse);
+      expect(paused.canPass, isFalse);
+    });
+
+    test('la reprise rend la main au narrateur', () {
+      final resumed = pausedGame().apply([const GameEvent.resumed()]);
+
+      expect(resumed.canAct, isTrue);
+      expect(resumed.apply([const GameEvent.cardFound()]).scoreOf('team-1'), 1);
+    });
+
+    test('un tour ne peut pas se terminer pendant une pause', () {
+      // Ni le chrono ni le paquet ne peuvent l'achever : c'est ce qui garantit
+      // qu'aucun tour figé ne rejoint jamais l'historique.
+      final paused = testGame(cardCount: 2).apply([
+        const GameEvent.turnStarted(),
+        const GameEvent.cardFound(),
         const GameEvent.paused(),
       ]);
 
-      expect(paused.turn!.isPaused, isTrue);
-      expect(paused.apply([const GameEvent.cardFound()]).remaining, minute);
+      final after = paused.apply([
+        const GameEvent.ticked(Duration(minutes: 10)),
+        const GameEvent.cardFound(),
+      ]);
+
+      expect(after.phase, GamePhase.playing);
+      expect(after.pile, hasLength(1));
     });
   });
 
@@ -273,9 +365,14 @@ void main() {
       expect(corrected.scoreOf('team-1'), 0);
     });
 
-    test('deux corrections successives se compensent exactement', () {
+    test('deux corrections successives rendent le paquet à son contenu', () {
       // Le geste le plus fréquent en usage réel : on corrige, puis on se rend
       // compte qu'on avait raison la première fois.
+      //
+      // Le score revient exactement à sa valeur, et le paquet à son contenu —
+      // mais pas forcément à son ordre : une carte remise au paquet repart au
+      // fond, comme une carte passée. C'est assumé, et c'est pour cela que
+      // l'assertion porte sur l'ensemble et non sur la liste.
       final state = playedTurn();
       final found = state.turn!.results.first.cardId;
 
@@ -285,7 +382,30 @@ void main() {
       ]);
 
       expect(corrected.scoreOf('team-1'), 1);
-      expect(corrected.pile, state.pile);
+      expect(corrected.pile.toSet(), state.pile.toSet());
+      expect(corrected.turn!.results, state.turn!.results);
+    });
+
+    test('une carte corrigée en « passée » repart au fond du paquet', () {
+      // Deux cartes passées dans l'ordre, la première n'est donc plus en
+      // queue. La corriger deux fois la ramène en queue : le paquet garde son
+      // contenu, pas son ordre.
+      final state = testGame().apply([
+        const GameEvent.turnStarted(),
+        const GameEvent.cardPassed(),
+        const GameEvent.cardPassed(),
+        const GameEvent.ticked(Duration(minutes: 1)),
+      ]);
+      final first = state.turn!.results.first.cardId;
+      expect(state.pile.last, isNot(first));
+
+      final corrected = state.apply([
+        GameEvent.resultCorrected(cardId: first, outcome: TurnOutcome.found),
+        GameEvent.resultCorrected(cardId: first, outcome: TurnOutcome.passed),
+      ]);
+
+      expect(corrected.pile.toSet(), state.pile.toSet());
+      expect(corrected.pile.last, first);
     });
 
     test('corriger vers le même résultat ne change rien', () {

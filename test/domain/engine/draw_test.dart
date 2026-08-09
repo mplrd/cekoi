@@ -264,6 +264,48 @@ void main() {
     });
   });
 
+  group('R5.3 — la réserve de départage', () {
+    test('les cartes réservées sont éligibles mais hors du paquet', () {
+      final result = draw(richPool(), requested: 40);
+
+      expect(result.tieBreakReserve, hasLength(tieBreakReserveSize));
+      for (final card in result.tieBreakReserve) {
+        expect(result.cards, isNot(contains(card)));
+        expect(card.audience, Audience.family);
+      }
+    });
+
+    test('la réserve respecte les difficultés autorisées', () {
+      final result = draw(
+        richPool(),
+        requested: 20,
+        allowedDifficulties: {Difficulty.easy},
+      );
+
+      expect(
+        result.tieBreakReserve.every((c) => c.difficulty == Difficulty.easy),
+        isTrue,
+      );
+    });
+
+    test('un vivier tout juste suffisant ne laisse pas de réserve', () {
+      final result = draw(testCards(20), requested: 20);
+
+      expect(result.cards, hasLength(20));
+      expect(
+        result.tieBreakReserve,
+        isEmpty,
+        reason: 'Le paquet passe avant le départage',
+      );
+    });
+
+    test("un vivier à peine plus grand ne réserve que ce qu'il peut", () {
+      final result = draw(testCards(23), requested: 20);
+
+      expect(result.tieBreakReserve, hasLength(3));
+    });
+  });
+
   group('déterminisme du tirage', () {
     test('deux tirages de même graine sont identiques', () {
       final a = draw(richPool(), seed: 7);
@@ -276,6 +318,38 @@ void main() {
       expect(
         ids(draw(richPool(), seed: 1)),
         isNot(ids(draw(richPool(), seed: 2))),
+      );
+    });
+
+    test("l'ordre d'écriture des difficultés autorisées n'influe pas", () {
+      // Un `Set` conserve son ordre d'insertion : itérer dessus directement
+      // ferait dépendre le tirage de la façon dont l'appelant a écrit son
+      // littéral, et deux profils identiques ne tireraient pas pareil.
+      expect(
+        ids(
+          draw(
+            richPool(),
+            allowedDifficulties: {Difficulty.hard, Difficulty.easy},
+          ),
+        ),
+        ids(
+          draw(
+            richPool(),
+            allowedDifficulties: {Difficulty.easy, Difficulty.hard},
+          ),
+        ),
+      );
+    });
+
+    test("le paquet rendu n'est pas rangé par difficulté", () {
+      // Les cartes sont prélevées vivier par vivier : sans mélange final, le
+      // paquet sortirait trié, et la réserve de départage comme tout aperçu
+      // du paquet commenceraient par douze cartes faciles.
+      final result = draw(richPool(), requested: 40);
+
+      expect(
+        result.cards.take(12).map((c) => c.difficulty).toSet().length,
+        greaterThan(1),
       );
     });
 

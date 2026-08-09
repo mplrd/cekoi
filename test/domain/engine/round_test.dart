@@ -1,7 +1,10 @@
+import 'package:cekoi/domain/engine/game_engine.dart';
 import 'package:cekoi/domain/engine/game_event.dart';
 import 'package:cekoi/domain/engine/game_phase.dart';
 import 'package:cekoi/domain/engine/game_state.dart';
 import 'package:cekoi/domain/engine/turn.dart';
+import 'package:cekoi/domain/entities/audience.dart';
+import 'package:cekoi/domain/entities/game_config.dart';
 import 'package:cekoi/domain/rules/round.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -80,7 +83,28 @@ void main() {
     });
 
     test("l'ordre du paquet change d'une manche à l'autre", () {
-      final first = testGame(cardCount: 12);
+      // Le test doit partir d'une vraie partie, pas de la fixture : celle-ci
+      // construit un paquet volontairement non mélangé, et comparer la manche
+      // 2 à un paquet non mélangé prouve seulement qu'elle est mélangée tout
+      // court. Ici les deux manches passent par le même mélange, et c'est
+      // bien la graine dérivée du numéro de manche qui les distingue.
+      final first = startGame(
+        config: const GameConfig(
+          mode: Audience.family,
+          deckIds: ['deck'],
+          turnDuration: Duration(seconds: 60),
+          roundCount: 3,
+        ),
+        players: [
+          for (final id in ['team-1-1', 'team-1-2', 'team-2-1', 'team-2-2'])
+            testPlayer(id),
+        ],
+        teams: [testTeam('team-1', 2), testTeam('team-2', 2)],
+        deck: testCards(12),
+        seed: 4,
+      );
+      final pileOfRoundOne = [...first.pile];
+
       final second = first.apply([
         const GameEvent.turnStarted(),
         for (var i = 0; i < 12; i++) const GameEvent.cardFound(),
@@ -88,7 +112,15 @@ void main() {
         const GameEvent.nextRoundStarted(),
       ]);
 
-      expect(second.pile, isNot(first.pile));
+      expect(second.pile.toSet(), pileOfRoundOne.toSet());
+      expect(
+        second.pile,
+        isNot(pileOfRoundOne),
+        reason:
+            'Sans graine dérivée du numéro de manche, les trois manches '
+            'rejoueraient le paquet dans le même ordre — ce qui se voit à '
+            "l'œil nu en partie",
+      );
     });
 
     test('le remélange est déterministe à graine égale', () {
@@ -341,6 +373,34 @@ void main() {
 
       expect(again.tieBreakCard, isNot(tied.tieBreakCard));
       expect(again.phase, GamePhase.tieBreak);
+    });
+
+    test('relancer le départage hors départage ne change rien', () {
+      final playing = testGame().apply([const GameEvent.turnStarted()]);
+
+      expect(playing.apply([const GameEvent.tieBreakRestarted()]), playing);
+    });
+
+    test('la carte de départage vient de la réserve, pas du paquet', () {
+      // R5.3 : les cartes du paquet ont été vues trois fois, elles ne
+      // départageraient plus rien.
+      final reserve = testCards(3, prefix: 'reserve');
+      final tied = tiedGame().copyWith(tieBreakReserve: reserve);
+
+      expect(tied.tieBreakCard, reserve.first);
+      expect(tied.deck, isNot(contains(tied.tieBreakCard)));
+
+      final again = tied.apply([const GameEvent.tieBreakRestarted()]);
+      expect(again.tieBreakCard, reserve[1]);
+    });
+
+    test('sans réserve, le départage se rabat sur le paquet joué', () {
+      // Vivier trop juste : un départage au réflexe vaut mieux que pas de
+      // départage du tout.
+      final tied = tiedGame();
+
+      expect(tied.tieBreakReserve, isEmpty);
+      expect(tied.deck, contains(tied.tieBreakCard));
     });
   });
 

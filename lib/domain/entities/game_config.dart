@@ -33,6 +33,16 @@ abstract class GameConfig with _$GameConfig {
   /// Nombre minimum de cartes pour qu'une partie puisse démarrer (R6.2).
   static const int minimumCardCount = 12;
 
+  /// Bornes de la durée de tour en mode libre (R6).
+  ///
+  /// En dessous de 15 secondes le narrateur n'a le temps de rien ; au-dessus
+  /// de 3 minutes le tour s'éternise pour ceux qui regardent.
+  static const Duration minimumTurnDuration = Duration(seconds: 15);
+  static const Duration maximumTurnDuration = Duration(seconds: 180);
+
+  static bool isTurnDurationAllowed(Duration duration) =>
+      duration >= minimumTurnDuration && duration <= maximumTurnDuration;
+
   /// Calcul du mode *auto* : `5 × joueurs`, arrondi au multiple de 4 supérieur,
   /// borné à [16, 80] (R6.1).
   ///

@@ -47,6 +47,9 @@ abstract class GameState with _$GameState {
 
     /// Les équipes à égalité en tête, pendant le départage (R5.3).
     @Default(<String>[]) List<String> tieBreakTeamIds,
+
+    /// Cartes neuves réservées au départage, écartées du paquet au tirage.
+    @Default(<Card>[]) List<Card> tieBreakReserve,
     @Default(0) int tieBreakCardIndex,
     String? tieBreakWinnerId,
   }) = _GameState;
@@ -64,7 +67,9 @@ abstract class GameState with _$GameState {
     required List<Card> deck,
     required int seed,
     required int roundIndex,
-  }) => [for (final card in deck) card.id]..shuffle(Random(seed + roundIndex));
+  }) =>
+      [for (final card in deck) card.id]
+        ..shuffle(Random(seed * 31 + roundIndex));
 
   Round get round => rounds[roundIndex];
 
@@ -96,9 +101,15 @@ abstract class GameState with _$GameState {
     return left.isNegative ? Duration.zero : left;
   }
 
+  bool get isPaused => turn?.isPaused ?? false;
+
+  /// Le narrateur peut agir : le tour est en cours et n'est pas en pause
+  /// (R3.8).
+  bool get canAct => phase == GamePhase.playing && !isPaused;
+
   /// Passer est indisponible sur la dernière carte (R3.4) : elle reviendrait
   /// aussitôt et le tour ne pourrait plus avancer.
-  bool get canPass => phase == GamePhase.playing && pile.length > 1;
+  bool get canPass => canAct && pile.length > 1;
 
   /// Les tours joués, le tour courant compris tant qu'il n'est pas validé.
   List<PlayedTurn> get allTurns => [...history, ?turn];
@@ -113,8 +124,14 @@ abstract class GameState with _$GameState {
   List<String> get leadingTeamIds => leadingTeamIdsOf(scores);
 
   /// La carte à mimer pour départager (R5.3).
-  Card? get tieBreakCard =>
-      deck.isEmpty ? null : deck[tieBreakCardIndex % deck.length];
+  ///
+  /// Prise dans la réserve de cartes neuves. Le repli sur le paquet joué n'a
+  /// lieu que si le vivier n'a pas permis d'en constituer une : départager sur
+  /// une carte déjà vue trois fois vaut mieux que ne pas départager.
+  Card? get tieBreakCard {
+    final source = tieBreakReserve.isNotEmpty ? tieBreakReserve : deck;
+    return source.isEmpty ? null : source[tieBreakCardIndex % source.length];
+  }
 
   /// Les vainqueurs, une fois la partie terminée. Vide avant.
   List<String> get winnerIds {

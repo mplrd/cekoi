@@ -12,10 +12,18 @@ class DrawResult {
     required this.cards,
     required this.requested,
     required this.available,
+    this.tieBreakReserve = const [],
   });
 
   /// Le paquet, déjà mélangé : c'est l'ordre de la première manche.
   final List<Card> cards;
+
+  /// Quelques cartes éligibles **écartées du paquet**, gardées pour le
+  /// départage (R5.3). Les cartes jouées ont été vues trois fois et ne
+  /// départageraient plus rien ; celles-ci sont neuves.
+  ///
+  /// Vide quand le vivier était trop juste : on se rabattra sur le paquet.
+  final List<Card> tieBreakReserve;
 
   /// Ce que la configuration demandait.
   final int requested;
@@ -126,12 +134,29 @@ DrawResult drawCards({
     picked.addAll(leftovers.take(target - picked.length));
   }
 
+  picked.shuffle(random);
+
+  // Le reliquat du vivier alimente le départage. Calculé après le mélange du
+  // paquet pour ne pas décaler la suite aléatoire de ce dernier.
+  final chosen = {for (final card in picked) card.id};
+  final reserve = [
+    for (final card in unique)
+      if (!chosen.contains(card.id)) card,
+  ]..shuffle(random);
+
   return DrawResult(
-    cards: picked..shuffle(random),
+    cards: picked,
     requested: requested,
     available: unique.length,
+    tieBreakReserve: reserve.take(tieBreakReserveSize).toList(),
   );
 }
+
+/// Nombre de cartes mises de côté pour le départage (R5.3).
+///
+/// « Répétée jusqu'à départage » : il en faut assez pour plusieurs manches de
+/// départage successives, pas de quoi amputer le paquet pour autant.
+const int tieBreakReserveSize = 8;
 
 /// Les difficultés autorisées dans l'ordre de l'énumération.
 ///

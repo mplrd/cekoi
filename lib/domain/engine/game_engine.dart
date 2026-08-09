@@ -20,7 +20,20 @@ GameState startGame({
   required List<Team> teams,
   required List<Card> deck,
   required int seed,
+
+  /// Cartes neuves pour le départage (R5.3), fournies par le tirage.
+  List<Card> tieBreakReserve = const [],
 }) {
+  if (!GameConfig.isTurnDurationAllowed(config.turnDuration)) {
+    throw ArgumentError.value(
+      config.turnDuration,
+      'config.turnDuration',
+      'La durée du tour tient entre '
+          '${GameConfig.minimumTurnDuration.inSeconds} et '
+          '${GameConfig.maximumTurnDuration.inSeconds} secondes (R6)',
+    );
+  }
+
   if (teams.length < minimumTeamCount) {
     throw ArgumentError.value(
       teams.length,
@@ -48,6 +61,16 @@ GameState startGame({
     );
   }
 
+  final cardIds = {for (final card in deck) card.id};
+  if (cardIds.length != deck.length) {
+    throw ArgumentError.value(
+      deck.length,
+      'deck',
+      'Deux cartes du paquet portent le même identifiant : elles seraient '
+          'retirées ensemble à la première trouvée',
+    );
+  }
+
   final known = {for (final player in players) player.id};
   for (final team in teams) {
     for (final id in team.playerIds) {
@@ -71,6 +94,7 @@ GameState startGame({
     pile: GameState.shufflePileFor(deck: deck, seed: seed, roundIndex: 0),
     phase: GamePhase.turnIntro,
     seed: seed,
+    tieBreakReserve: tieBreakReserve,
     turn: PlayedTurn(
       round: rounds.first,
       teamId: teams.first.id,
@@ -114,9 +138,9 @@ GameState _turnStarted(GameState state) => state.phase == GamePhase.turnIntro
 GameState _cardResolved(GameState state, TurnOutcome outcome) {
   final turn = state.turn;
   final cardId = state.currentCardId;
-  if (state.phase != GamePhase.playing || turn == null || cardId == null) {
-    return state;
-  }
+  // Une pause gèle le tour entièrement (R3.8) : chrono arrêté, valider une
+  // carte serait un point gratuit.
+  if (!state.canAct || turn == null || cardId == null) return state;
 
   if (outcome == TurnOutcome.passed && !state.canPass) return state;
 
@@ -155,6 +179,9 @@ GameState _pauseToggled(GameState state, {required bool isPaused}) {
   return state.copyWith(turn: turn.copyWith(isPaused: isPaused));
 }
 
+/// Un tour ne peut pas se terminer en pause : R3.8 gèle aussi bien le chrono
+/// que les actions de carte, donc aucun chemin n'y mène. Les tours archivés
+/// portent toujours `isPaused: false`, sans qu'il faille le forcer ici.
 GameState _endTurn(GameState state) =>
     state.copyWith(phase: GamePhase.turnSummary);
 

@@ -71,6 +71,44 @@ void main() {
       );
     });
 
+    test('un paquet contenant deux fois la même carte est refusé', () {
+      // Les deux lignes seraient retirées ensemble à la première trouvée : le
+      // paquet se viderait plus vite que le compte affiché.
+      final duplicated = testCards(12)..add(testCards(1).first);
+
+      expect(() => start(deck: duplicated), throwsArgumentError);
+    });
+
+    test('une durée de tour hors des bornes de R6 est refusée', () {
+      // startGame valide déjà équipes, joueurs et cartes ; laisser passer un
+      // chrono de 3 secondes serait une asymétrie difficile à justifier.
+      expect(
+        () => startGame(
+          config: _config.copyWith(turnDuration: const Duration(seconds: 5)),
+          players: [
+            for (final id in ['team-1-1', 'team-1-2', 'team-2-1', 'team-2-2'])
+              testPlayer(id),
+          ],
+          teams: [testTeam('team-1', 2), testTeam('team-2', 2)],
+          deck: testCards(12),
+          seed: 1,
+        ),
+        throwsArgumentError,
+      );
+      expect(
+        GameConfig.isTurnDurationAllowed(const Duration(seconds: 15)),
+        isTrue,
+      );
+      expect(
+        GameConfig.isTurnDurationAllowed(const Duration(seconds: 180)),
+        isTrue,
+      );
+      expect(
+        GameConfig.isTurnDurationAllowed(const Duration(seconds: 181)),
+        isFalse,
+      );
+    });
+
     test("une partie valide ouvre sur l'annonce du premier tour", () {
       final state = start();
 

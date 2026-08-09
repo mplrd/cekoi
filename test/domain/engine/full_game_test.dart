@@ -6,6 +6,7 @@ import 'package:cekoi/domain/engine/game_event.dart';
 import 'package:cekoi/domain/engine/game_phase.dart';
 import 'package:cekoi/domain/engine/game_state.dart';
 import 'package:cekoi/domain/engine/team_builder.dart';
+import 'package:cekoi/domain/engine/turn.dart';
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/card.dart';
 import 'package:cekoi/domain/entities/deck.dart';
@@ -69,17 +70,23 @@ class Session {
 GameState driveOneStep(GameState state, Random random) => switch (state.phase) {
   GamePhase.turnIntro => reduce(state, const GameEvent.turnStarted()),
   GamePhase.playing => _playSomeCards(state, random),
-  GamePhase.turnSummary => reduce(state, const GameEvent.turnConfirmed()),
+  GamePhase.turnSummary => _reviewAndConfirm(state, random),
   GamePhase.roundSummary => reduce(state, const GameEvent.nextRoundStarted()),
-  GamePhase.tieBreak => reduce(
-    state,
-    GameEvent.tieBreakWon(teamId: state.tieBreakTeamIds.first),
-  ),
+  GamePhase.tieBreak => _settleTieBreak(state, random),
   GamePhase.finished => state,
 };
 
 GameState _playSomeCards(GameState state, Random random) {
   var next = state;
+
+  // Le téléphone part en arrière-plan de temps en temps : le tour doit
+  // reprendre exactement où il en était (R3.7, R3.8).
+  if (random.nextInt(6) == 0) {
+    next = reduce(next, const GameEvent.paused());
+    next = reduce(next, GameEvent.ticked(next.config.turnDuration * 3));
+    next = reduce(next, const GameEvent.resumed());
+  }
+
   final actions = 1 + random.nextInt(5);
   for (var i = 0; i < actions && next.phase == GamePhase.playing; i++) {
     final passes = next.canPass && random.nextInt(4) == 0;
@@ -88,10 +95,45 @@ GameState _playSomeCards(GameState state, Random random) {
       passes ? const GameEvent.cardPassed() : const GameEvent.cardFound(),
     );
   }
+
   // Le tour n'est pas allé au bout du paquet : le chrono a le dernier mot.
   return next.phase == GamePhase.playing
       ? reduce(next, GameEvent.ticked(next.config.turnDuration))
       : next;
+}
+
+/// Le récapitulatif, avec les erreurs de manipulation que R3.6 existe pour
+/// rattraper — y compris celles qui décident de la fin de la manche.
+GameState _reviewAndConfirm(GameState state, Random random) {
+  var next = state;
+  final results = next.turn!.results;
+
+  if (results.isNotEmpty && random.nextInt(4) == 0) {
+    final line = results[random.nextInt(results.length)];
+    next = reduce(
+      next,
+      GameEvent.resultCorrected(
+        cardId: line.cardId,
+        outcome: line.outcome == TurnOutcome.found
+            ? TurnOutcome.passed
+            : TurnOutcome.found,
+      ),
+    );
+  }
+
+  return reduce(next, const GameEvent.turnConfirmed());
+}
+
+GameState _settleTieBreak(GameState state, Random random) {
+  // « Répétée jusqu'à départage » : personne ne trouve, on relance. Borné
+  // pour que le test reste un test et pas une roulette.
+  if (state.tieBreakCardIndex < 2 && random.nextBool()) {
+    return reduce(state, const GameEvent.tieBreakRestarted());
+  }
+  return reduce(
+    state,
+    GameEvent.tieBreakWon(teamId: state.tieBreakTeamIds.first),
+  );
 }
 
 /// Joue une partie entière depuis une graine, sans jamais toucher à autre
@@ -135,6 +177,7 @@ Session playFullGame(int seed) {
     players: _players,
     teams: teams,
     deck: drawn.cards,
+    tieBreakReserve: drawn.tieBreakReserve,
     seed: seed,
   );
 
@@ -211,17 +254,26 @@ void main() {
       );
     }
 
-    // R4.3 — deux manches consécutives ne sont jamais ouvertes par la même
-    // équipe, sans quoi celle qui vide le paquet enchaînerait deux tours.
+    // R4.3 — chaque manche est ouverte par l'équipe qui suit celle ayant
+    // terminé la précédente. Ce n'est pas « une équipe différente de celle
+    // qui a ouvert la manche d'avant » : avec deux équipes, la même peut très
+    // bien rouvrir deux manches de suite si l'autre les a closes.
     expect(session.roundOpeners, hasLength(3));
-    expect(
-      session.roundOpeners[Round.freeDescription],
-      isNot(session.roundOpeners[Round.oneWord]),
-    );
-    expect(
-      session.roundOpeners[Round.oneWord],
-      isNot(session.roundOpeners[Round.mime]),
-    );
+    for (var i = 0; i < state.rounds.length - 1; i++) {
+      final closer = state.history
+          .lastWhere((turn) => turn.round == state.rounds[i])
+          .teamId;
+      final closerIndex = state.teams.indexWhere((t) => t.id == closer);
+      final successor = state.teams[(closerIndex + 1) % state.teams.length].id;
+
+      expect(
+        session.roundOpeners[state.rounds[i + 1]],
+        successor,
+        reason:
+            "L'équipe $closer a clos la manche ${state.rounds[i].number}, "
+            "c'est donc $successor qui ouvre la suivante",
+      );
+    }
 
     // R3.1 — au sein d'une équipe, personne n'a narré nettement plus que ses
     // coéquipiers : la rotation est bien restée interne à chaque équipe.
@@ -235,6 +287,27 @@ void main() {
         lessThanOrEqualTo(1),
         reason: 'Rotation déséquilibrée dans ${team.id} : $counts',
       );
+    }
+
+    // R3.8 — aucun tour figé n'a rejoint l'historique : une pause bloque le
+    // chrono comme les cartes, donc aucun tour ne peut s'y terminer.
+    expect(
+      state.history.every((turn) => !turn.isPaused),
+      isTrue,
+      reason: 'Un tour archivé en pause se sérialiserait tel quel',
+    );
+
+    // Chaque carte a été trouvée une fois et une seule par manche, corrections
+    // comprises : c'est la seule façon pour une manche de se clore.
+    for (final round in state.rounds) {
+      final found = [
+        for (final turn in state.history)
+          if (turn.round == round)
+            for (final line in turn.results)
+              if (line.outcome == TurnOutcome.found) line.cardId,
+      ];
+      expect(found.toSet(), hasLength(40), reason: 'Manche ${round.number}');
+      expect(found, hasLength(40), reason: 'Aucune carte trouvée deux fois');
     }
 
     // ── Podium ──────────────────────────────────────────────────────────
