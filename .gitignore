@@ -28,7 +28,10 @@ migrate_working_dir/
 .pub/
 /build/
 flutter_*.png
-pubspec.lock
+
+# pubspec.lock EST versionné : Cékoi est une application livrée sur les stores,
+# pas une bibliothèque. Le versionner garantit que ton build et celui de la CI
+# résolvent exactement les mêmes versions de dépendances.
 
 # Code généré par build_runner (freezed, riverpod, drift, json_serializable)
 # Régénéré par : dart run build_runner build --delete-conflicting-outputs
