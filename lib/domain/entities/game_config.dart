@@ -1,4 +1,5 @@
 import 'package:cekoi/domain/entities/audience.dart';
+import 'package:cekoi/domain/entities/difficulty.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'game_config.freezed.dart';
@@ -23,6 +24,14 @@ abstract class GameConfig with _$GameConfig {
     /// Profil de départ, `null` dès que le joueur personnalise sa sélection
     /// (R7.6).
     String? profileId,
+
+    /// Difficultés autorisées au tirage (R7.7).
+    ///
+    /// Figées ici plutôt que redéduites du profil : « Rejouer avec les mêmes
+    /// réglages » retire un paquet, et devrait sinon retrouver un profil qui
+    /// peut avoir changé entre deux versions de l'application.
+    @Default({Difficulty.easy, Difficulty.medium, Difficulty.hard})
+    Set<Difficulty> difficulties,
   }) = _GameConfig;
 
   const GameConfig._();
@@ -42,6 +51,31 @@ abstract class GameConfig with _$GameConfig {
 
   static bool isTurnDurationAllowed(Duration duration) =>
       duration >= minimumTurnDuration && duration <= maximumTurnDuration;
+
+  /// Valeurs proposées en gros boutons, avant la saisie libre (R6).
+  static const List<Duration> turnDurationPresets = [
+    Duration(seconds: 30),
+    Duration(seconds: 45),
+    Duration(seconds: 60),
+    Duration(seconds: 90),
+  ];
+
+  static const List<int> cardCountPresets = [24, 32, 40, 48];
+
+  /// Défauts par mode (table de R6). Ils doivent permettre de traverser
+  /// l'écran de réglages sans y toucher dans la majorité des cas.
+  static const Map<Audience, Duration> defaultTurnDuration = {
+    Audience.family: Duration(seconds: 60),
+    Audience.adult: Duration(seconds: 45),
+  };
+
+  /// `null` signifie *auto*.
+  static const Map<Audience, int?> defaultCardCount = {
+    Audience.family: null,
+    Audience.adult: 32,
+  };
+
+  static const int defaultRoundCount = 3;
 
   /// Calcul du mode *auto* : `5 × joueurs`, arrondi au multiple de 4 supérieur,
   /// borné à [16, 80] (R6.1).
