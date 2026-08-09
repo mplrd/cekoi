@@ -39,5 +39,356 @@
   "actionRetry": "Réessayer",
   "@actionRetry": {
     "description": "Bouton de réessai après une erreur."
+  },
+
+  "actionContinue": "Continuer",
+  "@actionContinue": {
+    "description": "Bouton d'avancement d'une étape à la suivante dans la configuration."
+  },
+
+  "actionCancel": "Annuler",
+  "@actionCancel": {
+    "description": "Bouton d'annulation d'une boîte de dialogue."
+  },
+
+  "setupStep": "Étape {current} sur {total}",
+  "@setupStep": {
+    "description": "Indicateur de progression du parcours de configuration.",
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+
+  "setupModeTitle": "Comment on joue ?",
+  "@setupModeTitle": {
+    "description": "Titre de l'étape 1 : choix du mode de contenu."
+  },
+
+  "modeFamily": "En famille",
+  "@modeFamily": {
+    "description": "Mode de contenu tout public (R7.1)."
+  },
+
+  "modeFamilyDescription": "Des cartes pour tous les âges.",
+  "@modeFamilyDescription": {
+    "description": "Sous-titre de la carte du mode Famille."
+  },
+
+  "modeAdult": "Entre adultes",
+  "@modeAdult": {
+    "description": "Mode de contenu adulte, qui tire aussi dans le tout public (R7.1)."
+  },
+
+  "modeAdultDescription": "Ajoute les cartes réservées aux grands, sans retirer les autres.",
+  "@modeAdultDescription": {
+    "description": "Sous-titre de la carte du mode Entre adultes."
+  },
+
+  "adultConfirmTitle": "Vous avez plus de 18 ans ?",
+  "@adultConfirmTitle": {
+    "description": "Confirmation d'âge simple avant le mode adultes (R7.3)."
+  },
+
+  "adultConfirmBody": "Ce mode ajoute des cartes qui ne conviennent pas aux enfants. Votre réponse n'est pas enregistrée.",
+  "@adultConfirmBody": {
+    "description": "Corps de la confirmation d'âge. Précise que rien n'est stocké (R7.3)."
+  },
+
+  "adultConfirmAccept": "Oui, continuer",
+  "@adultConfirmAccept": {
+    "description": "Bouton de confirmation d'âge."
+  },
+
+  "setupDecksTitle": "Avec quelles cartes ?",
+  "@setupDecksTitle": {
+    "description": "Titre de l'étape 2 : profils et catégories."
+  },
+
+  "setupCustomize": "Personnaliser",
+  "@setupCustomize": {
+    "description": "Bouton qui déplie la grille complète des catégories (R7.6)."
+  },
+
+  "profileMinis": "Les minis",
+  "@profileMinis": {
+    "description": "Nom du profil 6-9 ans (R7.5)."
+  },
+
+  "profileAdos": "Ados & co",
+  "@profileAdos": {
+    "description": "Nom du profil 10-14 ans (R7.5)."
+  },
+
+  "profileMix": "Mix familial",
+  "@profileMix": {
+    "description": "Nom du profil tous âges (R7.5)."
+  },
+
+  "profileAgeRange": "{from} à {to} ans",
+  "@profileAgeRange": {
+    "description": "Tranche d'âge annoncée par une carte de profil.",
+    "placeholders": {
+      "from": { "type": "int" },
+      "to": { "type": "int" }
+    }
+  },
+
+  "profileAllAges": "Tous les âges",
+  "@profileAllAges": {
+    "description": "Tranche d'âge du profil Mix familial."
+  },
+
+  "profileUnavailableNotEnough": "Pas assez de cartes pour ce profil",
+  "@profileUnavailableNotEnough": {
+    "description": "Raison affichée sur un profil grisé faute de volume (R7.8)."
+  },
+
+  "profileUnavailableNoDeck": "Aucune catégorie pour cet âge",
+  "@profileUnavailableNoDeck": {
+    "description": "Raison affichée sur un profil grisé faute de catégorie éligible (R7.8)."
+  },
+
+  "cardCount": "{count, plural, =0{Aucune carte} =1{1 carte} other{{count} cartes}}",
+  "@cardCount": {
+    "description": "Nombre de cartes, utilisé sur les profils et les catégories.",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+
+  "deckPremium": "À débloquer",
+  "@deckPremium": {
+    "description": "Marque une catégorie premium, déblocable par pub récompensée."
+  },
+
+  "deckCustom": "La vôtre",
+  "@deckCustom": {
+    "description": "Marque discrète sur une catégorie créée par le joueur."
+  },
+
+  "setupSelectionSummary": "{count, plural, =0{Aucune carte sélectionnée} =1{1 carte sélectionnée} other{{count} cartes sélectionnées}}",
+  "@setupSelectionSummary": {
+    "description": "Compteur permanent en bas de l'écran de sélection.",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+
+  "setupNotEnoughCards": "Il en faut au moins {min} pour lancer une partie.",
+  "@setupNotEnoughCards": {
+    "description": "Avertissement affiché sous le minimum de R6.2.",
+    "placeholders": {
+      "min": { "type": "int" }
+    }
+  },
+
+  "setupNoDeck": "Aucune catégorie disponible dans ce mode.",
+  "@setupNoDeck": {
+    "description": "Message affiché quand la base ne contient aucune catégorie du mode."
+  },
+
+  "setupSettingsTitle": "Réglages de la partie",
+  "@setupSettingsTitle": {
+    "description": "Titre de l'étape 3."
+  },
+
+  "settingTurnDuration": "Durée du tour",
+  "@settingTurnDuration": {
+    "description": "Libellé du réglage de durée (R6)."
+  },
+
+  "settingCardCount": "Nombre de cartes",
+  "@settingCardCount": {
+    "description": "Libellé du réglage de volume du paquet (R6)."
+  },
+
+  "settingRoundCount": "Nombre de manches",
+  "@settingRoundCount": {
+    "description": "Libellé du réglage de manches (R2.2, R6)."
+  },
+
+  "valueSeconds": "{count} s",
+  "@valueSeconds": {
+    "description": "Durée en secondes, sur un bouton de réglage.",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+
+  "valueAuto": "Auto",
+  "@valueAuto": {
+    "description": "Valeur automatique du nombre de cartes (R6.1)."
+  },
+
+  "valueAutoExplained": "5 cartes par joueur, soit {count} ici.",
+  "@valueAutoExplained": {
+    "description": "Explication du mode auto, avec le nombre calculé (R6.1).",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+
+  "valueRounds": "{count}",
+  "@valueRounds": {
+    "description": "Nombre de manches, sur un bouton de réglage.",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+
+  "setupTeamsTitle": "Qui joue ?",
+  "@setupTeamsTitle": {
+    "description": "Titre de l'étape 4."
+  },
+
+  "playerNameHint": "Prénom",
+  "@playerNameHint": {
+    "description": "Invite du champ de saisie d'un joueur."
+  },
+
+  "actionAddPlayer": "Ajouter",
+  "@actionAddPlayer": {
+    "description": "Bouton d'ajout d'un joueur à la liste."
+  },
+
+  "playerChildBadge": "Enfant",
+  "@playerChildBadge": {
+    "description": "Marque un joueur comme enfant, ce qui influence la répartition (R8.3)."
+  },
+
+  "playerCount": "{count, plural, =0{Aucun joueur} =1{1 joueur} other{{count} joueurs}}",
+  "@playerCount": {
+    "description": "Nombre de joueurs saisis.",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+
+  "teamCountLabel": "Nombre d'équipes",
+  "@teamCountLabel": {
+    "description": "Libellé du sélecteur de nombre d'équipes (R8.1)."
+  },
+
+  "teamDefaultName": "Équipe {number}",
+  "@teamDefaultName": {
+    "description": "Nom par défaut d'une équipe proposée.",
+    "placeholders": {
+      "number": { "type": "int" }
+    }
+  },
+
+  "actionProposeTeams": "Proposer une composition",
+  "@actionProposeTeams": {
+    "description": "Bouton de composition aléatoire des équipes (R8.3)."
+  },
+
+  "actionShuffleTeams": "Relancer",
+  "@actionShuffleTeams": {
+    "description": "Bouton de relance de la proposition, bien visible (R8.4)."
+  },
+
+  "teamsNeedMorePlayers": "Il faut {count} joueurs pour {teams} équipes.",
+  "@teamsNeedMorePlayers": {
+    "description": "Avertissement quand l'effectif ne permet pas la composition (R8.5).",
+    "placeholders": {
+      "count": { "type": "int" },
+      "teams": { "type": "int" }
+    }
+  },
+
+  "teamNeedsTwoPlayers": "Chaque équipe a besoin de deux joueurs.",
+  "@teamNeedsTwoPlayers": {
+    "description": "Avertissement quand une équipe retouchée à la main tombe à un joueur (R8.5)."
+  },
+
+  "actionMovePlayer": "Déplacer vers…",
+  "@actionMovePlayer": {
+    "description": "Action de déplacement d'un joueur vers une autre équipe (R8.4)."
+  },
+
+  "actionRenameTeam": "Renommer l'équipe",
+  "@actionRenameTeam": {
+    "description": "Action de renommage d'une équipe (R8.4)."
+  },
+
+  "setupSummaryTitle": "Prêts ?",
+  "@setupSummaryTitle": {
+    "description": "Titre de l'étape 5, le récapitulatif."
+  },
+
+  "summaryMode": "Mode",
+  "@summaryMode": {
+    "description": "Ligne du récapitulatif : mode de contenu."
+  },
+
+  "summaryDecks": "Catégories",
+  "@summaryDecks": {
+    "description": "Ligne du récapitulatif : catégories retenues."
+  },
+
+  "summarySettings": "Réglages",
+  "@summarySettings": {
+    "description": "Ligne du récapitulatif : chrono, cartes, manches."
+  },
+
+  "summaryTeams": "Équipes",
+  "@summaryTeams": {
+    "description": "Ligne du récapitulatif : composition."
+  },
+
+  "summarySettingsValue": "{seconds} s · {cards} cartes · {rounds} manches",
+  "@summarySettingsValue": {
+    "description": "Résumé des trois réglages sur une ligne.",
+    "placeholders": {
+      "seconds": { "type": "int" },
+      "cards": { "type": "int" },
+      "rounds": { "type": "int" }
+    }
+  },
+
+  "actionStartGame": "Lancer la partie",
+  "@actionStartGame": {
+    "description": "Bouton final du récapitulatif."
+  },
+
+  "launchTruncated": "Le vivier ne contient que {available} cartes : la partie se jouera avec celles-là.",
+  "@launchTruncated": {
+    "description": "Avertissement de R6.2 quand le vivier est plus petit que demandé.",
+    "placeholders": {
+      "available": { "type": "int" }
+    }
+  },
+
+  "launchImpossible": "Il n'y a que {available} cartes disponibles, il en faut {min}.",
+  "@launchImpossible": {
+    "description": "Blocage de R6.2 quand le minimum n'est pas atteint.",
+    "placeholders": {
+      "available": { "type": "int" },
+      "min": { "type": "int" }
+    }
+  },
+
+  "gameReadyTitle": "Partie prête",
+  "@gameReadyTitle": {
+    "description": "Titre de l'écran affiché après le tirage, en attendant l'écran de jeu."
+  },
+
+  "gameReadyDeck": "{count, plural, =1{1 carte tirée} other{{count} cartes tirées}}",
+  "@gameReadyDeck": {
+    "description": "Taille du paquet tiré, sur l'écran de partie prête.",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+
+  "gameReadyPending": "L'écran de jeu arrive au lot suivant. Le paquet, lui, est bien tiré.",
+  "@gameReadyPending": {
+    "description": "Explication temporaire tant que l'écran de jeu n'existe pas."
+  },
+
+  "actionBackHome": "Revenir à l'accueil",
+  "@actionBackHome": {
+    "description": "Retour à l'accueil depuis l'écran de partie prête."
   }
 }
