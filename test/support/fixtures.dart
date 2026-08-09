@@ -5,9 +5,11 @@ import 'package:cekoi/domain/engine/game_state.dart';
 import 'package:cekoi/domain/engine/turn.dart';
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/card.dart';
+import 'package:cekoi/domain/entities/deck.dart';
 import 'package:cekoi/domain/entities/deck_origin.dart';
 import 'package:cekoi/domain/entities/difficulty.dart';
 import 'package:cekoi/domain/entities/game_config.dart';
+import 'package:cekoi/domain/entities/min_age.dart';
 import 'package:cekoi/domain/entities/player.dart';
 import 'package:cekoi/domain/entities/team.dart';
 import 'package:cekoi/domain/rules/round.dart';
@@ -57,6 +59,18 @@ List<Card> richPool({int perDifficulty = 100}) => [
   ...testCards(perDifficulty, prefix: 'moyen', difficulty: Difficulty.medium),
   ...testCards(perDifficulty, prefix: 'dur', difficulty: Difficulty.hard),
 ];
+
+Deck testDeck(
+  String id, {
+  MinAge minAge = MinAge.six,
+  Audience audience = Audience.family,
+}) => Deck(
+  id: id,
+  name: id,
+  audience: audience,
+  minAge: minAge,
+  origin: DeckOrigin.official,
+);
 
 Player testPlayer(String id, {bool isChild = false}) =>
     Player(id: id, name: id, isChild: isChild);

@@ -31,6 +31,45 @@ class DrawResult {
   bool get isPlayable => cards.length >= GameConfig.minimumCardCount;
 }
 
+/// Les cartes qu'un mode et un jeu de difficultés autorisent réellement à
+/// tirer : filtrées (R7.1, R7.7), dédoublonnées sur le texte normalisé (R6.4),
+/// et triées par identifiant.
+///
+/// Partagé entre le tirage et l'évaluation de disponibilité d'un profil
+/// (R7.8) : un profil annoncé jouable dont le tirage ne trouverait pas ses
+/// cartes serait un mensonge à l'écran. Une seule implémentation, donc.
+List<Card> eligibleCards({
+  required List<Card> pool,
+  required Audience mode,
+  Set<Difficulty>? allowedDifficulties,
+}) {
+  final allowed = allowedDifficulties ?? Difficulty.values.toSet();
+  if (allowed.isEmpty) {
+    throw ArgumentError.value(
+      allowed,
+      'allowedDifficulties',
+      'Au moins une difficulté doit être autorisée',
+    );
+  }
+
+  final drawable = mode.drawableAudiences;
+  final filtered =
+      pool
+          .where((c) => drawable.contains(c.audience))
+          .where((c) => allowed.contains(c.difficulty))
+          .toList()
+        // Tri par identifiant avant tout usage du hasard : sans lui, deux
+        // ordres de vivier différents consommeraient la même suite aléatoire
+        // sur des listes différentes.
+        ..sort((a, b) => a.id.compareTo(b.id));
+
+  final seen = <String>{};
+  return [
+    for (final card in filtered)
+      if (seen.add(card.normalizedText)) card,
+  ];
+}
+
 /// Tire le paquet d'une partie.
 ///
 /// Déterministe à [random] donné, et **indifférent à l'ordre de [pool]** : le
@@ -57,30 +96,11 @@ DrawResult drawCards({
   }
 
   final allowed = allowedDifficulties ?? Difficulty.values.toSet();
-  if (allowed.isEmpty) {
-    throw ArgumentError.value(
-      allowed,
-      'allowedDifficulties',
-      'Au moins une difficulté doit être autorisée',
-    );
-  }
-
-  final drawable = mode.drawableAudiences;
-  final eligible =
-      pool
-          .where((c) => drawable.contains(c.audience))
-          .where((c) => allowed.contains(c.difficulty))
-          .toList()
-        // Tri par identifiant avant tout usage du hasard : sans lui, deux
-        // ordres de vivier différents consommeraient la même suite aléatoire
-        // sur des listes différentes.
-        ..sort((a, b) => a.id.compareTo(b.id));
-
-  final seen = <String>{};
-  final unique = [
-    for (final card in eligible)
-      if (seen.add(card.normalizedText)) card,
-  ];
+  final unique = eligibleCards(
+    pool: pool,
+    mode: mode,
+    allowedDifficulties: allowed,
+  );
 
   final target = min(requested, unique.length);
   final quotas = _quotas(target, allowed);
