@@ -56,6 +56,11 @@ la composition du paquet avant de passer à la suite.
 **R3.7** — Si l'application passe en arrière-plan pendant un tour, le chrono se met en pause.
 À la reprise, un compte à rebours de 3 secondes précède la reprise du jeu.
 
+**R3.8** — Le jeu est aussi interruptible à la main, par un bouton de pause. Une pause, qu'elle
+vienne de l'arrière-plan ou du bouton, **gèle le tour entièrement** : le chrono s'arrête et
+aucune action de carte n'est acceptée, ni *Trouvé* ni *Passer*. Sans cette règle, une équipe
+peut valider des cartes chrono arrêté. La reprise suit le même compte à rebours que R3.7.
+
 ## 4. Fin de manche
 
 **R4.1** — Quand la dernière carte du paquet est trouvée, la manche s'arrête **immédiatement**,
@@ -79,6 +84,11 @@ dans toutes les manches.
 
 **R5.3** — En cas d'égalité en tête, une manche de départage oppose les équipes à égalité :
 une carte, en mime, la première équipe qui trouve gagne. Répétée jusqu'à départage.
+
+La carte de départage vient d'une **réserve de cartes écartées au tirage**, jamais du paquet
+joué : à ce stade toutes les cartes du paquet ont été vues trois fois et ne départageraient
+plus rien. Si le vivier était trop juste pour constituer cette réserve, on se rabat sur le
+paquet joué — un départage au réflexe reste préférable à pas de départage.
 
 ## 6. Configuration de partie
 
@@ -198,3 +208,5 @@ dédié dans `test/domain/`.
 12. Profil choisi puis décochage manuel d'une catégorie → passage en « personnalisé », les
     filtres de difficulté du profil ne s'appliquent plus, la sélection restante est conservée
     (R7.6).
+13. Pause en cours, le narrateur appuie sur *Trouvé* → aucun point, le paquet ne bouge pas
+    (R3.8). Le chrono figé rend l'action gratuite, c'est ce qui la rend tentante.

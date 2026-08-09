@@ -9,8 +9,10 @@ GameState reduce(GameState state, GameEvent event);
 ```
 
 Pas de `Future`, pas d'I/O, pas de `DateTime.now()`, pas de `Random()` non injecté. Le temps
-et l'aléatoire entrent par la porte : `GameEvent.tick(elapsed)` et un `Random(seed)` stocké
-dans l'état.
+et l'aléatoire entrent par la porte : `GameEvent.ticked(elapsed)` porte le temps écoulé, et
+l'état ne conserve que la **graine** — pas une instance de `Random`, qui ne serait pas
+sérialisable. Chaque mélange en dérive : le remélange de la manche *n* utilise
+`Random(seed + n)`.
 
 Trois bénéfices concrets, et c'est ce qui justifie la contrainte :
 
@@ -34,17 +36,21 @@ lib/
     router.dart               # go_router
     theme/                    # design system, couleurs, typo
   domain/                     # ── DART PUR, zéro import flutter ──
-    entities/                 # Card, Deck, Player, Team, GameConfig
+    entities/                 # Card, Deck, Player, Team, GameConfig, énumérations
     engine/
-      game_state.dart         # état immuable (freezed)
+      game_state.dart         # état immuable (freezed), sérialisable pour R9.1
       game_event.dart         # union scellée d'événements (freezed)
-      game_engine.dart        # reduce() — le cœur
+      game_engine.dart        # startGame() et reduce() — le cœur
+      game_phase.dart         # les phases dont dépend l'écran affiché
+      turn.dart               # PlayedTurn, CardResult, TurnOutcome
       draw.dart               # tirage du paquet, équilibrage difficulté
       team_builder.dart       # proposition de composition (R8.3)
     rules/
-      round_rules.dart
-      scoring.dart
+      round.dart              # les trois manches et leur ordre (R2.1, R2.2)
+      scoring.dart            # cumul, détail par manche, équipes en tête (R5)
       game_profiles.dart      # profils de partie (R7.5) — données, pas de branchements
+    text/
+      text_normalization.dart # forme comparable d'un texte de carte (R6.4)
   data/
     db/
       database.dart           # Drift
