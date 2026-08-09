@@ -26,14 +26,28 @@ const Set<String> _allowedPackagePrefixes = {
   'package:meta/',
 };
 
-/// Couvre `import` et `export`, guillemets simples ou doubles.
-final RegExp _directive = RegExp(
-  r'''^\s*(?:import|export)\s+['"]([^'"]+)['"]''',
-);
+/// Repère une directive `import` ou `export`.
+final RegExp _directiveStart = RegExp(r'''^\s*(?:import|export)\s+['"]''');
+
+/// Capture **toutes** les URI entre guillemets d'une ligne, et pas seulement
+/// la première : un import conditionnel en déclare deux, et c'est la seconde
+/// qui fait entrer Flutter dans le domaine.
+///
+///     import 'shim.dart' if (dart.library.io) 'package:flutter/material.dart';
+final RegExp _quotedUri = RegExp('''['"]([^'"]+)['"]''');
 
 bool _isAllowed(String target) =>
     _allowedDartLibraries.contains(target) ||
     _allowedPackagePrefixes.any(target.startsWith);
+
+/// Vrai si [relative], résolu depuis le dossier de [from], reste sous
+/// `lib/domain/`.
+bool _resolvesInsideDomain(File from, String relative) {
+  final resolved = Uri.file(
+    from.parent.path,
+  ).resolve(relative).toFilePath().replaceAll(r'\', '/');
+  return resolved.contains('/lib/domain/');
+}
 
 void main() {
   test('lib/domain/ ne dépend que de Dart pur et de ses annotations', () {
@@ -53,16 +67,22 @@ void main() {
 
       final lines = entity.readAsLinesSync();
       for (var i = 0; i < lines.length; i++) {
-        final match = _directive.firstMatch(lines[i]);
-        if (match == null) continue;
+        if (!_directiveStart.hasMatch(lines[i])) continue;
 
-        final target = match.group(1)!;
+        for (final uri in _quotedUri.allMatches(lines[i])) {
+          final target = uri.group(1)!;
 
-        // Un chemin sans schéma est un import relatif au sein du domaine.
-        final allowed = _isAllowed(target) || !target.contains(':');
+          // Un chemin sans schéma est relatif : on le résout réellement plutôt
+          // que de supposer qu'il reste dans le domaine. `../../data/...` est
+          // sinon accepté, et on dépendrait du lint always_use_package_imports
+          // pour l'attraper — deux garde-fous qui ne se savent pas liés.
+          final allowed = target.contains(':')
+              ? _isAllowed(target)
+              : _resolvesInsideDomain(entity, target);
 
-        if (!allowed) {
-          offenders.add('${entity.path}:${i + 1} → ${lines[i].trim()}');
+          if (!allowed) {
+            offenders.add('${entity.path}:${i + 1} → ${lines[i].trim()}');
+          }
         }
       }
     }
@@ -93,13 +113,26 @@ void main() {
       "import 'dart:ui';",
       "export 'package:flutter/foundation.dart';",
       '  import "package:cekoi/data/db/database.dart";',
+      // Import conditionnel : c'est la seconde URI qui est dangereuse.
+      "import 'shim.dart' if (dart.library.io) 'package:flutter/material.dart';",
     ];
 
     for (final line in violations) {
-      final match = _directive.firstMatch(line);
-      expect(match, isNotNull, reason: 'Non détecté : $line');
       expect(
-        _isAllowed(match!.group(1)!),
+        _directiveStart.hasMatch(line),
+        isTrue,
+        reason: 'Directive non repérée : $line',
+      );
+
+      final targets = _quotedUri
+          .allMatches(line)
+          .map((m) => m.group(1)!)
+          .where((t) => t.contains(':'))
+          .toList();
+
+      expect(targets, isNotEmpty, reason: 'Aucune URI extraite de : $line');
+      expect(
+        targets.every(_isAllowed),
         isFalse,
         reason: 'Aurait dû être refusé : $line',
       );

@@ -34,6 +34,7 @@ class SeedReport {
     this.cardsWritten = 0,
     this.cardsRemoved = 0,
     this.protectedDecks = const [],
+    this.protectedCards = const [],
     this.duplicateTexts = const [],
     this.failures = const [],
   });
@@ -42,14 +43,21 @@ class SeedReport {
   final int updated;
   final int skipped;
 
-  /// Nombre de lignes réellement écrites, doublons déjà fusionnés — et non le
-  /// nombre d'entrées du JSON, qui masquerait justement les doublons.
+  /// Lignes réellement écrites — hors doublons fusionnés et hors cartes
+  /// bloquées par le joueur. Compter les entrées du JSON masquerait exactement
+  /// les deux cas où une écriture est abandonnée.
   final int cardsWritten;
   final int cardsRemoved;
 
   /// Decks du JSON dont l'identifiant est déjà pris par du contenu créé par le
   /// joueur. On ne les écrase pas : on les signale.
   final List<String> protectedDecks;
+
+  /// Cartes officielles qu'on n'a pas pu écrire parce que le joueur occupe déjà
+  /// leur identifiant. Sans cette liste, la carte serait simplement absente du
+  /// deck, et le bump de `contentVersion` empêcherait tout re-seed de la
+  /// retenter : une disparition définitive et silencieuse.
+  final List<String> protectedCards;
 
   /// Textes apparaissant plusieurs fois dans un même JSON. Ils collapsent sur
   /// un seul identifiant, ce qui rétrécit silencieusement le paquet.
@@ -61,14 +69,15 @@ class SeedReport {
   bool get hasProblems =>
       failures.isNotEmpty ||
       duplicateTexts.isNotEmpty ||
-      protectedDecks.isNotEmpty;
+      protectedDecks.isNotEmpty ||
+      protectedCards.isNotEmpty;
 
   @override
   String toString() =>
       'SeedReport(inserted: $inserted, updated: $updated, skipped: $skipped, '
       'cardsWritten: $cardsWritten, cardsRemoved: $cardsRemoved, '
-      'protectedDecks: $protectedDecks, duplicateTexts: $duplicateTexts, '
-      'failures: $failures)';
+      'protectedDecks: $protectedDecks, protectedCards: $protectedCards, '
+      'duplicateTexts: $duplicateTexts, failures: $failures)';
 }
 
 /// Alimente la base à partir des JSON livrés dans `assets/decks/`.
@@ -105,6 +114,7 @@ class DeckSeeder {
     var cardsWritten = 0;
     var cardsRemoved = 0;
     final protectedDecks = <String>[];
+    final protectedCards = <String>[];
     final duplicateTexts = <String>[];
     final failures = <SeedFailure>[];
 
@@ -142,6 +152,7 @@ class DeckSeeder {
         cardsWritten += outcome.written;
         cardsRemoved += outcome.removed;
         duplicateTexts.addAll(outcome.duplicates);
+        protectedCards.addAll(outcome.protectedCards);
 
         if (existing == null) {
           inserted++;
@@ -162,6 +173,7 @@ class DeckSeeder {
       cardsWritten: cardsWritten,
       cardsRemoved: cardsRemoved,
       protectedDecks: protectedDecks,
+      protectedCards: protectedCards,
       duplicateTexts: duplicateTexts,
       failures: failures,
     );
@@ -194,8 +206,10 @@ class DeckSeeder {
             deckRow,
             onConflict: DoUpdate<$DecksTable, DeckRow>(
               (_) => deckRow,
-              // Ne mord que sur les lignes officielles. Sur une ligne custom,
-              // le conflit se résout en « ne rien faire ».
+              // Défense en profondeur, volontairement redondante : `run()`
+              // écarte déjà les decks custom en amont, donc cette clause n'est
+              // atteignable par aucun test. Elle reste parce qu'elle protège si
+              // la garde amont disparaît un jour dans un refactor.
               where: (old) => old.origin.equalsValue(DeckOrigin.official),
             ),
           );
@@ -203,8 +217,29 @@ class DeckSeeder {
       final cards = (json['cards'] as List<dynamic>)
           .cast<Map<String, dynamic>>();
 
+      if (cards.isEmpty) {
+        throw StateError('le deck ne contient aucune carte');
+      }
+
+      // Identifiants déjà occupés par du contenu du joueur dans ce deck. On les
+      // relève d'avance : sans ça la carte officielle serait simplement absente
+      // et rien ne le signalerait.
+      final customIds =
+          (await (database.select(
+                    database.cards,
+                  )..where(
+                    (c) =>
+                        c.deckId.equals(deckId) &
+                        c.origin.equalsValue(DeckOrigin.custom),
+                  ))
+                  .get())
+              .map((c) => c.id)
+              .toSet();
+
       final seenIds = <String>{};
       final duplicates = <String>[];
+      final protectedCards = <String>[];
+      var written = 0;
 
       for (final card in cards) {
         final text = card['text'] as String;
@@ -217,6 +252,11 @@ class DeckSeeder {
 
         if (!seenIds.add(id)) {
           duplicates.add(text);
+          continue;
+        }
+
+        if (customIds.contains(id)) {
+          protectedCards.add(id);
           continue;
         }
 
@@ -250,6 +290,8 @@ class DeckSeeder {
                 where: (old) => old.origin.equalsValue(DeckOrigin.official),
               ),
             );
+
+        written++;
       }
 
       // Cartes officielles disparues du JSON. Le filtre sur origin est ce qui
@@ -264,9 +306,10 @@ class DeckSeeder {
               .go();
 
       return _DeckOutcome(
-        written: seenIds.length,
+        written: written,
         removed: removed,
         duplicates: duplicates,
+        protectedCards: protectedCards,
       );
     });
   }
@@ -277,9 +320,11 @@ class _DeckOutcome {
     required this.written,
     required this.removed,
     required this.duplicates,
+    required this.protectedCards,
   });
 
   final int written;
   final int removed;
   final List<String> duplicates;
+  final List<String> protectedCards;
 }

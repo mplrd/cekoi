@@ -187,6 +187,34 @@ void main() {
       },
     );
 
+    test(
+      'une carte officielle bloquée par le joueur est signalée et non comptée',
+      () async {
+        await seed(deckJson());
+        await db.delete(db.cards).go();
+        await insertCustomCard(
+          id: 'animaux:elephant',
+          text: 'Éléphant (ma version)',
+        );
+
+        final report = await seed(deckJson(contentVersion: 2));
+
+        expect(
+          report.protectedCards,
+          contains('animaux:elephant'),
+          reason:
+              'Sans trace, la carte officielle disparaît pour toujours : '
+              'le bump de contentVersion empêche tout re-seed de la retenter',
+        );
+        expect(
+          report.cardsWritten,
+          1,
+          reason: 'cardsWritten ne doit pas compter une écriture abandonnée',
+        );
+        expect(report.hasProblems, isTrue);
+      },
+    );
+
     test('un deck custom en collision est protégé et signalé', () async {
       await db
           .into(db.decks)
