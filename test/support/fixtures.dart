@@ -1,9 +1,16 @@
+import 'package:cekoi/domain/engine/game_engine.dart';
+import 'package:cekoi/domain/engine/game_event.dart';
+import 'package:cekoi/domain/engine/game_phase.dart';
+import 'package:cekoi/domain/engine/game_state.dart';
+import 'package:cekoi/domain/engine/turn.dart';
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/card.dart';
 import 'package:cekoi/domain/entities/deck_origin.dart';
 import 'package:cekoi/domain/entities/difficulty.dart';
+import 'package:cekoi/domain/entities/game_config.dart';
 import 'package:cekoi/domain/entities/player.dart';
 import 'package:cekoi/domain/entities/team.dart';
+import 'package:cekoi/domain/rules/round.dart';
 import 'package:cekoi/domain/text/text_normalization.dart';
 
 /// Fabriques partagées par les tests du moteur.
@@ -63,3 +70,54 @@ Team testTeam(String id, int size) => Team(
 
 int countOf(List<Card> cards, Difficulty difficulty) =>
     cards.where((c) => c.difficulty == difficulty).length;
+
+/// Une partie prête à jouer, au premier écran de tour.
+///
+/// Le paquet est délibérément **non mélangé** : il suit l'ordre de création
+/// des cartes, de sorte qu'un test puisse raisonner sur « la première carte »
+/// sans dépendre d'une graine. Le mélange, lui, est couvert par les tests de
+/// `startGame` et de la remise en jeu entre deux manches (R4.2).
+GameState testGame({
+  int cardCount = 6,
+  List<int> teamSizes = const [2, 2],
+  int roundCount = 3,
+  Duration turnDuration = const Duration(seconds: 60),
+  int seed = 1,
+}) {
+  final deck = testCards(cardCount, prefix: 'c');
+  final teams = [
+    for (var i = 0; i < teamSizes.length; i++)
+      testTeam('team-${i + 1}', teamSizes[i]),
+  ];
+  final rounds = Round.sequenceFor(roundCount);
+
+  return GameState(
+    config: GameConfig(
+      mode: Audience.family,
+      deckIds: const ['deck'],
+      turnDuration: turnDuration,
+      roundCount: roundCount,
+      cardCount: cardCount,
+    ),
+    players: [
+      for (final team in teams)
+        for (final id in team.playerIds) testPlayer(id),
+    ],
+    teams: teams,
+    deck: deck,
+    rounds: rounds,
+    pile: [for (final card in deck) card.id],
+    phase: GamePhase.turnIntro,
+    turn: PlayedTurn(
+      round: rounds.first,
+      teamId: teams.first.id,
+      narratorId: teams.first.currentNarratorId,
+    ),
+    seed: seed,
+  );
+}
+
+extension GameStateTestX on GameState {
+  /// Applique une suite d'événements, comme le ferait l'interface.
+  GameState apply(List<GameEvent> events) => events.fold(this, reduce);
+}
