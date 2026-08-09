@@ -95,6 +95,10 @@ class _TeamsScreenState extends ConsumerState<TeamsScreen> {
                 child: TextField(
                   controller: _nameController,
                   focusNode: _nameFocus,
+                  // Saisir les joueurs est la première chose à faire ici :
+                  // demander un tap de plus pour ouvrir le clavier fait
+                  // perdre du temps au moment où tout le monde attend.
+                  autofocus: true,
                   textInputAction: TextInputAction.done,
                   decoration: InputDecoration(
                     labelText: l10n.playerNameHint,

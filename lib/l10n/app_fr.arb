@@ -229,6 +229,11 @@
     }
   },
 
+  "valueAutoPending": "5 cartes par joueur, calculé une fois les joueurs saisis.",
+  "@valueAutoPending": {
+    "description": "Explication du mode auto avant l'étape des joueurs : le nombre ne peut pas encore être annoncé (R6.1)."
+  },
+
   "valueRounds": "{count}",
   "@valueRounds": {
     "description": "Nombre de manches, sur un bouton de réglage.",

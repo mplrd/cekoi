@@ -61,9 +61,14 @@ class SettingsScreen extends ConsumerWidget {
                   onSelected: () => controller.setCardCount(preset),
                 ),
             ],
-            hint: setup.cardCount == null
-                ? l10n.valueAutoExplained(setup.resolvedCardCount)
-                : null,
+            // Les joueurs se saisissent à l'étape suivante : annoncer ici un
+            // nombre calculé sur zéro joueur afficherait le plancher de R6.1
+            // comme s'il s'agissait d'une prévision.
+            hint: switch (setup.cardCount) {
+              null when setup.players.isEmpty => l10n.valueAutoPending,
+              null => l10n.valueAutoExplained(setup.resolvedCardCount),
+              _ => null,
+            },
             freeEntry: _CardCountSlider(
               value: setup.cardCount ?? setup.resolvedCardCount,
               onChanged: controller.setCardCount,
