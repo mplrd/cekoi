@@ -1,0 +1,43 @@
+{
+  "@@locale": "fr",
+
+  "appTitle": "Cékoi",
+  "@appTitle": {
+    "description": "Nom du jeu, affiché sur l'accueil et dans le lanceur système."
+  },
+
+  "homePlay": "Jouer",
+  "@homePlay": {
+    "description": "Entrée principale de l'accueil, lance la configuration d'une partie."
+  },
+
+  "homeMyDecks": "Mes catégories",
+  "@homeMyDecks": {
+    "description": "Entrée de l'accueil vers la gestion des catégories créées par le joueur."
+  },
+
+  "homeSettings": "Réglages",
+  "@homeSettings": {
+    "description": "Entrée de l'accueil vers les réglages de l'application."
+  },
+
+  "homeResumeGame": "Reprendre la partie",
+  "@homeResumeGame": {
+    "description": "Bannière affichée sur l'accueil quand une partie de moins de 24 h existe (R9.2)."
+  },
+
+  "loadingDecks": "Préparation des cartes…",
+  "@loadingDecks": {
+    "description": "Écran de chargement affiché pendant le seeding de la base au premier lancement."
+  },
+
+  "errorGeneric": "Quelque chose s'est mal passé.",
+  "@errorGeneric": {
+    "description": "Message d'erreur générique, affiché avec une action de réessai."
+  },
+
+  "actionRetry": "Réessayer",
+  "@actionRetry": {
+    "description": "Bouton de réessai après une erreur."
+  }
+}

@@ -36,8 +36,6 @@ Ne réimplémente pas ce qui est déjà décidé. Avant de coder, lis le documen
 
 ## Commandes
 
-Le projet Flutter n'est pas encore scaffoldé. Une fois en place :
-
 ```bash
 flutter pub get
 dart run build_runner build --delete-conflicting-outputs   # freezed, riverpod, drift
@@ -48,6 +46,12 @@ flutter run
 
 Après toute modification d'une classe `@freezed`, `@riverpod` ou d'une table Drift, il faut
 relancer `build_runner` — sinon la compilation échoue sur des fichiers `.g.dart` obsolètes.
+Le code généré n'est pas versionné : après un clone ou un changement de branche, `build_runner`
+avant tout le reste.
+
+**Les versions de `freezed`, `json_serializable`, `riverpod_generator` et `drift_dev` sont
+solidaires** — elles doivent tourner sur la même version d'`analyzer`. Ne jamais en monter une
+seule : la résolution casse. Voir le bloc de commentaires des `dev_dependencies`.
 
 ## Conventions
 

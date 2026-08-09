@@ -48,7 +48,11 @@ jobs:
 
       - run: flutter pub get
 
-      # freezed, riverpod et drift génèrent du code qui n'est pas versionné.
+      # Rien de généré n'est versionné : ni les classes de localisation, ni le
+      # code de freezed, riverpod et drift.
+      - name: Localisation
+        run: flutter gen-l10n
+
       - name: Génération de code
         run: dart run build_runner build --delete-conflicting-outputs
 
@@ -67,6 +71,33 @@ jobs:
           name: coverage
           path: coverage/lcov.info
           if-no-files-found: ignore
+
+  # sqlite3 3.x compile ses binaires natifs via les build hooks de Dart. C'est
+  # le seul job qui prouve que ça se résout sur Android : sans lui, la
+  # déviation par rapport à sqlite3_flutter_libs n'est validée nulle part sur
+  # mobile.
+  android-build:
+    needs: scaffolded
+    if: needs.scaffolded.outputs.ready == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+      - run: flutter gen-l10n
+      - run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Build Android non signé
+        run: flutter build apk --debug
 
   # Branché dès le lot 1 volontairement : une CI iOS ajoutée tardivement fait
   # remonter d'un coup pods, permissions et signature au pire moment.
