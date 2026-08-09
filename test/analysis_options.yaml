@@ -1,0 +1,9 @@
+include: ../analysis_options.yaml
+
+linter:
+  rules:
+    # Dans un test, écrire une valeur qui se trouve être la valeur par défaut
+    # documente l'intention : un test sur l'équilibrage des difficultés doit
+    # nommer les trois difficultés de son vivier, pas en laisser une en creux.
+    # La règle garde tout son sens dans `lib/`, où elle n'est pas désactivée.
+    avoid_redundant_argument_values: false
