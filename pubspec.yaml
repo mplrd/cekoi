@@ -20,8 +20,8 @@ dependencies:
     sdk: flutter
 
   # État — providers générés, jamais de constructeur manuel.
-  # riverpod_annotation est épinglé pour rester sur la même version d'analyzer
-  # que freezed. Voir la note des dev_dependencies.
+  # riverpod_annotation est épinglé en 4.0.3 parce que riverpod_generator 4.0.4
+  # l'exige à l'identique. Voir la note des dev_dependencies.
   flutter_riverpod: ^3.3.0
 
   # Modèles immuables et unions scellées pour GameEvent.
@@ -40,19 +40,24 @@ dependencies:
 dev_dependencies:
   build_runner: ^2.15.1
 
-  # ATTENTION — ces quatre versions sont solidaires : elles doivent toutes
-  # tourner sur la MÊME version d'analyzer, et la seule fenêtre commune
-  # entièrement stable aujourd'hui est analyzer 9.
+  # ATTENTION — ces quatre générateurs sont solidaires : ils doivent tourner
+  # sur la MÊME version d'analyzer. La résolution actuelle est analyzer 12.
   #
-  #   freezed 3.2.5        analyzer >=9  <11
-  #   json_serializable    analyzer >=9  <11   (6.13.1+ exige >=10)
-  #   riverpod_generator   analyzer ^9         (4.0.4 passe à ^12)
-  #   drift_dev 2.31.0     analyzer >=8.1 <11  (2.32+ exige >=10)
+  #   freezed 3.2.6-dev.1  analyzer >=12 <13
+  #   riverpod_generator   analyzer ^12   (4.0.6+ passe à ^13)
+  #   drift_dev 2.34.x     analyzer >=10 <13
+  #   json_serializable    analyzer >=10 <15
   #
-  # Conséquence assumée : drift reste en 2.31 et flutter_riverpod en 3.3.1.
-  # Ne pas monter une seule de ces lignes isolément, la résolution casse.
-  # À remonter en bloc quand freezed 4 (analyzer 13) sera stable — c'est lui
-  # qui bloque tout le reste.
+  # Il n'existe AUCUNE combinaison entièrement stable :
+  #   - sur analyzer 13, drift_dev ne suit pas ;
+  #   - sur analyzer 10, riverpod_generator stable n'existe pas ;
+  #   - sur analyzer 9, json_serializable récent n'existe pas, et drift_dev
+  #     y réclame sqlite3 2.x, donc le paquet natif en fin de vie.
+  # D'où freezed en préversion, seule version couvrant analyzer 12. Le risque
+  # est contenu : freezed est un générateur, pas une dépendance d'exécution.
+  #
+  # Ne jamais monter une seule de ces lignes : la résolution casse. À remonter
+  # en bloc quand freezed 4 et drift_dev auront rejoint analyzer 13.
   drift_dev: ^2.34.0
 
   flutter_test:

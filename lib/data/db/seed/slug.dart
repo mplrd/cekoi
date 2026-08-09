@@ -1,31 +1,17 @@
-/// Transforme un texte de carte en fragment d'identifiant stable.
+import 'package:cekoi/domain/text/text_normalization.dart';
+
+/// Transforme un texte de carte en fragment d'identifiant.
 ///
-/// L'identifiant d'une carte officielle est `<deck_id>:<slug du texte>`.
-/// Il doit rester identique d'une version de deck à l'autre, sinon corriger
-/// une faute de frappe casserait le lien avec les parties déjà jouées.
+/// S'appuie sur la même translittération que la détection de doublons du
+/// domaine : sans ça, `œ` ou une apostrophe produiraient un identifiant
+/// incohérent avec la comparaison de textes.
+///
+/// **Le slug n'est qu'une valeur par défaut.** Un identifiant dérivé du texte
+/// change quand le texte change ; pour qu'une carte garde son identité à
+/// travers une correction de faute de frappe, le JSON doit porter un champ
+/// `id` explicite, qui prime sur ce slug.
 String slugify(String input) {
-  const accents = 'àâäáãåçèéêëìíîïñòóôöõùúûüýÿ';
-  const plain = 'aaaaaaceeeeiiiinooooouuuuyy';
-
-  final lowered = input.toLowerCase().trim();
-  final buffer = StringBuffer();
-
-  for (final rune in lowered.runes) {
-    final char = String.fromCharCode(rune);
-    final index = accents.indexOf(char);
-    if (index != -1) {
-      buffer.write(plain[index]);
-    } else if (char == 'œ') {
-      buffer.write('oe');
-    } else if (char == 'æ') {
-      buffer.write('ae');
-    } else {
-      buffer.write(char);
-    }
-  }
-
-  return buffer
-      .toString()
-      .replaceAll(RegExp('[^a-z0-9]+'), '-')
-      .replaceAll(RegExp(r'^-+|-+$'), '');
+  return stripDiacritics(
+    input,
+  ).replaceAll(RegExp('[^a-z0-9]+'), '-').replaceAll(RegExp(r'^-+|-+$'), '');
 }

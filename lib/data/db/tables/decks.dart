@@ -9,9 +9,11 @@ import 'package:drift/drift.dart';
 /// la seule distinction.
 /// La classe de ligne est nommée `DeckRow` : sans ça, Drift générerait `Deck`,
 /// qui entrerait en collision avec l'entité du domaine du même nom.
+///
+/// Aucun index secondaire : la table plafonnera à quelques dizaines de lignes,
+/// SQLite la parcourt plus vite qu'il ne lirait un index, et chaque index
+/// ralentirait le seeding pour rien.
 @DataClassName('DeckRow')
-@TableIndex(name: 'decks_audience', columns: {#audience})
-@TableIndex(name: 'decks_origin', columns: {#origin})
 class Decks extends Table {
   TextColumn get id => text()();
   TextColumn get name => text()();

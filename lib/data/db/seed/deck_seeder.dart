@@ -4,6 +4,7 @@ import 'package:cekoi/data/db/database.dart';
 import 'package:cekoi/data/db/seed/slug.dart';
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/deck_origin.dart';
+import 'package:cekoi/domain/entities/difficulty.dart';
 import 'package:cekoi/domain/entities/min_age.dart';
 import 'package:drift/drift.dart';
 
@@ -13,7 +14,18 @@ typedef DeckAssetLoader = Future<String> Function(String assetKey);
 /// Énumère les fichiers de decks disponibles.
 typedef DeckAssetLister = Future<List<String>> Function();
 
-/// Résultat d'un passage de seeding, pour l'affichage et les tests.
+/// Un deck qui n'a pas pu être seedé, et pourquoi.
+class SeedFailure {
+  const SeedFailure(this.assetKey, this.reason);
+
+  final String assetKey;
+  final String reason;
+
+  @override
+  String toString() => '$assetKey : $reason';
+}
+
+/// Résultat d'un passage de seeding.
 class SeedReport {
   const SeedReport({
     this.inserted = 0,
@@ -21,20 +33,42 @@ class SeedReport {
     this.skipped = 0,
     this.cardsWritten = 0,
     this.cardsRemoved = 0,
+    this.protectedDecks = const [],
+    this.duplicateTexts = const [],
+    this.failures = const [],
   });
 
   final int inserted;
   final int updated;
   final int skipped;
+
+  /// Nombre de lignes réellement écrites, doublons déjà fusionnés — et non le
+  /// nombre d'entrées du JSON, qui masquerait justement les doublons.
   final int cardsWritten;
   final int cardsRemoved;
 
-  bool get didNothing => inserted == 0 && updated == 0;
+  /// Decks du JSON dont l'identifiant est déjà pris par du contenu créé par le
+  /// joueur. On ne les écrase pas : on les signale.
+  final List<String> protectedDecks;
+
+  /// Textes apparaissant plusieurs fois dans un même JSON. Ils collapsent sur
+  /// un seul identifiant, ce qui rétrécit silencieusement le paquet.
+  final List<String> duplicateTexts;
+
+  /// Decks qu'on n'a pas pu lire. Les autres sont seedés quand même.
+  final List<SeedFailure> failures;
+
+  bool get hasProblems =>
+      failures.isNotEmpty ||
+      duplicateTexts.isNotEmpty ||
+      protectedDecks.isNotEmpty;
 
   @override
   String toString() =>
       'SeedReport(inserted: $inserted, updated: $updated, skipped: $skipped, '
-      'cardsWritten: $cardsWritten, cardsRemoved: $cardsRemoved)';
+      'cardsWritten: $cardsWritten, cardsRemoved: $cardsRemoved, '
+      'protectedDecks: $protectedDecks, duplicateTexts: $duplicateTexts, '
+      'failures: $failures)';
 }
 
 /// Alimente la base à partir des JSON livrés dans `assets/decks/`.
@@ -42,8 +76,15 @@ class SeedReport {
 /// Les JSON sont un **format de livraison**, pas une source de lecture à
 /// l'exécution : une fois seedés, tout passe par la base.
 ///
-/// Les lignes `origin = custom` ne sont jamais touchées, quoi qu'il arrive —
-/// c'est le contenu du joueur, et le perdre serait irréparable.
+/// Deux invariants, tenus par le code et pas seulement par la convention :
+///
+/// - **Aucune ligne `origin = custom` n'est jamais écrasée ni supprimée.** Le
+///   contenu du joueur n'existe nulle part ailleurs, le perdre est
+///   irréparable. Les écritures portent une clause qui limite l'`ON CONFLICT`
+///   aux lignes officielles.
+/// - **Un deck illisible n'emporte pas les autres.** Chaque fichier est isolé :
+///   un JSON malformé est signalé dans le rapport, les decks valides
+///   s'installent quand même.
 class DeckSeeder {
   DeckSeeder({
     required this.database,
@@ -63,31 +104,54 @@ class DeckSeeder {
     var skipped = 0;
     var cardsWritten = 0;
     var cardsRemoved = 0;
+    final protectedDecks = <String>[];
+    final duplicateTexts = <String>[];
+    final failures = <SeedFailure>[];
 
     for (final key in assetKeys) {
-      final raw = await loadAsset(key);
-      final json = jsonDecode(raw) as Map<String, dynamic>;
+      try {
+        final raw = await loadAsset(key);
+        final json = jsonDecode(raw) as Map<String, dynamic>;
 
-      final deckId = json['id'] as String;
-      final version = (json['contentVersion'] as num?)?.toInt() ?? 1;
+        final deckId = json['id'] as String?;
+        if (deckId == null || deckId.isEmpty) {
+          failures.add(SeedFailure(key, 'champ « id » absent ou vide'));
+          continue;
+        }
 
-      final existing = await (database.select(
-        database.decks,
-      )..where((d) => d.id.equals(deckId))).getSingleOrNull();
+        final version = (json['contentVersion'] as num?)?.toInt() ?? 1;
 
-      if (existing != null && existing.contentVersion >= version) {
-        skipped++;
-        continue;
-      }
+        final existing = await (database.select(
+          database.decks,
+        )..where((d) => d.id.equals(deckId))).getSingleOrNull();
 
-      final counts = await _writeDeck(json, deckId, version);
-      cardsWritten += counts.$1;
-      cardsRemoved += counts.$2;
+        // Un deck créé par le joueur porte le même identifiant : on n'y touche
+        // pas. Le contenu officiel manquera, c'est infiniment préférable à
+        // écraser une catégorie que le joueur a écrite.
+        if (existing != null && existing.origin == DeckOrigin.custom) {
+          protectedDecks.add(deckId);
+          continue;
+        }
 
-      if (existing == null) {
-        inserted++;
-      } else {
-        updated++;
+        if (existing != null && existing.contentVersion >= version) {
+          skipped++;
+          continue;
+        }
+
+        final outcome = await _writeDeck(json, deckId, version);
+        cardsWritten += outcome.written;
+        cardsRemoved += outcome.removed;
+        duplicateTexts.addAll(outcome.duplicates);
+
+        if (existing == null) {
+          inserted++;
+        } else {
+          updated++;
+        }
+      } on Object catch (error) {
+        // Volontairement large : un JSON livré peut échouer de mille façons, et
+        // aucune ne justifie de priver le joueur des autres catégories.
+        failures.add(SeedFailure(key, error.toString()));
       }
     }
 
@@ -97,11 +161,13 @@ class DeckSeeder {
       skipped: skipped,
       cardsWritten: cardsWritten,
       cardsRemoved: cardsRemoved,
+      protectedDecks: protectedDecks,
+      duplicateTexts: duplicateTexts,
+      failures: failures,
     );
   }
 
-  /// Écrit un deck et ses cartes. Renvoie (cartes écrites, cartes supprimées).
-  Future<(int, int)> _writeDeck(
+  Future<_DeckOutcome> _writeDeck(
     Map<String, dynamic> json,
     String deckId,
     int version,
@@ -109,50 +175,79 @@ class DeckSeeder {
     final deckAudience = Audience.values.byName(json['audience'] as String);
 
     return database.transaction(() async {
+      final deckRow = DecksCompanion.insert(
+        id: deckId,
+        name: json['name'] as String,
+        audience: deckAudience,
+        minAge: MinAge.fromYears((json['minAge'] as num).toInt()).years,
+        origin: DeckOrigin.official,
+        description: Value(json['description'] as String?),
+        icon: Value(json['icon'] as String?),
+        contentVersion: Value(version),
+        isPremium: Value(json['isPremium'] as bool? ?? false),
+        sortOrder: Value((json['sortOrder'] as num?)?.toInt() ?? 0),
+      );
+
       await database
           .into(database.decks)
-          .insertOnConflictUpdate(
-            DecksCompanion.insert(
-              id: deckId,
-              name: json['name'] as String,
-              audience: deckAudience,
-              minAge: MinAge.fromYears((json['minAge'] as num).toInt()).years,
-              origin: DeckOrigin.official,
-              description: Value(json['description'] as String?),
-              icon: Value(json['icon'] as String?),
-              contentVersion: Value(version),
-              isPremium: Value(json['isPremium'] as bool? ?? false),
-              sortOrder: Value((json['sortOrder'] as num?)?.toInt() ?? 0),
+          .insert(
+            deckRow,
+            onConflict: DoUpdate<$DecksTable, DeckRow>(
+              (_) => deckRow,
+              // Ne mord que sur les lignes officielles. Sur une ligne custom,
+              // le conflit se résout en « ne rien faire ».
+              where: (old) => old.origin.equalsValue(DeckOrigin.official),
             ),
           );
 
       final cards = (json['cards'] as List<dynamic>)
           .cast<Map<String, dynamic>>();
+
       final seenIds = <String>{};
+      final duplicates = <String>[];
 
       for (final card in cards) {
         final text = card['text'] as String;
-        final id = '$deckId:${slugify(text)}';
-        seenIds.add(id);
+
+        // L'identifiant explicite prime sur le slug. C'est ce qui permet de
+        // corriger une faute de frappe sans changer l'identité de la carte :
+        // sans lui, l'id dérivé du texte changerait et casserait le lien avec
+        // les parties déjà jouées — exactement ce que l'id stable doit éviter.
+        final id = (card['id'] as String?) ?? '$deckId:${slugify(text)}';
+
+        if (!seenIds.add(id)) {
+          duplicates.add(text);
+          continue;
+        }
+
+        final cardRow = CardsCompanion.insert(
+          id: id,
+          deckId: deckId,
+          cardText: text,
+          audience: card['audience'] != null
+              ? Audience.values.byName(card['audience'] as String)
+              : deckAudience,
+          // Validé ici plutôt qu'à la lecture : une difficulté hors bornes doit
+          // faire échouer le deck fautif, pas surgir au moment du tirage.
+          difficulty: Difficulty.fromValue(
+            (card['difficulty'] as num?)?.toInt() ?? 2,
+          ).value,
+          taboo: Value(
+            jsonEncode(
+              (card['taboo'] as List<dynamic>? ?? const <dynamic>[])
+                  .cast<String>(),
+            ),
+          ),
+          origin: DeckOrigin.official,
+        );
 
         await database
             .into(database.cards)
-            .insertOnConflictUpdate(
-              CardsCompanion.insert(
-                id: id,
-                deckId: deckId,
-                cardText: text,
-                audience: card['audience'] != null
-                    ? Audience.values.byName(card['audience'] as String)
-                    : deckAudience,
-                difficulty: (card['difficulty'] as num?)?.toInt() ?? 2,
-                taboo: Value(
-                  jsonEncode(
-                    (card['taboo'] as List<dynamic>? ?? const <dynamic>[])
-                        .cast<String>(),
-                  ),
-                ),
-                origin: DeckOrigin.official,
+            .insert(
+              cardRow,
+              onConflict: DoUpdate<$CardsTable, CardRow>(
+                (_) => cardRow,
+                where: (old) => old.origin.equalsValue(DeckOrigin.official),
               ),
             );
       }
@@ -168,7 +263,23 @@ class DeckSeeder {
               ))
               .go();
 
-      return (cards.length, removed);
+      return _DeckOutcome(
+        written: seenIds.length,
+        removed: removed,
+        duplicates: duplicates,
+      );
     });
   }
+}
+
+class _DeckOutcome {
+  const _DeckOutcome({
+    required this.written,
+    required this.removed,
+    required this.duplicates,
+  });
+
+  final int written;
+  final int removed;
+  final List<String> duplicates;
 }

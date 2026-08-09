@@ -1,6 +1,7 @@
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/deck_origin.dart';
 import 'package:cekoi/domain/entities/difficulty.dart';
+import 'package:cekoi/domain/text/text_normalization.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'card.freezed.dart';
@@ -36,23 +37,5 @@ abstract class Card with _$Card {
   ///
   /// Le tirage ne doit jamais produire deux fois la même carte, même si deux
   /// catégories sélectionnées contiennent la même entrée écrite différemment.
-  String get normalizedText {
-    const accents = 'àâäáãåçèéêëìíîïñòóôöõùúûüýÿœæ';
-    const plain = 'aaaaaaceeeeiiiinooooouuuuyyoa';
-
-    final lowered = text.toLowerCase().trim();
-    final buffer = StringBuffer();
-    for (final rune in lowered.runes) {
-      final char = String.fromCharCode(rune);
-      final index = accents.indexOf(char);
-      buffer.write(index == -1 ? char : plain[index]);
-    }
-
-    return buffer
-        .toString()
-        .replaceAll(RegExp('[^a-z0-9 ]'), '')
-        .replaceAll(RegExp('^(le|la|les|un|une|des|du|de|l) '), '')
-        .replaceAll(RegExp(' +'), ' ')
-        .trim();
-  }
+  String get normalizedText => normalizeCardText(text);
 }

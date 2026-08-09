@@ -9,13 +9,18 @@ import 'package:drift/drift.dart';
 /// public et difficulté, et doit rester rapide même avec plusieurs milliers
 /// de lignes.
 /// Nommée `CardRow` pour ne pas entrer en collision avec l'entité du domaine.
+///
+/// Un seul index composite, dans l'ordre du prédicat de tirage du lot 2 :
+/// `deck_id IN (...) AND audience IN (...) AND difficulty = ?`. SQLite ne
+/// retient de toute façon qu'un index par table dans une requête ; des index
+/// séparés sur `audience` ou `origin`, qui ne portent que deux valeurs, ne
+/// seraient quasiment jamais choisis tout en coûtant à chaque écriture du
+/// seeder. `deck_id` en tête sert aussi la suppression des cartes disparues.
 @DataClassName('CardRow')
-@TableIndex(name: 'cards_deck', columns: {#deckId})
 @TableIndex(
-  name: 'cards_audience_difficulty',
-  columns: {#audience, #difficulty},
+  name: 'cards_deck_audience_difficulty',
+  columns: {#deckId, #audience, #difficulty},
 )
-@TableIndex(name: 'cards_origin', columns: {#origin})
 class Cards extends Table {
   /// Officiel : `<deck_id>:<slug du texte>`, stable d'une version à l'autre.
   TextColumn get id => text()();
