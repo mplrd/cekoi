@@ -1,0 +1,38 @@
+# Normalisation des fins de ligne.
+# La machine de dev est sous Windows (core.autocrlf=true) mais la CI tourne sous
+# Linux et macOS : sans ce fichier, les fins de ligne partent en CRLF dans les
+# commits et cassent les scripts shell des runners.
+* text=auto eol=lf
+
+# Ces fichiers-là doivent rester en CRLF : cmd.exe et PowerShell les exigent.
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+*.ps1   text eol=crlf
+
+# Ceux-là doivent rester en LF même sous Windows : ils sont exécutés par un shell.
+*.sh    text eol=lf
+gradlew text eol=lf
+
+# Binaires — jamais de conversion, jamais de diff textuel.
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.gif    binary
+*.webp   binary
+*.ico    binary
+*.ttf    binary
+*.otf    binary
+*.woff   binary
+*.woff2  binary
+*.mp3    binary
+*.wav    binary
+*.ogg    binary
+*.zip    binary
+*.jar    binary
+*.keystore binary
+*.jks    binary
+*.p12    binary
+*.pdf    binary
+
+# Les decks sont du JSON en UTF-8, avec des accents : diff textuel normal.
+assets/decks/*.json text eol=lf

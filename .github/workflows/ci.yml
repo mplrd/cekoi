@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+
+# Une PR qu'on repousse annule le run précédent : inutile de payer deux fois
+# un runner macOS pour un commit déjà remplacé.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FLUTTER_VERSION: 3.44.9
+
+jobs:
+  # Le projet Flutter n'est pas encore scaffoldé (lot 1 de docs/ROADMAP.md).
+  # Ce job évite une CI rouge en permanence en attendant, et se neutralise
+  # tout seul dès que pubspec.yaml existe.
+  scaffolded:
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: check
+        run: |
+          if [ -f pubspec.yaml ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Projet Flutter pas encore scaffoldé — analyze et test sont sautés."
+          fi
+
+  analyze-test:
+    needs: scaffolded
+    if: needs.scaffolded.outputs.ready == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      # freezed, riverpod et drift génèrent du code qui n'est pas versionné.
+      - name: Génération de code
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Formatage
+        run: dart format --output=none --set-exit-if-changed lib test
+
+      - name: Analyse statique
+        run: flutter analyze --fatal-infos --fatal-warnings
+
+      - name: Tests
+        run: flutter test --coverage
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage
+          path: coverage/lcov.info
+          if-no-files-found: ignore
+
+  # Branché dès le lot 1 volontairement : une CI iOS ajoutée tardivement fait
+  # remonter d'un coup pods, permissions et signature au pire moment.
+  # Voir docs/ROADMAP.md, lot 1.
+  ios-build:
+    needs: scaffolded
+    if: needs.scaffolded.outputs.ready == 'true'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+      - run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Build iOS non signé
+        run: flutter build ios --no-codesign --debug

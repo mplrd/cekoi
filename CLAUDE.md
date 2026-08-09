@@ -56,3 +56,32 @@ relancer `build_runner` — sinon la compilation échoue sur des fichiers `.g.da
 - Les tests du domaine sont purs et rapides : pas de `WidgetTester`, pas de base, pas de mock
   de temps réel. Le temps est une dépendance injectée.
 - Les textes affichés passent par l'ARB de `lib/l10n/`, jamais en dur dans un widget.
+
+## Workflow git
+
+Gitflow allégé. **Ne jamais committer directement sur `main` ni sur `develop`.**
+
+| Branche | Rôle |
+|---|---|
+| `main` | Ce qui est publié sur les stores. N'avance que par PR depuis `develop`, et chaque avancée est taguée `vX.Y.Z`. Protégée. |
+| `develop` | Branche d'intégration. C'est la base de départ et d'arrivée de tout travail courant. |
+| `feature/*` | Une par unité de travail : `feature/lot-2-moteur`, `feature/lot-3-config`. Part de `develop`, y retourne par PR. |
+| `hotfix/*` | Correction urgente en production. Part de `main`, et se merge dans `main` **et** `develop` — oublier le second fait réapparaître le bug à la release suivante. |
+
+Commits en **Conventional Commits**, en français : `feat(engine): tirage équilibré du paquet`,
+`fix(timer): pause à la mise en arrière-plan (R3.7)`. Portées usuelles : `engine`, `data`,
+`ui`, `decks`, `ci`, `docs`. Un comportement par commit ; pas de commit fourre-tout de fin de
+lot. Quand un commit implémente une règle, cite son numéro.
+
+Cycle d'une unité de travail :
+
+1. `git switch develop && git pull` puis `git switch -c feature/<nom>`.
+2. Implémenter, avec les numéros de `RULES.md` dans les noms de test.
+3. Lancer l'agent `flutter-reviewer` et traiter ses remarques avant d'ouvrir la PR.
+4. `gh pr create --base develop`, en remplissant honnêtement la section
+   *Ce que je n'ai pas fait* du template.
+5. CI verte + revue propre → merge dans `develop`.
+6. La remontée de `develop` vers `main` est un arbitrage humain, jamais automatique.
+
+Le code généré (`*.g.dart`, `*.freezed.dart`) n'est pas versionné : après tout clone ou tout
+changement de branche qui touche une classe générée, relancer `build_runner`.
