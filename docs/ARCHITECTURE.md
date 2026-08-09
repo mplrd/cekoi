@@ -82,7 +82,7 @@ dans `domain/`, `data/` ou `app/theme/`.
 |---|---|---|
 | État | `flutter_riverpod` + `riverpod_generator` | Providers typés, testables, invalidation fine. Le domaine n'en dépend pas. |
 | Modèles immuables | `freezed` + `json_serializable` | Unions scellées pour `GameEvent`, `copyWith` gratuit, égalité de valeur. |
-| Base locale | `drift` + `sqlite3_flutter_libs` | Requêtes typées à la compilation, migrations versionnées, tirage aléatoire en SQL. |
+| Base locale | `drift` + `sqlite3` 3.x | Requêtes typées à la compilation, migrations versionnées, tirage aléatoire en SQL. **`sqlite3_flutter_libs` n'est plus utilisé** : il est en fin de vie depuis que `sqlite3` 3.x embarque lui-même les binaires natifs via les build hooks de Dart. |
 | Navigation | `go_router` | Routes déclaratives, deep links pour la v2. |
 | Lints | `very_good_analysis` | Strict par défaut, évite les débats de style. |
 | Pub | `google_mobile_ads` | Inclut le CMP Google UMP dont on a besoin en Europe. |

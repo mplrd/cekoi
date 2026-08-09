@@ -48,7 +48,11 @@ jobs:
 
       - run: flutter pub get
 
-      # freezed, riverpod et drift génèrent du code qui n'est pas versionné.
+      # Rien de généré n'est versionné : ni les classes de localisation, ni le
+      # code de freezed, riverpod et drift.
+      - name: Localisation
+        run: flutter gen-l10n
+
       - name: Génération de code
         run: dart run build_runner build --delete-conflicting-outputs
 

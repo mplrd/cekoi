@@ -1,0 +1,17 @@
+include: package:very_good_analysis/analysis_options.yaml
+
+analyzer:
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "lib/l10n/generated/**"
+  errors:
+    # freezed et json_serializable posent leurs annotations sur le constructeur
+    # généré, ce que l'analyseur signale à tort sur les champs.
+    invalid_annotation_target: ignore
+
+linter:
+  rules:
+    # Le projet est une application, pas une bibliothèque publiée : documenter
+    # chaque membre public n'apporte rien et noierait les commentaires utiles.
+    public_member_api_docs: false

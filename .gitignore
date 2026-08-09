@@ -40,6 +40,9 @@ flutter_*.png
 *.gr.dart
 *.config.dart
 
+# Classes de localisation, régénérées par : flutter gen-l10n
+lib/l10n/generated/
+
 # Symbolisation / obfuscation
 app.*.symbols
 app.*.map.json

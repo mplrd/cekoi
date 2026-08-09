@@ -1,0 +1,29 @@
+{
+  "id": "animaux",
+  "name": "Animaux",
+  "description": "De la basse-cour à la savane. La catégorie qui marche à tous les âges.",
+  "icon": "pets",
+  "audience": "family",
+  "minAge": 6,
+  "contentVersion": 1,
+  "isPremium": false,
+  "sortOrder": 10,
+  "cards": [
+    { "text": "Éléphant", "difficulty": 1, "taboo": ["trompe", "gris", "Afrique"] },
+    { "text": "Girafe", "difficulty": 1, "taboo": ["cou", "grand", "taches"] },
+    { "text": "Pingouin", "difficulty": 1, "taboo": ["banquise", "noir et blanc", "nage"] },
+    { "text": "Escargot", "difficulty": 1, "taboo": ["coquille", "lent", "bave"] },
+    { "text": "Hérisson", "difficulty": 1, "taboo": ["piquants", "boule", "jardin"] },
+    { "text": "Coccinelle", "difficulty": 1, "taboo": ["points", "rouge", "bête à bon Dieu"] },
+    { "text": "Kangourou", "difficulty": 2, "taboo": ["poche", "Australie", "saut"] },
+    { "text": "Caméléon", "difficulty": 2, "taboo": ["couleur", "langue", "lézard"] },
+    { "text": "Chauve-souris", "difficulty": 2, "taboo": ["nuit", "grotte", "ailes"] },
+    { "text": "Hippopotame", "difficulty": 2, "taboo": ["eau", "gueule", "gros"] },
+    { "text": "Loutre", "difficulty": 2, "taboo": ["rivière", "nage", "poisson"] },
+    { "text": "Ornithorynque", "difficulty": 3, "taboo": ["bec", "Australie", "œuf"] },
+    { "text": "Tatou", "difficulty": 3, "taboo": ["carapace", "boule", "Amérique"] },
+    { "text": "Axolotl", "difficulty": 3, "taboo": ["salamandre", "rose", "branchies"] },
+    { "text": "Fourmilier", "difficulty": 3, "taboo": ["fourmis", "langue", "museau"] },
+    { "text": "Narval", "difficulty": 3, "taboo": ["corne", "licorne", "Arctique"] }
+  ]
+}

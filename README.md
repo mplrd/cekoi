@@ -18,8 +18,11 @@ n'est nécessaire pour jouer.
 
 ## État du projet
 
-Spécification écrite, implémentation non commencée. Le SDK Flutter n'est pas encore installé
-et le projet n'est pas scaffoldé — voir la section *Prérequis* de `docs/ROADMAP.md`.
+**Lot 1 — Fondations** en cours. Le projet est scaffoldé, la base Drift et son seeding depuis
+`assets/decks/` fonctionnent, la CI tourne sur Android et iOS. Le moteur de jeu (lot 2) n'est
+pas commencé : l'accueil s'affiche mais aucune partie ne se lance encore.
+
+Voir `docs/ROADMAP.md` pour le découpage en lots.
 
 ## Documentation
 
