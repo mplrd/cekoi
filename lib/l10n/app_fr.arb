@@ -328,7 +328,7 @@
     "description": "Nom de la manche 3."
   },
 
-  "roundRuleFree": "Dis ce que tu veux, sauf les mots de la carte. Ni mime, ni bruitage. On ne passe pas : on cherche jusqu'au bout.",
+  "roundRuleFree": "Dis ce que tu veux, sauf les mots de la carte, leurs dérivés et leurs synonymes. Ni mime, ni bruitage. On ne passe pas : on cherche jusqu'au bout.",
   "@roundRuleFree": {
     "description": "Contrainte de la manche 1, rappelée avant le tour (R2.3, R3.9)."
   },
@@ -370,12 +370,12 @@
     "description": "Déclenche le compte à rebours qui précède le tour."
   },
 
-  "actionFound": "Trouvé",
+  "actionFound": "Trouvé !",
   "@actionFound": {
     "description": "Action de carte devinée, à droite de l'écran de jeu."
   },
 
-  "actionPass": "Passer",
+  "actionPass": "Je passe…",
   "@actionPass": {
     "description": "Action de carte passée, à gauche de l'écran de jeu."
   },
