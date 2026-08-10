@@ -69,6 +69,17 @@ LaunchOutcome launchGame({
   required List<Card> pool,
   required int seed,
 }) {
+  // Le tirage se dimensionne sur `setup.teamCount` (R6.1) et la partie se joue
+  // avec `teams` : les deux doivent parler des mêmes équipes, sinon le paquet
+  // est calculé pour une table et distribué à une autre.
+  if (teams.length != setup.teamCount) {
+    throw ArgumentError.value(
+      teams,
+      'teams',
+      '${setup.teamCount} équipes réglées, ${teams.length} reçues',
+    );
+  }
+
   final selected = setup.deckIds.toSet();
   final draw = drawCards(
     pool: [
