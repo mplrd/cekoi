@@ -5,7 +5,6 @@ import 'package:cekoi/domain/engine/team_builder.dart';
 import 'package:cekoi/domain/engine/turn.dart';
 import 'package:cekoi/domain/entities/card.dart';
 import 'package:cekoi/domain/entities/game_config.dart';
-import 'package:cekoi/domain/entities/player.dart';
 import 'package:cekoi/domain/entities/team.dart';
 import 'package:cekoi/domain/rules/round.dart';
 
@@ -16,7 +15,6 @@ import 'package:cekoi/domain/rules/round.dart';
 /// elle ne peut simplement pas démarrer.
 GameState startGame({
   required GameConfig config,
-  required List<Player> players,
   required List<Team> teams,
   required List<Card> deck,
   required int seed,
@@ -42,16 +40,6 @@ GameState startGame({
     );
   }
 
-  for (final team in teams) {
-    if (team.playerIds.length < minimumTeamSize) {
-      throw ArgumentError.value(
-        team.id,
-        'teams',
-        'Chaque équipe compte au moins $minimumTeamSize joueurs (R8.5)',
-      );
-    }
-  }
-
   if (deck.length < GameConfig.minimumCardCount) {
     throw ArgumentError.value(
       deck.length,
@@ -71,23 +59,9 @@ GameState startGame({
     );
   }
 
-  final known = {for (final player in players) player.id};
-  for (final team in teams) {
-    for (final id in team.playerIds) {
-      if (!known.contains(id)) {
-        throw ArgumentError.value(
-          id,
-          'teams',
-          "L'équipe ${team.id} référence un joueur absent de la partie",
-        );
-      }
-    }
-  }
-
-  final rounds = Round.sequenceFor(config.roundCount);
+  const rounds = Round.sequence;
   return GameState(
     config: config,
-    players: players,
     teams: teams,
     deck: deck,
     rounds: rounds,
@@ -95,11 +69,7 @@ GameState startGame({
     phase: GamePhase.turnIntro,
     seed: seed,
     tieBreakReserve: tieBreakReserve,
-    turn: PlayedTurn(
-      round: rounds.first,
-      teamId: teams.first.id,
-      narratorId: teams.first.currentNarratorId,
-    ),
+    turn: PlayedTurn(round: rounds.first, teamId: teams.first.id),
   );
 }
 
@@ -195,6 +165,11 @@ GameState _resultCorrected(
 
   // Le récapitulatif ne liste que les cartes vues (R3.6) : une carte que le
   // narrateur n'a jamais retournée n'a pas de ligne à corriger.
+  //
+  // Corriger vers `passed` reste possible en manche 1, où l'action *Passer*
+  // n'existe pourtant pas (R3.9) : ici, `passed` veut dire « pas trouvée »,
+  // c'est l'annulation d'un tap de trop. R3.9 interdit d'écarter une carte
+  // pendant le tour, pas de corriger une erreur une fois le chrono arrêté.
   final existing = turn.resultFor(cardId);
   if (existing == null || existing.outcome == outcome) return state;
 
@@ -212,16 +187,8 @@ GameState _turnConfirmed(GameState state) {
   final turn = state.turn;
   if (state.phase != GamePhase.turnSummary || turn == null) return state;
 
-  // Le narrateur de l'équipe qui vient de jouer avance, et lui seul : la
-  // rotation est interne à chaque équipe (R3.1).
-  final teams = [
-    for (final team in state.teams)
-      if (team.id == turn.teamId) team.withNextNarrator() else team,
-  ];
-
   final nextTeamIndex = (state.activeTeamIndex + 1) % state.teams.length;
   final committed = state.copyWith(
-    teams: teams,
     history: [...state.history, turn],
     turn: null,
     activeTeamIndex: nextTeamIndex,
@@ -255,17 +222,10 @@ GameState _nextRoundStarted(GameState state) {
 }
 
 /// Ouvre l'annonce du tour de l'équipe active.
-GameState _openTurn(GameState state) {
-  final team = state.activeTeam;
-  return state.copyWith(
-    phase: GamePhase.turnIntro,
-    turn: PlayedTurn(
-      round: state.round,
-      teamId: team.id,
-      narratorId: team.currentNarratorId,
-    ),
-  );
-}
+GameState _openTurn(GameState state) => state.copyWith(
+  phase: GamePhase.turnIntro,
+  turn: PlayedTurn(round: state.round, teamId: state.activeTeam.id),
+);
 
 GameState _endGame(GameState state) {
   final leaders = state.leadingTeamIds;

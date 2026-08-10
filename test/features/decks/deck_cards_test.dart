@@ -71,6 +71,42 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  group('le formulaire se lit de haut en bas et finit par son action', () {
+    testWidgets('le bouton Ajouter est sous le champ et sous la difficulté', (
+      tester,
+    ) async {
+      // Retour d'usage : un « + » collé au champ, avec le sélecteur de
+      // difficulté *en dessous*, laisse penser que la carte part sans le
+      // niveau affiché. L'ordre visuel est donc la règle, pas un détail.
+      await pumpScreen(tester);
+
+      double bas(Finder finder) => tester.getRect(finder).bottom;
+
+      expect(
+        bas(find.byType(SegmentedButton<Difficulty>)),
+        lessThan(bas(find.byType(TextField).first)),
+        reason: 'La difficulté se choisit avant de taper le texte',
+      );
+      expect(
+        bas(find.byType(TextField).first),
+        lessThan(bas(find.widgetWithText(FilledButton, l10n.actionAddCard))),
+        reason: "Rien ne doit rester sous le bouton d'ajout",
+      );
+    });
+
+    testWidgets('le bouton ajoute la carte, comme la validation clavier', (
+      tester,
+    ) async {
+      await pumpScreen(tester);
+
+      await tester.enterText(find.byType(TextField).first, 'Le camping');
+      await tester.tap(find.widgetWithText(FilledButton, l10n.actionAddCard));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Le camping'), findsOneWidget);
+    });
+  });
+
   group('saisie en rafale', () {
     testWidgets('la carte entre et le champ se vide', (tester) async {
       // Quelqu'un qui saisit trente prénoms ne doit pas retoucher l'écran

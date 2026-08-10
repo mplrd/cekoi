@@ -40,7 +40,7 @@ lib/
     game_persistence.dart     # sauvegarde et reprise (R9.1, R9.2)
     theme/                    # design system, couleurs, typo
   domain/                     # ── DART PUR, zéro import flutter ──
-    entities/                 # Card, Deck, Player, Team, GameConfig, énumérations
+    entities/                 # Card, Deck, Team, GameConfig, énumérations
     engine/
       game_state.dart         # état immuable (freezed), sérialisable pour R9.1
       game_event.dart         # union scellée d'événements (freezed)
@@ -49,7 +49,7 @@ lib/
       turn.dart               # PlayedTurn, CardResult, TurnOutcome
       turn_clock.dart         # temps de jeu net des pauses (R3.7, R3.8)
       draw.dart               # tirage du paquet, équilibrage, PoolVerdict (R6.2)
-      team_builder.dart       # proposition de composition (R8.3)
+      team_builder.dart       # équipes à partir de leurs noms (R8.3)
     rules/
       round.dart              # les trois manches et leur ordre (R2.1, R2.2)
       scoring.dart            # cumul, détail par manche, équipes en tête (R5)

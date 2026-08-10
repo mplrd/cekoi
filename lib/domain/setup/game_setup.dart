@@ -1,14 +1,10 @@
-import 'dart:math';
-
 import 'package:cekoi/domain/engine/team_builder.dart';
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/deck.dart';
 import 'package:cekoi/domain/entities/difficulty.dart';
 import 'package:cekoi/domain/entities/game_config.dart';
-import 'package:cekoi/domain/entities/player.dart';
 import 'package:cekoi/domain/entities/team.dart';
 import 'package:cekoi/domain/rules/game_profiles.dart';
-import 'package:cekoi/domain/rules/round.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'game_setup.freezed.dart';
@@ -28,16 +24,21 @@ abstract class GameSetup with _$GameSetup {
     required List<String> deckIds,
     required Set<Difficulty> difficulties,
     required Duration turnDuration,
-    required int roundCount,
 
     /// `null` signifie *auto* (R6.1).
     int? cardCount,
 
     /// Profil retenu, `null` dès que la sélection est personnalisée (R7.6).
     String? profileId,
-    @Default(<Player>[]) List<Player> players,
-    @Default(minimumTeamCount) int teamCount,
-    @Default(<Team>[]) List<Team> teams,
+
+    /// Les noms d'équipe **tels qu'ils ont été tapés** : une entrée par équipe,
+    /// vide tant que le joueur n'a rien saisi (R8.3).
+    ///
+    /// Les vides sont conservés au lieu d'être remplacés par « Équipe N » ici :
+    /// ce libellé est de la présentation, et le stocker interdirait au champ de
+    /// distinguer un nom voulu d'un nom par défaut — donc d'afficher un
+    /// placeholder qu'on peut retaper par-dessus sans l'effacer d'abord.
+    @Default(<String>['', '']) List<String> teamNames,
   }) = _GameSetup;
 
   const GameSetup._();
@@ -45,49 +46,52 @@ abstract class GameSetup with _$GameSetup {
   /// Vrai tant qu'aucun profil ne pilote la sélection (R7.6).
   bool get isCustomSelection => profileId == null;
 
-  /// Nombre de cartes effectif pour l'effectif saisi (R6.1).
-  int get resolvedCardCount =>
-      cardCount ??
-      GameConfig.autoCardCount(
-        players.length,
-      );
+  int get teamCount => teamNames.length;
 
-  /// Assez de joueurs pour remplir le nombre d'équipes demandé (R8.5).
-  bool get canProposeTeams => players.length >= teamCount * minimumTeamSize;
+  /// Nombre de cartes effectif pour le nombre d'équipes retenu (R6.1).
+  int get resolvedCardCount => cardCount ?? GameConfig.autoCardCount(teamCount);
 
   /// Tout ce que R8.5 et R6.2 exigent avant de lancer.
   ///
   /// Le vivier de cartes, lui, n'est pas connu d'ici : il dépend de la base.
   /// C'est l'appelant qui confronte [resolvedCardCount] au tirage réel.
-  bool get canStart {
-    if (deckIds.isEmpty) return false;
-    if (teams.length < minimumTeamCount) return false;
-    if (teams.any((t) => t.playerIds.length < minimumTeamSize)) return false;
+  bool get canStart => deckIds.isNotEmpty && teamCount >= minimumTeamCount;
 
-    final known = {for (final player in players) player.id};
-    return teams.every((t) => t.playerIds.every(known.contains));
+  /// Les équipes de la partie, les noms vides comblés par [fallbacks] (R8.3).
+  ///
+  /// Les libellés par défaut viennent de l'appelant, comme tout ce qui
+  /// s'affiche : le domaine ne fabrique pas de texte.
+  List<Team> teamsNamed(List<String> fallbacks) {
+    if (fallbacks.length < teamCount) {
+      throw ArgumentError.value(
+        fallbacks.length,
+        'fallbacks',
+        'Il faut un nom de repli par équipe, soit $teamCount',
+      );
+    }
+
+    return teamsFromNames([
+      for (var i = 0; i < teamCount; i++)
+        if (teamNames[i].trim().isEmpty) fallbacks[i] else teamNames[i].trim(),
+    ]);
   }
 
   /// Change le mode de contenu.
   ///
   /// Tout ce qui dépend du vivier repart des défauts du nouveau mode : les
   /// catégories retenues n'y existent peut-être pas, et les réglages par
-  /// défaut diffèrent (R6, R7.1). Les **joueurs et les équipes survivent** :
-  /// ils n'ont rien à voir avec le contenu, et les resaisir parce qu'on est
-  /// revenu à la première étape serait une punition.
+  /// défaut diffèrent (R6, R7.1). Les **équipes survivent** : elles n'ont rien
+  /// à voir avec le contenu, et les resaisir parce qu'on est revenu à la
+  /// première étape serait une punition.
   ///
   /// Retaper le mode déjà choisi ne change rien du tout.
   GameSetup withMode(Audience mode) {
     if (mode == this.mode) return this;
-    return setupForMode(mode).copyWith(
-      players: players,
-      teamCount: teamCount,
-      teams: teams,
-    );
+    return setupForMode(mode).copyWith(teamNames: teamNames);
   }
 
   /// Applique un profil : catégories, difficultés et réglages d'un coup
-  /// (R7.5). Les joueurs déjà saisis sont conservés.
+  /// (R7.5). Les équipes déjà nommées sont conservées.
   GameSetup withProfile(GameProfile profile, List<Deck> decks) {
     if (profile.mode != mode) {
       throw ArgumentError.value(
@@ -104,7 +108,6 @@ abstract class GameSetup with _$GameSetup {
       deckIds: selection.deckIds,
       difficulties: selection.difficulties,
       turnDuration: selection.turnDuration,
-      roundCount: selection.roundCount,
       cardCount: selection.cardCount,
     );
   }
@@ -137,17 +140,6 @@ abstract class GameSetup with _$GameSetup {
     return copyWith(turnDuration: duration);
   }
 
-  GameSetup withRoundCount(int count) {
-    if (!Round.allowedCounts.contains(count)) {
-      throw ArgumentError.value(
-        count,
-        'count',
-        'Le nombre de manches vaut ${Round.allowedCounts.join(' ou ')} (R2.2)',
-      );
-    }
-    return copyWith(roundCount: count);
-  }
-
   /// [count] à `null` rétablit le mode auto (R6.1).
   GameSetup withCardCount(int? count) {
     if (count != null && count < GameConfig.minimumCardCount) {
@@ -161,52 +153,11 @@ abstract class GameSetup with _$GameSetup {
     return copyWith(cardCount: count);
   }
 
-  GameSetup withPlayer(Player player) {
-    if (players.any((p) => p.id == player.id)) {
-      throw ArgumentError.value(
-        player.id,
-        'player',
-        'Ce joueur est déjà dans la partie',
-      );
-    }
-    return copyWith(players: [...players, player]);
-  }
-
-  /// Retire un joueur, **et le retire des équipes déjà composées**.
+  /// Change le nombre d'équipes en **gardant les noms déjà tapés** (R8.4).
   ///
-  /// Une équipe qui référencerait un joueur disparu ferait échouer le
-  /// lancement bien plus loin, sur un message incompréhensible.
-  GameSetup withoutPlayer(String playerId) => copyWith(
-    players: [
-      for (final player in players)
-        if (player.id != playerId) player,
-    ],
-    teams: [
-      for (final team in teams)
-        team.copyWith(
-          narratorIndex: 0,
-          playerIds: [
-            for (final id in team.playerIds)
-              if (id != playerId) id,
-          ],
-        ),
-    ],
-  );
-
-  GameSetup toggleChild(String playerId) => copyWith(
-    players: [
-      for (final player in players)
-        if (player.id == playerId)
-          player.copyWith(isChild: !player.isChild)
-        else
-          player,
-    ],
-  );
-
-  /// Change le nombre d'équipes et **oublie la composition en cours**.
-  ///
-  /// La conserver afficherait deux équipes alors que le joueur en demande
-  /// trois : mieux vaut une relance explicite qu'une incohérence muette.
+  /// Passer de 2 à 3 ajoute une entrée vide ; redescendre à 2 coupe la
+  /// dernière. Un aller-retour perd donc le troisième nom, et c'est voulu :
+  /// le retenir ferait réapparaître un nom que le joueur a cru supprimer.
   GameSetup withTeamCount(int count) {
     if (count < minimumTeamCount) {
       throw ArgumentError.value(
@@ -215,64 +166,36 @@ abstract class GameSetup with _$GameSetup {
         'Une partie demande au moins $minimumTeamCount équipes (R8.5)',
       );
     }
-    return copyWith(teamCount: count, teams: const []);
-  }
-
-  /// Propose une composition, relançable autant de fois que voulu (R8.3, R8.4).
-  GameSetup withProposedTeams({
-    required List<String> names,
-    required Random random,
-  }) {
-    if (names.length != teamCount) {
-      throw ArgumentError.value(
-        names.length,
-        'names',
-        "Il faut exactement $teamCount noms d'équipe",
-      );
-    }
     return copyWith(
-      teams: proposeTeams(players: players, teamNames: names, random: random),
-    );
-  }
-
-  GameSetup withTeams(List<Team> teams) => copyWith(teams: teams);
-
-  /// Déplace un joueur d'une équipe à l'autre, à la main (R8.4).
-  GameSetup movePlayer(String playerId, {required String toTeamId}) {
-    final from = teams.where((t) => t.playerIds.contains(playerId));
-    if (from.isEmpty || from.first.id == toTeamId) return this;
-
-    return copyWith(
-      teams: [
-        for (final team in teams)
-          team.copyWith(
-            // Le curseur repartirait sinon au-delà d'une équipe rétrécie.
-            narratorIndex: 0,
-            playerIds: switch (team.id) {
-              final id when id == toTeamId => [...team.playerIds, playerId],
-              _ => [
-                for (final current in team.playerIds)
-                  if (current != playerId) current,
-              ],
-            },
-          ),
+      teamNames: [
+        for (var i = 0; i < count; i++)
+          if (i < teamNames.length) teamNames[i] else '',
       ],
     );
   }
 
-  GameSetup renameTeam(String teamId, String name) => copyWith(
-    teams: [
-      for (final team in teams)
-        if (team.id == teamId) team.copyWith(name: name) else team,
-    ],
-  );
+  /// Nomme une équipe. Une chaîne vide rend son nom par défaut (R8.3).
+  GameSetup renameTeam(int index, String name) {
+    if (index < 0 || index >= teamCount) {
+      throw ArgumentError.value(
+        index,
+        'index',
+        "Il n'y a que $teamCount équipes",
+      );
+    }
+    return copyWith(
+      teamNames: [
+        for (var i = 0; i < teamCount; i++)
+          if (i == index) name else teamNames[i],
+      ],
+    );
+  }
 
   /// Les réglages figés, tels que la partie les emportera.
   GameConfig toConfig() => GameConfig(
     mode: mode,
     deckIds: deckIds,
     turnDuration: turnDuration,
-    roundCount: roundCount,
     cardCount: cardCount,
     profileId: profileId,
     difficulties: difficulties,
@@ -288,6 +211,5 @@ GameSetup setupForMode(Audience mode) => GameSetup(
   deckIds: const [],
   difficulties: Difficulty.values.toSet(),
   turnDuration: GameConfig.defaultTurnDuration[mode]!,
-  roundCount: GameConfig.defaultRoundCount,
   cardCount: GameConfig.defaultCardCount[mode],
 );

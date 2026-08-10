@@ -203,11 +203,6 @@
     "description": "Libellé du réglage de volume du paquet (R6)."
   },
 
-  "settingRoundCount": "Nombre de manches",
-  "@settingRoundCount": {
-    "description": "Libellé du réglage de manches (R2.2, R6)."
-  },
-
   "valueSeconds": "{count} s",
   "@valueSeconds": {
     "description": "Durée en secondes, sur un bouton de réglage.",
@@ -221,53 +216,27 @@
     "description": "Valeur automatique du nombre de cartes (R6.1)."
   },
 
-  "valueAutoExplained": "5 cartes par joueur, soit {count} ici.",
+  "valueAutoExplained": "{count} cartes par équipe, une fois les équipes formées à l'étape suivante.",
   "@valueAutoExplained": {
-    "description": "Explication du mode auto, avec le nombre calculé (R6.1).",
+    "description": "Explication du mode auto. Dit le nombre par équipe et non un total : le nombre d'équipes se choisit à l'étape suivante (R6.1).",
     "placeholders": {
       "count": { "type": "int" }
     }
   },
 
-  "valueAutoPending": "5 cartes par joueur, calculé une fois les joueurs saisis.",
-  "@valueAutoPending": {
-    "description": "Explication du mode auto avant l'étape des joueurs : le nombre ne peut pas encore être annoncé (R6.1)."
-  },
-
-  "valueRounds": "{count}",
-  "@valueRounds": {
-    "description": "Nombre de manches, sur un bouton de réglage.",
-    "placeholders": {
-      "count": { "type": "int" }
-    }
-  },
-
-  "setupTeamsTitle": "Qui joue ?",
+  "setupTeamsTitle": "Combien d'équipes ?",
   "@setupTeamsTitle": {
     "description": "Titre de l'étape 4."
   },
 
-  "playerNameHint": "Prénom",
-  "@playerNameHint": {
-    "description": "Invite du champ de saisie d'un joueur."
+  "teamNamesOptional": "Les noms sont facultatifs : sans rien taper, ce sera Équipe 1, Équipe 2…",
+  "@teamNamesOptional": {
+    "description": "Précise qu'on peut lancer une partie sans nommer les équipes (R8.3)."
   },
 
-  "actionAddPlayer": "Ajouter",
-  "@actionAddPlayer": {
-    "description": "Bouton d'ajout d'un joueur à la liste."
-  },
-
-  "playerChildBadge": "Enfant",
-  "@playerChildBadge": {
-    "description": "Marque un joueur comme enfant, ce qui influence la répartition (R8.3)."
-  },
-
-  "playerCount": "{count, plural, =0{Aucun joueur} =1{1 joueur} other{{count} joueurs}}",
-  "@playerCount": {
-    "description": "Nombre de joueurs saisis.",
-    "placeholders": {
-      "count": { "type": "int" }
-    }
+  "teamCountMore": "Plus",
+  "@teamCountMore": {
+    "description": "Ajoute une équipe au-delà des valeurs proposées (R8.1)."
   },
 
   "teamCountLabel": "Nombre d'équipes",
@@ -281,40 +250,6 @@
     "placeholders": {
       "number": { "type": "int" }
     }
-  },
-
-  "actionProposeTeams": "Proposer une composition",
-  "@actionProposeTeams": {
-    "description": "Bouton de composition aléatoire des équipes (R8.3)."
-  },
-
-  "actionShuffleTeams": "Relancer",
-  "@actionShuffleTeams": {
-    "description": "Bouton de relance de la proposition, bien visible (R8.4)."
-  },
-
-  "teamsNeedMorePlayers": "Il faut {count} joueurs pour {teams} équipes.",
-  "@teamsNeedMorePlayers": {
-    "description": "Avertissement quand l'effectif ne permet pas la composition (R8.5).",
-    "placeholders": {
-      "count": { "type": "int" },
-      "teams": { "type": "int" }
-    }
-  },
-
-  "teamNeedsTwoPlayers": "Chaque équipe a besoin de deux joueurs.",
-  "@teamNeedsTwoPlayers": {
-    "description": "Avertissement quand une équipe retouchée à la main tombe à un joueur (R8.5)."
-  },
-
-  "actionMovePlayer": "Déplacer vers…",
-  "@actionMovePlayer": {
-    "description": "Action de déplacement d'un joueur vers une autre équipe (R8.4)."
-  },
-
-  "actionRenameTeam": "Renommer l'équipe",
-  "@actionRenameTeam": {
-    "description": "Action de renommage d'une équipe (R8.4)."
   },
 
   "setupSummaryTitle": "Prêts ?",
@@ -342,22 +277,12 @@
     "description": "Ligne du récapitulatif : composition."
   },
 
-  "summaryTeamValue": "{name} ({count})",
-  "@summaryTeamValue": {
-    "description": "Une équipe du récapitulatif : son nom et son effectif. Le gabarit est ici et non dans le widget — une langue peut vouloir d'autres séparateurs.",
-    "placeholders": {
-      "name": { "type": "String" },
-      "count": { "type": "int" }
-    }
-  },
-
-  "summarySettingsValue": "{seconds} s · {cards} cartes · {rounds} manches",
+  "summarySettingsValue": "{seconds} s · {cards} cartes · 3 manches",
   "@summarySettingsValue": {
-    "description": "Résumé des trois réglages sur une ligne.",
+    "description": "Résumé des réglages sur une ligne. Les trois manches sont annoncées mais ne se règlent plus (R2.2).",
     "placeholders": {
       "seconds": { "type": "int" },
-      "cards": { "type": "int" },
-      "rounds": { "type": "int" }
+      "cards": { "type": "int" }
     }
   },
 
@@ -403,19 +328,19 @@
     "description": "Nom de la manche 3."
   },
 
-  "roundRuleFree": "Dis ce que tu veux, sauf les mots de la carte. Pas de gestes.",
+  "roundRuleFree": "Dis ce que tu veux, sauf les mots de la carte. Ni mime, ni bruitage. On ne passe pas : on cherche jusqu'au bout.",
   "@roundRuleFree": {
-    "description": "Contrainte de la manche 1, rappelée avant le tour."
+    "description": "Contrainte de la manche 1, rappelée avant le tour (R2.3, R3.9)."
   },
 
-  "roundRuleOneWord": "Un seul mot, répétable à volonté. Rien d'autre, aucun geste.",
+  "roundRuleOneWord": "Un seul mot, et rien d'autre : ni mime, ni bruitage. L'équipe ne se concerte pas — seule la première proposition compte, sinon on passe.",
   "@roundRuleOneWord": {
-    "description": "Contrainte de la manche 2."
+    "description": "Contrainte de la manche 2 (R2.3)."
   },
 
-  "roundRuleMime": "Silence total. Gestes uniquement.",
+  "roundRuleMime": "Mimes, gestes et bruitages, mais aucun mot. Une seule proposition, sans se concerter.",
   "@roundRuleMime": {
-    "description": "Contrainte de la manche 3."
+    "description": "Contrainte de la manche 3 (R2.3)."
   },
 
   "roundStep": "Manche {current} sur {total}",
@@ -435,12 +360,9 @@
     }
   },
 
-  "turnIntroNarrator": "Passez le téléphone à {narrator}",
-  "@turnIntroNarrator": {
-    "description": "Consigne de passage du téléphone, pour que la manche ne s'enchaîne pas avant que l'appareil ait changé de mains.",
-    "placeholders": {
-      "narrator": { "type": "String" }
-    }
+  "turnIntroPassPhone": "Passez le téléphone à votre narrateur",
+  "@turnIntroPassPhone": {
+    "description": "Consigne de passage du téléphone, pour que la manche ne s'enchaîne pas avant que l'appareil ait changé de mains. L'équipe désigne son narrateur elle-même (R3.1)."
   },
 
   "actionStartTurn": "C'est parti",
@@ -539,6 +461,11 @@
   "outcomePassed": "Passée",
   "@outcomePassed": {
     "description": "Résultat d'une carte passée, dans le récapitulatif."
+  },
+
+  "outcomeMissed": "Pas trouvée",
+  "@outcomeMissed": {
+    "description": "Résultat d'une carte non devinée en manche 1, où l'on ne passe pas (R3.9)."
   },
 
   "actionConfirmTurn": "Valider le tour",

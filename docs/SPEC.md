@@ -53,27 +53,27 @@ marquage discret, en fin de liste.
 
 ### 3. Réglages de partie
 
-Durée du tour, nombre de cartes, nombre de manches — voir le tableau de R6. Chaque réglage
-propose des valeurs prédéfinies en gros boutons plus une saisie libre repliée. Les défauts
-dépendent du mode choisi à l'étape 1, ce qui doit permettre de traverser cet écran sans y
-toucher dans la majorité des cas.
+Durée du tour et nombre de cartes — voir le tableau de R6. Chaque réglage propose des valeurs
+prédéfinies en gros boutons plus une saisie libre repliée. Les défauts dépendent du mode choisi
+à l'étape 1, ce qui doit permettre de traverser cet écran sans y toucher dans la majorité des
+cas.
+
+Le nombre de manches n'y figure pas : une partie, c'est les trois (R2.2).
 
 ### 4. Équipes
 
-Le point le plus travaillé de la configuration, parce que c'est le moment où tout le monde
-attend.
+Deux choses, et rien d'autre : **combien d'équipes**, et **comment elles s'appellent**.
 
-L'utilisateur saisit d'abord la **liste des joueurs** dans un champ unique, une validation par
-joueur, avec la liste qui se construit en dessous. Chaque joueur peut être marqué *enfant*
-d'un tap, ce qui influencera la répartition (R8.3).
+Une rangée de pastilles pour le nombre, puis un champ de nom par équipe. Les noms sont
+facultatifs : un champ laissé vide donne « Équipe 1 », « Équipe 2 » (R8.3), et le libellé par
+défaut s'affiche dans le champ vide sans qu'il faille l'effacer pour taper le sien. Changer le
+nombre d'équipes ne fait pas perdre les noms déjà donnés (R8.4).
 
-Il choisit ensuite un **nombre d'équipes**, puis « Proposer une composition » répartit
-aléatoirement en équilibrant effectifs et enfants. Le résultat est présenté avec un bouton
-**Relancer** bien visible — dans la vraie vie, on relance jusqu'à ce que le groupe soit
-content. Tout reste modifiable à la main : glisser un joueur d'une équipe à l'autre, renommer
-une équipe, changer sa couleur.
-
-Il est aussi possible de composer entièrement à la main sans passer par la proposition.
+**L'application ne demande pas les joueurs** (R8.2). Ni leurs prénoms, ni leur nombre, ni qui
+est avec qui. C'est un retour d'usage de la première phase de tests : la saisie était la corvée
+du début de partie, alors que le groupe s'était déjà réparti de vive voix avant que le premier
+prénom soit tapé. Qui narre se décide à la table, et l'écran d'annonce se contente de nommer
+l'équipe (R3.1).
 
 ### 5. Récapitulatif
 
@@ -92,20 +92,30 @@ L'écran le plus important de l'app. Il ne contient rien d'autre que :
 - **La carte**, texte centré, taille de police adaptative selon la longueur. Rien d'autre :
   pas de mots interdits listés, pas d'indice. Le narrateur doit lire la carte d'un coup d'œil,
   à bout de bras, au milieu d'une table qui crie.
-- **Deux zones d'action** occupant la moitié basse : *Trouvé* (verte, à droite) et *Passer*
+- **Les zones d'action** occupant la moitié basse : *Trouvé* (verte, à droite) et *Passer*
   (neutre, à gauche). Un glissement horizontal sur la carte fait la même chose, pour ceux qui
   prennent le coup de main.
 - Le nom de l'équipe active et son score courant, discrets, en haut.
 
-Le bouton *Passer* se grise quand il ne reste qu'une carte (R3.4). Une pause est accessible
-via un bouton discret en haut, qui masque immédiatement la carte.
+**En manche 1, *Passer* n'est pas à l'écran** (R3.9) : *Trouvé* prend toute la largeur, et le
+glissement vers la gauche ne fait rien. L'action est retirée et non grisée — un bouton mort
+pendant une manche entière se lit comme une panne, et l'écran de jeu est celui où on ne doit
+jamais se demander si l'application a compris.
+
+Aux manches 2 et 3, le bouton *Passer* se grise quand il ne reste qu'une carte (R3.4). Une
+pause est accessible via un bouton discret en haut, qui masque immédiatement la carte.
 
 ## Récapitulatif de tour
 
 Liste des cartes vues, chacune avec son résultat et un tap pour le basculer (R3.6). Le score
 du tour se met à jour en direct. Un bouton confirme et passe à l'équipe suivante, avec un
-écran intermédiaire « Au tour de <équipe> — passez le téléphone à <narrateur> » qui évite que
-la manche s'enchaîne avant que le téléphone ait changé de mains.
+écran intermédiaire « Au tour de <équipe> — passez le téléphone à votre narrateur » qui évite
+que la manche s'enchaîne avant que le téléphone ait changé de mains. Cet écran **rappelle la
+règle de la manche** en toutes lettres (R2.3) : c'est le seul moment de la partie où tout le
+monde écoute.
+
+En manche 1, basculer une carte sur « pas trouvée » reste possible bien que *Passer* n'y
+existe pas : c'est l'annulation d'un tap de trop, pas un contournement de R3.9.
 
 ## Scores et fin de partie
 
@@ -124,6 +134,10 @@ suppression avec confirmation.
 Dans une catégorie : liste des cartes, ajout rapide (un champ, une validation, on enchaîne),
 édition, suppression. Chaque carte peut recevoir une difficulté ; elle est optionnelle, avec
 un défaut raisonnable, pour ne pas transformer la saisie en corvée.
+
+Le formulaire d'ajout se lit de haut en bas et **finit par son action** : difficulté, puis
+texte, puis le bouton *Ajouter*. Retour d'usage — un « + » collé au champ avec le sélecteur de
+difficulté en dessous laissait douter que la carte parte avec le niveau affiché.
 
 Une catégorie custom est marquée `family` ou `adult` à la création, ce qui détermine dans
 quel mode elle apparaîtra.

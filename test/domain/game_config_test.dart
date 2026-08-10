@@ -1,3 +1,4 @@
+import 'package:cekoi/domain/engine/team_builder.dart';
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/game_config.dart';
 import 'package:cekoi/domain/rules/round.dart';
@@ -5,20 +6,29 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('R6.1 — nombre de cartes en mode auto', () {
-    test('vaut 5 × joueurs arrondi au multiple de 4 supérieur', () {
-      // 5 × 5 = 25 → 28
-      expect(GameConfig.autoCardCount(5), 28);
-      // 5 × 8 = 40, déjà multiple de 4
-      expect(GameConfig.autoCardCount(8), 40);
-      // 5 × 7 = 35 → 36
-      expect(GameConfig.autoCardCount(7), 36);
+    test('vaut 12 × équipes, arrondi au multiple de 4 supérieur', () {
+      expect(GameConfig.autoCardCount(2), 24);
+      expect(GameConfig.autoCardCount(3), 36);
+      expect(GameConfig.autoCardCount(4), 48);
     });
 
-    test('est borné à [16, 80]', () {
-      // 5 × 2 = 10, sous la borne basse
-      expect(GameConfig.autoCardCount(2), 16);
-      // 5 × 40 = 200, au-dessus de la borne haute
+    test('est borné à 80 par le haut', () {
+      // 12 × 7 = 84, au-dessus de la borne haute
+      expect(GameConfig.autoCardCount(7), 80);
       expect(GameConfig.autoCardCount(40), 80);
+    });
+
+    test('le plancher de 16 ne peut plus être atteint', () {
+      // Depuis que le calcul part des équipes (R8.2), le minimum de deux en
+      // donne déjà 24 : la borne basse de R6.1 ne mord plus. Ce test dit
+      // qu'elle est inatteignable plutôt que de faire croire qu'elle est
+      // exercée — c'est le facteur, s'il baissait un jour, qui la réveillerait.
+      expect(GameConfig.autoCardCount(minimumTeamCount), 24);
+      expect(
+        GameConfig.autoCardCount(minimumTeamCount),
+        greaterThan(16),
+        reason: 'aucun nombre d’équipes valide ne descend jusqu’au plancher',
+      );
     });
 
     test('un nombre explicite prend le pas sur le calcul auto', () {
@@ -26,11 +36,10 @@ void main() {
         mode: Audience.family,
         deckIds: ['animaux'],
         turnDuration: Duration(seconds: 60),
-        roundCount: 3,
         cardCount: 48,
       );
 
-      expect(config.resolvedCardCount(4), 48);
+      expect(config.resolvedCardCount(2), 48);
     });
 
     test('cardCount nul déclenche le calcul auto', () {
@@ -38,29 +47,30 @@ void main() {
         mode: Audience.family,
         deckIds: ['animaux'],
         turnDuration: Duration(seconds: 60),
-        roundCount: 3,
       );
 
-      expect(config.resolvedCardCount(6), GameConfig.autoCardCount(6));
+      expect(config.resolvedCardCount(3), GameConfig.autoCardCount(3));
     });
   });
 
-  group('R2.2 — séquence des manches', () {
-    test("trois manches se jouent dans l'ordre canonique", () {
-      expect(Round.sequenceFor(3), [
+  group('R2.2 — une partie, ce sont les trois manches', () {
+    test("la séquence est fixe et dans l'ordre canonique", () {
+      expect(Round.sequence, [
         Round.freeDescription,
         Round.oneWord,
         Round.mime,
       ]);
     });
+  });
 
-    test('deux manches retirent « un seul mot », pas le mime', () {
-      expect(Round.sequenceFor(2), [Round.freeDescription, Round.mime]);
+  group("R3.9 — passer n'existe qu'à partir de la manche 2", () {
+    test('la description libre ne le permet pas', () {
+      expect(Round.freeDescription.allowsPass, isFalse);
     });
 
-    test('tout autre nombre de manches est refusé', () {
-      expect(() => Round.sequenceFor(1), throwsArgumentError);
-      expect(() => Round.sequenceFor(4), throwsArgumentError);
+    test('les deux manches contraintes le permettent', () {
+      expect(Round.oneWord.allowsPass, isTrue);
+      expect(Round.mime.allowsPass, isTrue);
     });
   });
 

@@ -140,8 +140,8 @@ appel réseau ou publicitaire** — si la pub échoue, la partie démarre quand 
 
 - Fichiers en `snake_case`, classes en `UpperCamelCase`, le reste en `lowerCamelCase`.
 - Les écrans se terminent par `Screen`, les providers générés par `Provider`, les DAO par `Dao`.
-- Le domaine parle le vocabulaire de `docs/RULES.md` : `Round`, `Turn`, `Narrator`, `Deck`,
-  `Card`, `Team`. Pas de synonymes inventés — `manche` se dit `round` dans le code, toujours.
+- Le domaine parle le vocabulaire de `docs/RULES.md` : `Round`, `Turn`, `Deck`, `Card`,
+  `Team`. Pas de synonymes inventés — `manche` se dit `round` dans le code, toujours.
 
 ## Avant de considérer une tâche terminée
 

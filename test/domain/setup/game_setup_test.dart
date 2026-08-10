@@ -1,6 +1,3 @@
-import 'dart:math';
-
-import 'package:cekoi/domain/engine/team_builder.dart';
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/deck.dart';
 import 'package:cekoi/domain/entities/difficulty.dart';
@@ -21,36 +18,10 @@ final List<Deck> _decks = [
 GameProfile _profile(String id) =>
     builtInProfiles.firstWhere((p) => p.id == id);
 
-/// Six joueurs en deux équipes dont le curseur de narrateur **n'est pas** à
-/// zéro, seule façon d'observer qu'une opération le remet bien à zéro.
-///
-/// Passe par `withTeams`, qui est public : rien dans le parcours ne produit
-/// aujourd'hui un curseur décalé, mais la garde existe pour le jour où — et
-/// une garde qu'aucun test ne peut voir tomber ne protège rien.
-GameSetup _decalees() {
-  final players = [for (var i = 0; i < 6; i++) 'joueur-$i'];
-  return _withPlayers(setupForMode(Audience.family), 6).withTeams([
-    testTeam('A', 3).copyWith(
-      playerIds: players.take(3).toList(),
-      narratorIndex: 2,
-    ),
-    testTeam('B', 3).copyWith(
-      playerIds: players.skip(3).toList(),
-      narratorIndex: 1,
-    ),
-  ]);
-}
-
-/// Une configuration prête à composer les équipes.
-GameSetup _withPlayers(GameSetup setup, int count, {int children = 0}) {
-  var next = setup;
-  for (var i = 0; i < count; i++) {
-    next = next.withPlayer(
-      testPlayer('joueur-$i', isChild: i < children),
-    );
-  }
-  return next;
-}
+/// Les noms de repli, tels que la présentation les fournirait.
+List<String> _fallbacks(int count) => [
+  for (var i = 1; i <= count; i++) 'Équipe $i',
+];
 
 void main() {
   group('R6 — les défauts dépendent du mode choisi', () {
@@ -60,7 +31,6 @@ void main() {
       expect(setup.mode, Audience.family);
       expect(setup.turnDuration, const Duration(seconds: 60));
       expect(setup.cardCount, isNull, reason: 'auto');
-      expect(setup.roundCount, 3);
       expect(setup.teamCount, 2);
       expect(setup.difficulties, Difficulty.values.toSet());
       expect(setup.deckIds, isEmpty);
@@ -104,23 +74,18 @@ void main() {
       expect(switched.difficulties, Difficulty.values.toSet());
     });
 
-    test('les joueurs et les équipes survivent au changement de mode', () {
-      // On revient à la première étape depuis n'importe où. Reperdre huit noms
-      // et leur répartition parce qu'on a touché au mode serait une punition :
-      // l'effectif n'a rien à voir avec le contenu.
-      final composed =
-          _withPlayers(setupForMode(Audience.family), 8, children: 2)
-              .withTeamCount(3)
-              .withProposedTeams(
-                names: ['A', 'B', 'C'],
-                random: Random(1),
-              );
+    test('les équipes survivent au changement de mode', () {
+      // On revient à la première étape depuis n'importe où. Reperdre les noms
+      // d'équipe parce qu'on a touché au mode serait une punition : ils n'ont
+      // rien à voir avec le contenu.
+      final composed = setupForMode(
+        Audience.family,
+      ).withTeamCount(3).renameTeam(0, 'Les Rouges').renameTeam(2, 'Les Verts');
 
       final switched = composed.withMode(Audience.adult);
 
-      expect(switched.players, composed.players);
       expect(switched.teamCount, 3);
-      expect(switched.teams, composed.teams);
+      expect(switched.teamNames, ['Les Rouges', '', 'Les Verts']);
     });
 
     test('rechoisir le mode déjà en cours ne touche à rien', () {
@@ -149,22 +114,23 @@ void main() {
       expect(setup.turnDuration, const Duration(seconds: 90));
     });
 
-    test("les joueurs déjà saisis survivent au choix d'un profil", () {
-      // On peut revenir en arrière depuis l'écran des équipes : reperdre la
-      // liste des joueurs à cette occasion serait rageant.
-      final setup = _withPlayers(
-        setupForMode(Audience.family),
-        4,
-      ).withProfile(_profile('mix'), _decks);
+    test("les équipes déjà nommées survivent au choix d'un profil", () {
+      // On peut revenir en arrière depuis l'écran des équipes : reperdre les
+      // noms à cette occasion serait rageant.
+      final setup = setupForMode(Audience.family)
+          .withTeamCount(3)
+          .renameTeam(1, 'Les Bleus')
+          .withProfile(_profile('mix'), _decks);
 
-      expect(setup.players, hasLength(4));
+      expect(setup.teamCount, 3);
+      expect(setup.teamNames[1], 'Les Bleus');
     });
 
     test('les réglages du profil sont appliqués, pas que ses filtres', () {
       // Profil de test et non profil livré : les trois profils intégrés ont
-      // `cardCount: null` et `roundCount: 3`, soit exactement les défauts du
-      // mode Famille. Sur eux, ne pas appliquer ces deux champs serait
-      // inobservable — et R7.5 promet qu'un profil s'ajoute en donnée seule.
+      // `cardCount: null`, soit exactement le défaut du mode Famille. Sur eux,
+      // ne pas appliquer ce champ serait inobservable — et R7.5 promet qu'un
+      // profil s'ajoute en donnée seule.
       const dense = GameProfile(
         id: 'dense',
         mode: Audience.family,
@@ -172,13 +138,11 @@ void main() {
         difficulties: {Difficulty.hard},
         turnDuration: Duration(seconds: 30),
         cardCount: 24,
-        roundCount: 2,
       );
 
       final setup = setupForMode(Audience.family).withProfile(dense, _decks);
 
       expect(setup.cardCount, 24);
-      expect(setup.roundCount, 2);
       expect(setup.turnDuration, const Duration(seconds: 30));
       expect(setup.difficulties, {Difficulty.hard});
       expect(setup.deckIds, ['animaux', 'metiers']);
@@ -253,14 +217,6 @@ void main() {
       );
     });
 
-    test('un nombre de manches autre que 2 ou 3 est refusé', () {
-      final setup = setupForMode(Audience.family);
-
-      expect(() => setup.withRoundCount(1), throwsArgumentError);
-      expect(() => setup.withRoundCount(4), throwsArgumentError);
-      expect(setup.withRoundCount(2).roundCount, 2);
-    });
-
     test('un nombre de cartes sous le minimum de R6.2 est refusé', () {
       final setup = setupForMode(Audience.family);
 
@@ -272,247 +228,132 @@ void main() {
       final setup = setupForMode(Audience.adult).withCardCount(null);
 
       expect(setup.cardCount, isNull);
-      expect(setup.resolvedCardCount, GameConfig.autoCardCount(0));
+      expect(setup.resolvedCardCount, GameConfig.autoCardCount(2));
     });
 
-    test('le nombre de cartes résolu suit le nombre de joueurs', () {
-      final setup = _withPlayers(setupForMode(Audience.family), 8);
+    test("R6.1 — le nombre de cartes résolu suit le nombre d'équipes", () {
+      final setup = setupForMode(Audience.family).withTeamCount(4);
 
-      expect(setup.resolvedCardCount, GameConfig.autoCardCount(8));
+      expect(setup.resolvedCardCount, GameConfig.autoCardCount(4));
+      expect(
+        setup.resolvedCardCount,
+        isNot(setupForMode(Audience.family).resolvedCardCount),
+        reason: 'Quatre équipes ne jouent pas le même paquet que deux',
+      );
       expect(setup.withCardCount(24).resolvedCardCount, 24);
     });
   });
 
-  group('saisie des joueurs', () {
-    test("les joueurs s'ajoutent dans leur ordre de saisie", () {
-      final setup = _withPlayers(setupForMode(Audience.family), 3);
+  group('R8.3 — les équipes tiennent en un nombre et des noms', () {
+    test('une configuration neuve ouvre sur deux équipes sans nom', () {
+      final setup = setupForMode(Audience.family);
 
-      expect(setup.players.map((p) => p.name), [
-        'joueur-0',
-        'joueur-1',
-        'joueur-2',
-      ]);
+      expect(setup.teamCount, 2);
+      expect(setup.teamNames, ['', '']);
     });
 
-    test('un joueur se marque et se démarque enfant', () {
-      var setup = _withPlayers(setupForMode(Audience.family), 2);
-      setup = setup.toggleChild('joueur-0');
-
-      expect(setup.players.first.isChild, isTrue);
-      expect(setup.toggleChild('joueur-0').players.first.isChild, isFalse);
-    });
-
-    test('retirer un joueur le retire aussi des équipes déjà composées', () {
-      // Une équipe qui référencerait un joueur disparu ferait planter le
-      // lancement de la partie, loin d'ici.
-      final setup = _withPlayers(setupForMode(Audience.family), 4)
-          .withProposedTeams(names: ['A', 'B'], random: Random(1))
-          .withoutPlayer('joueur-0');
-
-      expect(setup.players, hasLength(3));
-      expect(
-        [for (final team in setup.teams) ...team.playerIds],
-        isNot(contains('joueur-0')),
-      );
-      expect(
-        setup.canStart,
-        isFalse,
-        reason: 'Une équipe est tombée à un joueur (R8.5)',
-      );
-    });
-
-    test('un même joueur ne peut pas être ajouté deux fois', () {
-      // Le doublon serait refusé bien plus tard, à la composition, sur un
-      // message qui ne désignerait plus l'écran fautif.
-      final setup = setupForMode(
+    test('un nom vide prend son libellé par défaut', () {
+      final teams = setupForMode(
         Audience.family,
-      ).withPlayer(testPlayer('lea'));
+      ).renameTeam(0, 'Les Rouges').teamsNamed(_fallbacks(2));
 
-      expect(() => setup.withPlayer(testPlayer('lea')), throwsArgumentError);
+      expect(teams.map((t) => t.name), ['Les Rouges', 'Équipe 2']);
     });
 
-    test('deux joueurs de même nom sont acceptés mais distincts', () {
-      // Deux « Papa » à la même table, ça arrive. Ce sont les identifiants
-      // qui doivent différer, pas les noms.
-      final setup = setupForMode(
+    test("un nom fait uniquement d'espaces vaut un nom vide", () {
+      final teams = setupForMode(
         Audience.family,
-      ).withPlayer(testPlayer('papa-1')).withPlayer(testPlayer('papa-2'));
+      ).renameTeam(0, '   ').teamsNamed(_fallbacks(2));
 
-      expect(setup.players.map((p) => p.id).toSet(), hasLength(2));
+      expect(teams.first.name, 'Équipe 1');
+    });
+
+    test('les espaces de bord sont mangés au lancement', () {
+      // Ils ne le sont pas à la frappe : couper l'espace qu'on vient de taper
+      // entre deux mots ferait sauter le curseur du champ.
+      final teams = setupForMode(
+        Audience.family,
+      ).renameTeam(0, '  Les Rouges  ').teamsNamed(_fallbacks(2));
+
+      expect(teams.first.name, 'Les Rouges');
+    });
+
+    test('renommer hors des équipes existantes est refusé', () {
+      final setup = setupForMode(Audience.family);
+
+      expect(() => setup.renameTeam(2, 'Trop loin'), throwsArgumentError);
+      expect(() => setup.renameTeam(-1, 'Trop tôt'), throwsArgumentError);
+    });
+
+    test('il faut un nom de repli par équipe', () {
+      final setup = setupForMode(Audience.family).withTeamCount(3);
+
+      expect(() => setup.teamsNamed(_fallbacks(2)), throwsArgumentError);
     });
   });
 
-  group('R8 — composition des équipes', () {
-    test('proposer exige assez de joueurs pour deux équipes de deux', () {
-      final short = _withPlayers(setupForMode(Audience.family), 3);
-      expect(short.canProposeTeams, isFalse);
+  group("R8.4 — les noms survivent au changement de nombre d'équipes", () {
+    test('cas limite 14 : passer de 2 à 3 garde les deux noms', () {
+      final setup = setupForMode(
+        Audience.family,
+      ).renameTeam(0, 'Les Rouges').renameTeam(1, 'Les Bleus').withTeamCount(3);
 
-      final enough = _withPlayers(setupForMode(Audience.family), 4);
-      expect(enough.canProposeTeams, isTrue);
-    });
-
-    test('la proposition répartit les joueurs saisis', () {
-      final setup = _withPlayers(
-        setupForMode(Audience.family),
-        8,
-        children: 2,
-      ).withProposedTeams(names: ['Rouges', 'Bleus'], random: Random(3));
-
-      expect(setup.teams, hasLength(2));
-      expect(setup.teams.map((t) => t.name), ['Rouges', 'Bleus']);
+      expect(setup.teamNames, ['Les Rouges', 'Les Bleus', '']);
       expect(
-        [for (final team in setup.teams) ...team.playerIds],
-        hasLength(8),
+        setup.teamsNamed(_fallbacks(3)).map((t) => t.name),
+        ['Les Rouges', 'Les Bleus', 'Équipe 3'],
       );
     });
 
-    test("changer le nombre d'équipes invalide la composition", () {
-      // La garder afficherait deux équipes alors que le joueur en demande
-      // trois : la relance est explicite, l'incohérence ne l'est pas.
-      final setup = _withPlayers(setupForMode(Audience.family), 8)
-          .withProposedTeams(names: ['A', 'B'], random: Random(1))
+    test('redescendre coupe la dernière, et elle ne revient pas', () {
+      // La retenir ferait réapparaître un nom que le joueur a cru supprimer.
+      final setup = setupForMode(Audience.family)
+          .withTeamCount(3)
+          .renameTeam(2, 'Les Verts')
+          .withTeamCount(2)
           .withTeamCount(3);
 
-      expect(setup.teamCount, 3);
-      expect(setup.teams, isEmpty);
+      expect(setup.teamNames, ['', '', '']);
     });
 
-    test("un joueur se déplace d'une équipe à l'autre", () {
-      final setup = _withPlayers(
-        setupForMode(Audience.family),
-        6,
-      ).withProposedTeams(names: ['A', 'B'], random: Random(1));
-      final moved = setup.teams.first.playerIds.first;
+    test('moins de deux équipes est refusé (R8.5)', () {
+      final setup = setupForMode(Audience.family);
 
-      final after = setup.movePlayer(moved, toTeamId: setup.teams.last.id);
-
-      expect(after.teams.first.playerIds, isNot(contains(moved)));
-      expect(after.teams.last.playerIds, contains(moved));
-      expect(
-        [for (final team in after.teams) ...team.playerIds],
-        hasLength(6),
-        reason: 'Aucun joueur perdu ni dupliqué',
-      );
+      expect(() => setup.withTeamCount(1), throwsArgumentError);
+      expect(() => setup.withTeamCount(0), throwsArgumentError);
     });
 
-    test('déplacer un joueur dans son équipe actuelle ne change rien', () {
-      final setup = _withPlayers(
-        setupForMode(Audience.family),
-        6,
-      ).withProposedTeams(names: ['A', 'B'], random: Random(1));
-      final stay = setup.teams.first.playerIds.first;
+    test("R8.1 — le nombre d'équipes n'a pas de plafond", () {
+      final setup = setupForMode(Audience.family).withTeamCount(12);
 
-      expect(setup.movePlayer(stay, toTeamId: setup.teams.first.id), setup);
-    });
-
-    test('le curseur de narrateur repart de zéro après un déplacement', () {
-      // Sinon un curseur pointerait au-delà d'une équipe qui a rétréci.
-      //
-      // Fixture volontairement décalée : `withProposedTeams` laisse toujours
-      // le curseur à zéro, donc partir d'une composition proposée rendrait
-      // l'assertion vraie avant même l'appel, pour une raison mécanique.
-      final setup = _decalees();
-      expect(
-        setup.teams.map((t) => t.narratorIndex),
-        [2, 1],
-        reason: 'point de départ observable',
-      );
-
-      final after = setup.movePlayer('joueur-0', toTeamId: 'B');
-
-      expect(after.teams.map((t) => t.narratorIndex), [0, 0]);
-    });
-
-    test('le curseur repart aussi de zéro après un retrait de joueur', () {
-      // Même raison : c'est le retrait qui fait rétrécir l'équipe.
-      final after = _decalees().withoutPlayer('joueur-0');
-
-      expect(after.teams.map((t) => t.narratorIndex), [0, 0]);
-    });
-
-    test('une équipe se renomme', () {
-      final setup = _withPlayers(
-        setupForMode(Audience.family),
-        4,
-      ).withProposedTeams(names: ['A', 'B'], random: Random(1));
-
-      final renamed = setup.renameTeam(setup.teams.first.id, 'Les Zèbres');
-
-      expect(renamed.teams.first.name, 'Les Zèbres');
-      expect(renamed.teams.last.name, 'B');
+      expect(setup.teamCount, 12);
+      expect(setup.teamsNamed(_fallbacks(12)), hasLength(12));
     });
   });
 
   group('conditions de lancement', () {
-    GameSetup ready() => _withPlayers(setupForMode(Audience.family), 4)
-        .toggleDeck('animaux')
-        .withProposedTeams(names: ['A', 'B'], random: Random(1));
+    GameSetup ready() => setupForMode(Audience.family).toggleDeck('animaux');
 
     test('une configuration complète peut démarrer', () {
       expect(ready().canStart, isTrue);
     });
 
     test('sans catégorie sélectionnée, rien ne démarre', () {
-      final setup = _withPlayers(
-        setupForMode(Audience.family),
-        4,
-      ).withProposedTeams(names: ['A', 'B'], random: Random(1));
+      final setup = setupForMode(Audience.family);
 
       expect(setup.deckIds, isEmpty);
       expect(setup.canStart, isFalse);
     });
 
-    test('une équipe citant un joueur inconnu bloque le lancement', () {
-      // Effectifs volontairement valides : sans ça, c'est la garde de R8.5 qui
-      // répond et celle-ci n'est jamais atteinte. Une référence fantôme ferait
-      // échouer `startGame` bien plus loin, sur un message qui ne désignerait
-      // plus l'écran fautif.
-      final setup = _withPlayers(setupForMode(Audience.family), 4)
-          .toggleDeck('animaux')
-          .withTeams([
-            testTeam('A', 2).copyWith(playerIds: ['joueur-0', 'joueur-1']),
-            testTeam('B', 2).copyWith(playerIds: ['joueur-2', 'fantome']),
-          ]);
-
-      expect(
-        setup.teams.every((t) => t.playerIds.length >= minimumTeamSize),
-        isTrue,
-        reason: "Ce n'est pas R8.5 qui doit répondre ici",
-      );
-      expect(setup.canStart, isFalse);
-    });
-
-    test('sans composition, rien ne démarre', () {
-      final setup = _withPlayers(
-        setupForMode(Audience.family),
-        4,
-      ).toggleDeck('animaux');
-
-      expect(setup.teams, isEmpty);
-      expect(setup.canStart, isFalse);
-    });
-
-    test('une équipe à un seul joueur bloque le lancement (R8.5)', () {
-      final setup = ready();
-      final lonely = setup.teams.first.playerIds.first;
-
-      final broken = setup.movePlayer(lonely, toTeamId: setup.teams.last.id);
-
-      expect(broken.teams.first.playerIds, hasLength(1));
-      expect(broken.canStart, isFalse);
-    });
-
     test('la configuration produite reprend tous les réglages', () {
       final config = ready()
           .withTurnDuration(const Duration(seconds: 45))
-          .withRoundCount(2)
           .withCardCount(24)
           .toConfig();
 
       expect(config.mode, Audience.family);
       expect(config.deckIds, ['animaux']);
       expect(config.turnDuration, const Duration(seconds: 45));
-      expect(config.roundCount, 2);
       expect(config.cardCount, 24);
       expect(config.profileId, isNull);
       expect(config.difficulties, Difficulty.values.toSet());
@@ -522,19 +363,17 @@ void main() {
       // « Rejouer avec les mêmes réglages » retire un paquet : sans cette
       // copie, il faudrait retrouver un profil qui a pu changer de définition
       // entre deux versions de l'application.
-      final config = _withPlayers(setupForMode(Audience.family), 4)
-          .withProfile(_profile('minis'), _decks)
-          .withProposedTeams(names: ['A', 'B'], random: Random(1))
-          .toConfig();
+      final config = setupForMode(
+        Audience.family,
+      ).withProfile(_profile('minis'), _decks).toConfig();
 
       expect(config.difficulties, {Difficulty.easy});
     });
 
     test('le profil retenu est reporté dans la configuration', () {
-      final config = _withPlayers(setupForMode(Audience.family), 4)
-          .withProfile(_profile('mix'), _decks)
-          .withProposedTeams(names: ['A', 'B'], random: Random(1))
-          .toConfig();
+      final config = setupForMode(
+        Audience.family,
+      ).withProfile(_profile('mix'), _decks).toConfig();
 
       expect(config.profileId, 'mix');
     });

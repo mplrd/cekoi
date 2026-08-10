@@ -4,6 +4,7 @@ import 'package:cekoi/app/router.dart';
 import 'package:cekoi/app/screen_awake.dart';
 import 'package:cekoi/domain/engine/game_phase.dart';
 import 'package:cekoi/domain/engine/game_state.dart';
+import 'package:cekoi/domain/engine/turn.dart';
 import 'package:cekoi/domain/entities/card.dart' as domain;
 import 'package:cekoi/domain/entities/difficulty.dart';
 import 'package:cekoi/features/play/presentation/game_screen.dart';
@@ -20,7 +21,11 @@ import '../../support/providers.dart';
 import 'play_controller_test.dart' show FakeClock;
 
 /// Une partie dont la carte du dessus porte un texte reconnaissable.
-GameState _withNamedCard({int roundIndex = 0}) {
+///
+/// La manche passe par la fixture et non par un `copyWith` : `roundIndex` et
+/// `turn.round` doivent rester d'accord, sinon `canPass` répond sur une manche
+/// et l'affichage sur une autre.
+GameState _withNamedCard({int roundIndex = 1}) {
   final autres = testCards(5);
   final carte = domain.Card(
     id: 'deck:tarte',
@@ -31,8 +36,7 @@ GameState _withNamedCard({int roundIndex = 0}) {
     origin: autres.first.origin,
   );
 
-  return testGame(cardCount: 6).copyWith(
-    roundIndex: roundIndex,
+  return testGame(cardCount: 6, roundIndex: roundIndex).copyWith(
     deck: [carte, ...autres],
     pile: [carte.id, for (final c in autres) c.id],
   );
@@ -140,15 +144,14 @@ void main() {
   }
 
   group("l'annonce du tour", () {
-    testWidgets("nomme l'équipe, le narrateur et la contrainte", (
-      tester,
-    ) async {
+    testWidgets("nomme l'équipe et rappelle la contrainte", (tester) async {
+      // R3.1 : aucun narrateur n'est désigné, l'équipe s'en charge.
       await pumpScreen(tester);
 
       expect(find.text(l10n.turnIntroTeam('team-1')), findsOneWidget);
-      expect(find.text(l10n.turnIntroNarrator('team-1-1')), findsOneWidget);
-      expect(find.text(l10n.roundNameFree), findsOneWidget);
-      expect(find.text(l10n.roundRuleFree), findsOneWidget);
+      expect(find.text(l10n.turnIntroPassPhone), findsOneWidget);
+      expect(find.text(l10n.roundNameOneWord), findsOneWidget);
+      expect(find.text(l10n.roundRuleOneWord), findsOneWidget);
       await stopGame(tester);
     });
 
@@ -274,8 +277,8 @@ void main() {
       await stopGame(tester);
     });
 
-    testWidgets('en manche 2, la carte est la même', (tester) async {
-      await pumpScreen(tester, game: _withNamedCard(roundIndex: 1));
+    testWidgets('en manche 3, la carte est la même', (tester) async {
+      await pumpScreen(tester, game: _withNamedCard(roundIndex: 2));
       await startTurn(tester);
 
       expect(find.text('Tarte aux pommes'), findsOneWidget);
@@ -285,6 +288,81 @@ void main() {
           matching: find.byType(Text),
         ),
         findsOneWidget,
+      );
+      await stopGame(tester);
+    });
+  });
+
+  group("R3.9 — en manche 1, l'action Passer n'est pas à l'écran", () {
+    testWidgets('la zone Passer est absente, pas grisée', (tester) async {
+      // Un bouton mort pendant toute une manche se lit comme une panne.
+      await pumpScreen(tester, game: testGame(roundIndex: 0));
+      await startTurn(tester);
+
+      expect(find.text(l10n.actionPass), findsNothing);
+      expect(find.text(l10n.actionFound), findsOneWidget);
+      expect(
+        find.text(l10n.gamePassLocked),
+        findsNothing,
+        reason: "Rien à expliquer : il n'y a pas de bouton",
+      );
+      await stopGame(tester);
+    });
+
+    testWidgets('elle revient en manche 2', (tester) async {
+      // Cas de contrôle : sans lui, retirer *toujours* la zone passerait.
+      await pumpScreen(tester, game: testGame(roundIndex: 1));
+      await startTurn(tester);
+
+      expect(find.text(l10n.actionPass), findsOneWidget);
+      await stopGame(tester);
+    });
+
+    testWidgets('le glissement vers la gauche ne passe pas non plus', (
+      tester,
+    ) async {
+      // Le geste double les deux zones. Ce qui rend la manche 1 étanche est le
+      // réducteur, pas la garde d'écran : retirer `game.canPass` de
+      // `_CardZone` ne fait rougir aucun test, parce que l'événement part et
+      // se fait refuser sans rien changer. La garde évite l'envoi inutile ; la
+      // règle, elle, tient plus bas.
+      await pumpScreen(tester, game: testGame(roundIndex: 0));
+      await startTurn(tester);
+      final avant = partie();
+
+      await tester.fling(
+        find.byType(GameCardFace),
+        const Offset(-300, 0),
+        1000,
+      );
+      await tester.pump();
+
+      expect(partie().pile, avant.pile);
+      expect(partie().turn!.results, isEmpty);
+      await stopGame(tester);
+    });
+
+    testWidgets('le même glissement passe bien la carte en manche 2', (
+      tester,
+    ) async {
+      // Cas de contrôle du test précédent : sans lui, un geste mort dans
+      // toutes les manches le laisserait vert.
+      await pumpScreen(tester, game: testGame(roundIndex: 1));
+      await startTurn(tester);
+      final avant = partie();
+
+      await tester.fling(
+        find.byType(GameCardFace),
+        const Offset(-300, 0),
+        1000,
+      );
+      await tester.pump();
+
+      expect(partie().pile, isNot(avant.pile));
+      expect(
+        partie().turn!.results.single.outcome,
+        TurnOutcome.passed,
+        reason: 'le glissement gauche passe la carte',
       );
       await stopGame(tester);
     });

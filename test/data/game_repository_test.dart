@@ -4,6 +4,7 @@ import 'package:cekoi/data/repositories/game_repository.dart';
 import 'package:cekoi/domain/engine/game_phase.dart';
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/deck_origin.dart';
+import 'package:cekoi/domain/rules/round.dart';
 // `drift` exporte ses propres `isNull` / `isNotNull`, qui sont des conditions
 // SQL et non des matchers : sans préfixe, elles masquent celles de `matcher`.
 import 'package:drift/drift.dart' show Migrator, Value;
@@ -92,6 +93,22 @@ void main() {
         isEmpty,
         reason: 'Une ligne illisible ne doit pas être reproposée à chaque fois',
       );
+    });
+
+    test('une partie à deux manches ne se reprend pas (R2.2)', () async {
+      // Le cas réel de la première phase de tests : le nombre de manches était
+      // réglable. Le décodage accepte ce payload sans broncher — c'est un état
+      // bien formé — et les 24 heures de R9.2 feraient rejouer une partie sous
+      // des règles qui n'existent plus.
+      await repository.save(
+        testGame().copyWith(
+          rounds: const [Round.freeDescription, Round.mime],
+        ),
+        savedAt: _now,
+      );
+
+      expect(await repository.load(), isNull);
+      expect(await db.select(db.savedGames).get(), isEmpty);
     });
   });
 

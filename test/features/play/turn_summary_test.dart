@@ -71,12 +71,14 @@ void main() {
     int found = 2,
     int passed = 1,
     int cardCount = 6,
+    int roundIndex = 1,
   }) async {
     await pumpScreen(
       tester,
       game: testGame(
         cardCount: cardCount,
         turnDuration: const Duration(seconds: 30),
+        roundIndex: roundIndex,
       ),
     );
 
@@ -129,6 +131,33 @@ void main() {
 
       expect(find.text(l10n.turnSummaryEmpty), findsOneWidget);
       expect(find.text(l10n.turnSummaryScore(0)), findsOneWidget);
+      await stopGame(tester);
+    });
+
+    testWidgets('en manche 1, une carte non devinée n’est pas « passée »', (
+      tester,
+    ) async {
+      // On ne passe pas en manche 1 (R3.9), mais on peut y corriger un tap de
+      // trop (R3.6) : la ligne existe, et le mot que l'écran de jeu vient
+      // d'exclure ne doit pas revenir par le récapitulatif.
+      await playTurn(tester, found: 1, passed: 0, roundIndex: 0);
+
+      await tester.tap(find.text(l10n.outcomeFound));
+      await tester.pump();
+
+      expect(find.text(l10n.outcomeMissed), findsOneWidget);
+      expect(find.text(l10n.outcomePassed), findsNothing);
+      await stopGame(tester);
+    });
+
+    testWidgets('en manche 2, la même ligne dit bien « passée »', (
+      tester,
+    ) async {
+      // Cas de contrôle : sans lui, bannir le mot partout passerait au vert.
+      await playTurn(tester, found: 0, passed: 1);
+
+      expect(find.text(l10n.outcomePassed), findsOneWidget);
+      expect(find.text(l10n.outcomeMissed), findsNothing);
       await stopGame(tester);
     });
   });

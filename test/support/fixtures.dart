@@ -10,7 +10,6 @@ import 'package:cekoi/domain/entities/deck_origin.dart';
 import 'package:cekoi/domain/entities/difficulty.dart';
 import 'package:cekoi/domain/entities/game_config.dart';
 import 'package:cekoi/domain/entities/min_age.dart';
-import 'package:cekoi/domain/entities/player.dart';
 import 'package:cekoi/domain/entities/team.dart';
 import 'package:cekoi/domain/rules/round.dart';
 import 'package:cekoi/domain/text/text_normalization.dart';
@@ -74,15 +73,7 @@ Deck testDeck(
   isPremium: isPremium,
 );
 
-Player testPlayer(String id, {bool isChild = false}) =>
-    Player(id: id, name: id, isChild: isChild);
-
-/// Une équipe de joueurs nommés `<id>-1`, `<id>-2`, etc.
-Team testTeam(String id, int size) => Team(
-  id: id,
-  name: id,
-  playerIds: [for (var i = 1; i <= size; i++) '$id-$i'],
-);
+Team testTeam(String id) => Team(id: id, name: id);
 
 int countOf(List<Card> cards, Difficulty difficulty) =>
     cards.where((c) => c.difficulty == difficulty).length;
@@ -93,42 +84,39 @@ int countOf(List<Card> cards, Difficulty difficulty) =>
 /// des cartes, de sorte qu'un test puisse raisonner sur « la première carte »
 /// sans dépendre d'une graine. Le mélange, lui, est couvert par les tests de
 /// `startGame` et de la remise en jeu entre deux manches (R4.2).
+///
+/// [roundIndex] ouvre la partie sur une manche donnée. Il vaut 1 par défaut,
+/// c'est-à-dire *un seul mot* : la manche 1 n'offre pas *Passer* (R3.9), et une
+/// fixture qui y démarrerait rendrait vraie sans rien prouver toute assertion
+/// du genre « le paquet n'a pas bougé ». Les tests qui portent sur la manche 1
+/// la demandent explicitement.
 GameState testGame({
   int cardCount = 6,
-  List<int> teamSizes = const [2, 2],
-  int roundCount = 3,
+  int teamCount = 2,
+  int roundIndex = 1,
   Duration turnDuration = const Duration(seconds: 60),
   int seed = 1,
 }) {
   final deck = testCards(cardCount, prefix: 'c');
   final teams = [
-    for (var i = 0; i < teamSizes.length; i++)
-      testTeam('team-${i + 1}', teamSizes[i]),
+    for (var i = 0; i < teamCount; i++) testTeam('team-${i + 1}'),
   ];
-  final rounds = Round.sequenceFor(roundCount);
+  const rounds = Round.sequence;
 
   return GameState(
     config: GameConfig(
       mode: Audience.family,
       deckIds: const ['deck'],
       turnDuration: turnDuration,
-      roundCount: roundCount,
       cardCount: cardCount,
     ),
-    players: [
-      for (final team in teams)
-        for (final id in team.playerIds) testPlayer(id),
-    ],
     teams: teams,
     deck: deck,
     rounds: rounds,
+    roundIndex: roundIndex,
     pile: [for (final card in deck) card.id],
     phase: GamePhase.turnIntro,
-    turn: PlayedTurn(
-      round: rounds.first,
-      teamId: teams.first.id,
-      narratorId: teams.first.currentNarratorId,
-    ),
+    turn: PlayedTurn(round: rounds[roundIndex], teamId: teams.first.id),
     seed: seed,
   );
 }

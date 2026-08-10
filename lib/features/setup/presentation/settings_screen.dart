@@ -1,6 +1,5 @@
 import 'package:cekoi/app/router.dart';
 import 'package:cekoi/domain/entities/game_config.dart';
-import 'package:cekoi/domain/rules/round.dart';
 import 'package:cekoi/features/setup/presentation/setup_controller.dart';
 import 'package:cekoi/features/setup/presentation/widgets/setup_scaffold.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
@@ -8,10 +7,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-/// Étape 3 — chrono, volume du paquet et nombre de manches (R6).
+/// Étape 3 — chrono et volume du paquet (R6).
 ///
 /// Les défauts dépendent du mode choisi à l'étape 1 : dans la majorité des
 /// cas, cet écran se traverse sans y toucher.
+///
+/// Le nombre de manches n'y figure pas : une partie, c'est les trois (R2.2).
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
@@ -61,29 +62,18 @@ class SettingsScreen extends ConsumerWidget {
                   onSelected: () => controller.setCardCount(preset),
                 ),
             ],
-            // Les joueurs se saisissent à l'étape suivante : annoncer ici un
-            // nombre calculé sur zéro joueur afficherait le plancher de R6.1
-            // comme s'il s'agissait d'une prévision.
-            hint: switch (setup.cardCount) {
-              null when setup.players.isEmpty => l10n.valueAutoPending,
-              null => l10n.valueAutoExplained(setup.resolvedCardCount),
-              _ => null,
-            },
+            // Le nombre d'équipes se règle à l'étape suivante : annoncer un
+            // total ici reviendrait à le calculer sur deux équipes, et à
+            // mentir à qui en prendra trois. L'indice dit le taux de R6.1,
+            // vrai quel que soit le nombre d'équipes ; le récapitulatif, lui,
+            // donne le total une fois les équipes connues.
+            hint: setup.cardCount == null
+                ? l10n.valueAutoExplained(GameConfig.cardsPerTeam)
+                : null,
             freeEntry: _CardCountSlider(
               value: setup.cardCount ?? setup.resolvedCardCount,
               onChanged: controller.setCardCount,
             ),
-          ),
-          _Setting(
-            label: l10n.settingRoundCount,
-            chips: [
-              for (final count in Round.allowedCounts)
-                _Choice(
-                  label: l10n.valueRounds(count),
-                  isSelected: setup.roundCount == count,
-                  onSelected: () => controller.setRoundCount(count),
-                ),
-            ],
           ),
         ],
       ),

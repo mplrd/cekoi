@@ -10,6 +10,9 @@ enum TurnOutcome {
   found,
 
   /// Aucune pénalité, la carte retourne au fond du paquet.
+  ///
+  /// Au récapitulatif de tour, c'est aussi ce que vaut « pas trouvée » : la
+  /// manche 1 n'offre pas *Passer* (R3.9) mais reste corrigeable (R3.6).
   passed,
 }
 
@@ -35,7 +38,6 @@ abstract class PlayedTurn with _$PlayedTurn {
   const factory PlayedTurn({
     required Round round,
     required String teamId,
-    required String narratorId,
 
     /// Temps consommé depuis le début du tour, **pauses exclues** (R3.7).
     @Default(Duration.zero) Duration elapsed,

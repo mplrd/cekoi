@@ -1,10 +1,9 @@
-import 'dart:math';
-
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/card.dart';
 import 'package:cekoi/domain/entities/deck.dart';
 import 'package:cekoi/domain/entities/difficulty.dart';
 import 'package:cekoi/domain/entities/min_age.dart';
+import 'package:cekoi/domain/entities/team.dart';
 import 'package:cekoi/domain/rules/game_profiles.dart';
 import 'package:cekoi/domain/setup/game_launch.dart';
 import 'package:cekoi/domain/setup/game_setup.dart';
@@ -53,14 +52,12 @@ List<Card> _pool() => [
   ],
 ];
 
+/// Les équipes telles que la présentation les aurait construites.
+final List<Team> _teams = [testTeam('Rouges'), testTeam('Bleus')];
+
 /// Une configuration complète, prête à lancer.
-GameSetup _ready({GameProfile profile = _restrictif}) {
-  var setup = setupForMode(Audience.family).withProfile(profile, _decks);
-  for (var i = 0; i < 4; i++) {
-    setup = setup.withPlayer(testPlayer('joueur-$i'));
-  }
-  return setup.withProposedTeams(names: ['Rouges', 'Bleus'], random: Random(1));
-}
+GameSetup _ready({GameProfile profile = _restrictif}) =>
+    setupForMode(Audience.family).withProfile(profile, _decks);
 
 void main() {
   group('R7.4 — le tirage ne voit que les catégories retenues', () {
@@ -75,7 +72,12 @@ void main() {
       final setup = _ready();
       expect(setup.deckIds, ['animaux'], reason: 'point de départ');
 
-      final outcome = launchGame(setup: setup, pool: pool, seed: 7);
+      final outcome = launchGame(
+        setup: setup,
+        teams: _teams,
+        pool: pool,
+        seed: 7,
+      );
 
       expect(
         {for (final card in outcome.draw.cards) card.deckId},
@@ -93,7 +95,12 @@ void main() {
         reason: 'Le vivier doit contenir des cartes difficiles',
       );
 
-      final outcome = launchGame(setup: _ready(), pool: pool, seed: 7);
+      final outcome = launchGame(
+        setup: _ready(),
+        teams: _teams,
+        pool: pool,
+        seed: 7,
+      );
 
       expect(
         {for (final card in outcome.draw.cards) card.difficulty},
@@ -105,7 +112,12 @@ void main() {
       // R6.3 s'applique aux difficultés restantes, renormalisé. Un paquet qui
       // ne contiendrait que des faciles respecterait le filtre et raterait
       // l'équilibrage.
-      final outcome = launchGame(setup: _ready(), pool: _pool(), seed: 7);
+      final outcome = launchGame(
+        setup: _ready(),
+        teams: _teams,
+        pool: _pool(),
+        seed: 7,
+      );
 
       expect(countOf(outcome.draw.cards, Difficulty.easy), greaterThan(0));
       expect(countOf(outcome.draw.cards, Difficulty.medium), greaterThan(0));
@@ -121,7 +133,12 @@ void main() {
         deckId: 'animaux',
       );
 
-      final outcome = launchGame(setup: _ready(), pool: maigre, seed: 7);
+      final outcome = launchGame(
+        setup: _ready(),
+        teams: _teams,
+        pool: maigre,
+        seed: 7,
+      );
 
       expect(outcome.isLaunched, isFalse);
       expect(outcome.game, isNull);
@@ -143,7 +160,12 @@ void main() {
         deckId: 'animaux',
       );
 
-      final outcome = launchGame(setup: _ready(), pool: juste, seed: 7);
+      final outcome = launchGame(
+        setup: _ready(),
+        teams: _teams,
+        pool: juste,
+        seed: 7,
+      );
 
       expect(outcome.isLaunched, isTrue);
       expect(outcome.draw.isTruncated, isTrue);
@@ -152,44 +174,47 @@ void main() {
     });
 
     test('une configuration incomplète bloque malgré assez de cartes', () {
-      // Équipes non composées : le vivier suffit, la partie non.
-      final sansEquipes = setupForMode(
-        Audience.family,
-      ).withProfile(_restrictif, _decks).withPlayer(testPlayer('seul'));
+      // Aucune catégorie retenue : le vivier suffit, la partie non.
+      final sansCategorie = setupForMode(Audience.family);
 
       final outcome = launchGame(
-        setup: sansEquipes,
+        setup: sansCategorie,
+        teams: _teams,
         pool: _pool(),
         seed: 7,
       );
 
-      expect(sansEquipes.canStart, isFalse);
+      expect(sansCategorie.canStart, isFalse);
       expect(outcome.isLaunched, isFalse);
-      expect(
-        outcome.draw.isPlayable,
-        isTrue,
-        reason: 'Le refus vient de la configuration, pas du vivier',
-      );
     });
   });
 
   group('la partie ouverte reprend la configuration', () {
-    test('le paquet, les joueurs et les équipes passent dans la partie', () {
+    test('le paquet et les équipes passent dans la partie', () {
       final setup = _ready();
 
-      final outcome = launchGame(setup: setup, pool: _pool(), seed: 7);
+      final outcome = launchGame(
+        setup: setup,
+        teams: _teams,
+        pool: _pool(),
+        seed: 7,
+      );
       final game = outcome.game!;
 
       expect(game.deck, outcome.draw.cards);
-      expect(game.players, setup.players);
-      expect(game.teams, setup.teams);
+      expect(game.teams, _teams);
       expect(game.config.deckIds, ['animaux']);
       expect(game.config.profileId, 'test-restrictif');
       expect(game.config.difficulties, {Difficulty.easy, Difficulty.medium});
     });
 
     test('la réserve de départage vient de hors du paquet (R5.3)', () {
-      final outcome = launchGame(setup: _ready(), pool: _pool(), seed: 7);
+      final outcome = launchGame(
+        setup: _ready(),
+        teams: _teams,
+        pool: _pool(),
+        seed: 7,
+      );
 
       final joues = {for (final card in outcome.draw.cards) card.id};
       expect(outcome.draw.tieBreakReserve, isNotEmpty);
@@ -205,6 +230,7 @@ void main() {
       List<String> ids(int seed) => [
         for (final card in launchGame(
           setup: setup,
+          teams: _teams,
           pool: _pool(),
           seed: seed,
         ).draw.cards)

@@ -20,10 +20,19 @@ GameState playTurn(GameState state, {int found = 0}) => state.apply([
   const GameEvent.turnConfirmed(),
 ]);
 
+/// Vide une manche entière, chaque équipe trouvant [found] cartes par tour.
+GameState playRound(GameState state, List<int> found) {
+  var current = state;
+  for (final count in found) {
+    current = playTurn(current, found: count);
+  }
+  return current;
+}
+
 void main() {
   group("R4.1 — la manche s'arrête sur la dernière carte trouvée", () {
     test("cas limite 1 : le paquet se vide alors qu'il reste du temps", () {
-      final state = testGame().apply([
+      final state = testGame(roundIndex: 0).apply([
         const GameEvent.turnStarted(),
         const GameEvent.ticked(Duration(seconds: 40)),
         for (var i = 0; i < 6; i++) const GameEvent.cardFound(),
@@ -39,7 +48,7 @@ void main() {
     });
 
     test('le temps restant est perdu, pas reporté', () {
-      final state = testGame()
+      final state = testGame(roundIndex: 0)
           .apply([
             const GameEvent.turnStarted(),
             const GameEvent.ticked(Duration(seconds: 40)),
@@ -52,7 +61,7 @@ void main() {
     });
 
     test('la validation du récap clôt la manche et affiche les scores', () {
-      final state = testGame().apply([
+      final state = testGame(roundIndex: 0).apply([
         const GameEvent.turnStarted(),
         for (var i = 0; i < 6; i++) const GameEvent.cardFound(),
         const GameEvent.turnConfirmed(),
@@ -69,7 +78,7 @@ void main() {
 
   group('R4.2 — toutes les cartes sont remises en jeu et remélangées', () {
     test('la manche suivante rejoue le paquet entier', () {
-      final state = testGame().apply([
+      final state = testGame(roundIndex: 0).apply([
         const GameEvent.turnStarted(),
         for (var i = 0; i < 6; i++) const GameEvent.cardFound(),
         const GameEvent.turnConfirmed(),
@@ -93,13 +102,8 @@ void main() {
           mode: Audience.family,
           deckIds: ['deck'],
           turnDuration: Duration(seconds: 60),
-          roundCount: 3,
         ),
-        players: [
-          for (final id in ['team-1-1', 'team-1-2', 'team-2-1', 'team-2-2'])
-            testPlayer(id),
-        ],
-        teams: [testTeam('team-1', 2), testTeam('team-2', 2)],
+        teams: [testTeam('team-1'), testTeam('team-2')],
         deck: testCards(12),
         seed: 4,
       );
@@ -125,7 +129,7 @@ void main() {
 
     test('le remélange est déterministe à graine égale', () {
       List<String> pileOfRoundTwo(int seed) =>
-          testGame(cardCount: 12, seed: seed).apply([
+          testGame(cardCount: 12, seed: seed, roundIndex: 0).apply([
             const GameEvent.turnStarted(),
             for (var i = 0; i < 12; i++) const GameEvent.cardFound(),
             const GameEvent.turnConfirmed(),
@@ -141,7 +145,7 @@ void main() {
     test("l'équipe qui vide le paquet n'enchaîne pas deux tours", () {
       // Sans cette règle, l'équipe qui termine la manche rejouerait
       // immédiatement à l'ouverture de la suivante.
-      final state = testGame().apply([
+      final state = testGame(roundIndex: 0).apply([
         const GameEvent.turnStarted(),
         for (var i = 0; i < 6; i++) const GameEvent.cardFound(),
         const GameEvent.turnConfirmed(),
@@ -163,42 +167,21 @@ void main() {
 
       expect(order, ['team-1', 'team-2', 'team-1', 'team-2']);
     });
-  });
 
-  group('R3.1 — la rotation du narrateur est interne à chaque équipe', () {
-    test('cas limite 6 : une équipe de 2 et une de 5 tournent séparément', () {
-      var state = testGame(cardCount: 12, teamSizes: [2, 5]);
-      final narrators = <String>[];
-
-      for (var i = 0; i < 6; i++) {
-        narrators.add(state.turn!.narratorId);
-        state = playTurn(state);
-      }
-
-      expect(narrators, [
-        'team-1-1', 'team-2-1', //
-        'team-1-2', 'team-2-2', //
-        'team-1-1', 'team-2-3', //
-      ]);
-    });
-
-    test('le narrateur avance même quand le tour ne rapporte rien', () {
+    test('R3.1 — un tour annonce une équipe, jamais un joueur', () {
+      // L'application ne connaît pas les joueurs (R8.2) : le tour ne porte que
+      // l'équipe, et c'est elle qui désigne son narrateur à la table.
       final state = playTurn(testGame(cardCount: 12));
 
       expect(state.turn!.teamId, 'team-2');
-      expect(
-        state.teams.first.currentNarratorId,
-        'team-1-2',
-        reason: "Le curseur de l'équipe 1 a avancé pour son prochain tour",
-      );
+      expect(state.teams.map((t) => t.name), ['team-1', 'team-2']);
     });
   });
 
   group('R4.4 — scores intermédiaires entre deux manches', () {
     test('le détail par manche et le cumul sont disponibles', () {
-      var state = testGame(cardCount: 12, roundCount: 2);
-      state = playTurn(state, found: 5); // team-1
-      state = playTurn(state, found: 7); // team-2, vide le paquet
+      var state = testGame(cardCount: 12, roundIndex: 0);
+      state = playRound(state, [5, 7]); // team-1 puis team-2, qui vide
       expect(state.phase, GamePhase.roundSummary);
 
       expect(state.scoresByRound[Round.freeDescription], {
@@ -208,10 +191,9 @@ void main() {
       expect(state.scores, {'team-1': 5, 'team-2': 7});
 
       state = state.apply([const GameEvent.nextRoundStarted()]);
-      state = playTurn(state, found: 4); // team-1 ouvre (R4.3)
-      state = playTurn(state, found: 8); // team-2 vide le paquet
+      state = playRound(state, [4, 8]); // team-1 ouvre (R4.3)
 
-      expect(state.scoresByRound[Round.mime], {'team-1': 4, 'team-2': 8});
+      expect(state.scoresByRound[Round.oneWord], {'team-1': 4, 'team-2': 8});
       expect(
         state.scores,
         {'team-1': 9, 'team-2': 15},
@@ -220,33 +202,44 @@ void main() {
     });
 
     test('une manche non jouée ne figure pas au détail', () {
-      final state = testGame(cardCount: 12);
+      final state = testGame(cardCount: 12, roundIndex: 0);
 
       expect(state.scoresByRound, isEmpty);
       expect(state.scores, {'team-1': 0, 'team-2': 0});
     });
   });
 
-  group('R2.2 — la partie tient le nombre de manches configuré', () {
-    test('une partie en deux manches joue la 1 puis la 3', () {
-      var state = testGame(cardCount: 6, roundCount: 2);
-      expect(state.round, Round.freeDescription);
+  group('R2.2 — une partie, ce sont les trois manches', () {
+    test('la séquence est toujours la même', () {
+      final state = testGame(roundIndex: 0);
 
-      state = playTurn(state, found: 6).apply([
-        const GameEvent.nextRoundStarted(),
-      ]);
-
-      expect(state.round, Round.mime);
+      expect(state.rounds, [Round.freeDescription, Round.oneWord, Round.mime]);
     });
 
-    test('la partie se termine après la dernière manche', () {
-      var state = testGame(cardCount: 6, roundCount: 2);
-      state = playTurn(state, found: 6); // team-1 vide la manche 1
-      state = state.apply([const GameEvent.nextRoundStarted()]);
-      state = playTurn(state, found: 4); // team-2 ouvre la manche 3
-      state = playTurn(state, found: 2); // team-1 la termine
+    test("les manches s'enchaînent dans l'ordre de R2.1", () {
+      var state = testGame(roundIndex: 0);
+      final played = [state.round];
 
-      expect(state.scores, {'team-1': 8, 'team-2': 4});
+      for (var i = 0; i < 2; i++) {
+        state = playTurn(state, found: 6).apply([
+          const GameEvent.nextRoundStarted(),
+        ]);
+        played.add(state.round);
+      }
+
+      expect(played, [Round.freeDescription, Round.oneWord, Round.mime]);
+    });
+
+    test('la partie se termine après la troisième manche', () {
+      var state = testGame(roundIndex: 0);
+      for (var round = 0; round < 3; round++) {
+        state = playTurn(state, found: 6);
+        if (round < 2) {
+          expect(state.phase, GamePhase.roundSummary);
+          state = state.apply([const GameEvent.nextRoundStarted()]);
+        }
+      }
+
       expect(state.phase, GamePhase.finished);
       expect(state.isOver, isTrue);
       expect(
@@ -259,27 +252,22 @@ void main() {
 
   group('R5 — fin de partie', () {
     test('R5.2 — la meilleure équipe gagne', () {
-      var state = testGame(cardCount: 6, roundCount: 2);
-      state = playTurn(state, found: 2); // team-1
-      state = playTurn(state, found: 4); // team-2 vide le paquet
+      var state = testGame(roundIndex: 0);
+      state = playRound(state, [2, 4]); // 2 / 4
       state = state.apply([const GameEvent.nextRoundStarted()]);
-      state = playTurn(state, found: 1); // team-1
-      state = playTurn(state, found: 5); // team-2
+      state = playRound(state, [1, 5]); // 3 / 9
+      state = state.apply([const GameEvent.nextRoundStarted()]);
+      state = playRound(state, [1, 5]); // 4 / 14
 
       expect(state.phase, GamePhase.finished);
-      expect(state.scores, {'team-1': 3, 'team-2': 9});
+      expect(state.scores, {'team-1': 4, 'team-2': 14});
       expect(state.winnerIds, ['team-2']);
     });
 
     test('R5.3 — une égalité en tête ouvre une manche de départage', () {
-      var state = testGame(cardCount: 6, roundCount: 2);
-      state = playTurn(state, found: 3);
-      state = playTurn(state, found: 3);
-      state = state.apply([const GameEvent.nextRoundStarted()]);
-      state = playTurn(state, found: 3);
-      state = playTurn(state, found: 3);
+      final state = tiedGame();
 
-      expect(state.scores, {'team-1': 6, 'team-2': 6});
+      expect(state.scores, {'team-1': 9, 'team-2': 9});
       expect(state.phase, GamePhase.tieBreak);
       expect(state.tieBreakTeamIds, ['team-1', 'team-2']);
       expect(state.tieBreakCard, isNotNull);
@@ -287,45 +275,28 @@ void main() {
         state.winnerIds,
         isEmpty,
         reason:
-            "Tant que le départage n'est pas joué, il n'y a pas de "
-            'vainqueur',
+            "Tant que le départage n'est pas joué, il n'y a pas de vainqueur",
       );
     });
 
     test('cas limite 7 : trois équipes à égalité parfaite', () {
-      var state = testGame(
-        cardCount: 12,
-        teamSizes: [2, 2, 2],
-        roundCount: 2,
-      );
-      for (final found in [4, 4, 4]) {
-        state = playTurn(state, found: found);
-      }
-      state = state.apply([const GameEvent.nextRoundStarted()]);
-      for (final found in [4, 4, 4]) {
-        state = playTurn(state, found: found);
+      var state = testGame(cardCount: 12, teamCount: 3, roundIndex: 0);
+      for (var round = 0; round < 3; round++) {
+        state = playRound(state, [4, 4, 4]);
+        if (round < 2) {
+          state = state.apply([const GameEvent.nextRoundStarted()]);
+        }
       }
 
-      expect(state.scores.values, everyElement(8));
+      expect(state.scores.values, everyElement(12));
       expect(state.phase, GamePhase.tieBreak);
       expect(state.tieBreakTeamIds, ['team-1', 'team-2', 'team-3']);
     });
 
     test('seules les équipes en tête participent au départage', () {
-      var state = testGame(
-        cardCount: 12,
-        teamSizes: [2, 2, 2],
-        roundCount: 2,
-      );
-      state = playTurn(state, found: 5); // team-1
-      state = playTurn(state, found: 5); // team-2
-      state = playTurn(state, found: 2); // team-3 vide le paquet
-      state = state.apply([const GameEvent.nextRoundStarted()]);
-      state = playTurn(state, found: 5); // team-1 ouvre
-      state = playTurn(state, found: 5); // team-2
-      state = playTurn(state, found: 2); // team-3
+      final state = unevenThreeTeamGame();
 
-      expect(state.scores, {'team-1': 10, 'team-2': 10, 'team-3': 4});
+      expect(state.scores, {'team-1': 15, 'team-2': 15, 'team-3': 6});
       expect(state.tieBreakTeamIds, ['team-1', 'team-2']);
     });
 
@@ -346,18 +317,7 @@ void main() {
     });
 
     test('une équipe hors égalité ne peut pas remporter le départage', () {
-      var state = testGame(
-        cardCount: 12,
-        teamSizes: [2, 2, 2],
-        roundCount: 2,
-      );
-      state = playTurn(state, found: 5);
-      state = playTurn(state, found: 5);
-      state = playTurn(state, found: 2);
-      state = state.apply([const GameEvent.nextRoundStarted()]);
-      state = playTurn(state, found: 5);
-      state = playTurn(state, found: 5);
-      state = playTurn(state, found: 2);
+      final state = unevenThreeTeamGame();
 
       expect(
         state.apply([const GameEvent.tieBreakWon(teamId: 'team-3')]),
@@ -459,10 +419,24 @@ void main() {
 
 /// Une partie terminée sur une égalité parfaite entre deux équipes.
 GameState tiedGame() {
-  var state = testGame(cardCount: 6, roundCount: 2);
-  state = playTurn(state, found: 3);
-  state = playTurn(state, found: 3);
-  state = state.apply([const GameEvent.nextRoundStarted()]);
-  state = playTurn(state, found: 3);
-  return playTurn(state, found: 3);
+  var state = testGame(roundIndex: 0);
+  for (var round = 0; round < 3; round++) {
+    state = playRound(state, [3, 3]);
+    if (round < 2) {
+      state = state.apply([const GameEvent.nextRoundStarted()]);
+    }
+  }
+  return state;
+}
+
+/// Trois équipes, deux à égalité en tête et une décrochée.
+GameState unevenThreeTeamGame() {
+  var state = testGame(cardCount: 12, teamCount: 3, roundIndex: 0);
+  for (var round = 0; round < 3; round++) {
+    state = playRound(state, [5, 5, 2]);
+    if (round < 2) {
+      state = state.apply([const GameEvent.nextRoundStarted()]);
+    }
+  }
+  return state;
 }
