@@ -151,6 +151,17 @@ class DeckRepository {
     await (_db.delete(_db.decks)..where((d) => d.id.equals(deckId))).go();
   }
 
+  /// Vrai si la catégorie contient déjà cette carte, au sens de R6.4.
+  ///
+  /// Exposé pour que l'écran de saisie puisse refuser sans provoquer une
+  /// exception : ajouter deux fois la même carte est une maladresse de saisie
+  /// quotidienne, pas une situation exceptionnelle.
+  Future<bool> customDeckContains(String deckId, String text) async {
+    final cle = normalizeCardText(text.trim());
+    final existantes = await cardsOfDeck(deckId);
+    return existantes.any((c) => c.normalizedText == cle);
+  }
+
   /// Ajoute une carte à une catégorie du joueur.
   ///
   /// Le public est hérité de la catégorie : une carte d'une catégorie adultes

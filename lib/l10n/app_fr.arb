@@ -654,5 +654,119 @@
   "actionKeepPlaying": "Continuer à jouer",
   "@actionKeepPlaying": {
     "description": "Annule l'abandon et revient à la partie."
+  },
+
+  "myDecksEmpty": "Aucune catégorie pour l'instant",
+  "@myDecksEmpty": {
+    "description": "Écran vide de la gestion des catégories du joueur."
+  },
+
+  "myDecksEmptyHint": "Créez la vôtre : les prénoms de la famille, les blagues du grand-père, les personnages d'une série. Elles restent sur ce téléphone.",
+  "@myDecksEmptyHint": {
+    "description": "Explique à quoi servent les catégories custom, et rappelle qu'elles ne quittent pas l'appareil (règle d'or n°4)."
+  },
+
+  "actionCreateDeck": "Nouvelle catégorie",
+  "@actionCreateDeck": {
+    "description": "Crée une catégorie du joueur."
+  },
+
+  "deckNameHint": "Nom de la catégorie",
+  "@deckNameHint": {
+    "description": "Champ de saisie du nom d'une catégorie."
+  },
+
+  "deckNameRequired": "Il faut un nom.",
+  "@deckNameRequired": {
+    "description": "Erreur affichée quand le nom de catégorie est vide."
+  },
+
+  "deckAudienceLabel": "Dans quel mode ?",
+  "@deckAudienceLabel": {
+    "description": "Choix du public d'une catégorie créée par le joueur (R7.1)."
+  },
+
+  "actionRenameDeck": "Renommer",
+  "@actionRenameDeck": {
+    "description": "Renomme une catégorie du joueur."
+  },
+
+  "actionDeleteDeck": "Supprimer",
+  "@actionDeleteDeck": {
+    "description": "Supprime une catégorie du joueur."
+  },
+
+  "deleteDeckTitle": "Supprimer « {name} » ?",
+  "@deleteDeckTitle": {
+    "description": "Confirmation avant suppression d'une catégorie.",
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+
+  "deleteDeckBody": "{count, plural, =0{Cette catégorie sera perdue.} =1{Sa carte sera perdue avec elle.} other{Ses {count} cartes seront perdues avec elle.}}",
+  "@deleteDeckBody": {
+    "description": "Rappelle ce qu'emporte la suppression d'une catégorie.",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+
+  "cardTextHint": "Ce qu'il faudra faire deviner",
+  "@cardTextHint": {
+    "description": "Champ de saisie rapide d'une carte."
+  },
+
+  "actionAddCard": "Ajouter",
+  "@actionAddCard": {
+    "description": "Ajoute la carte saisie et laisse le champ prêt pour la suivante."
+  },
+
+  "cardAlreadyThere": "Cette carte est déjà dans la catégorie.",
+  "@cardAlreadyThere": {
+    "description": "Refus d'un doublon dans une même catégorie (R6.4)."
+  },
+
+  "deckCardsEmpty": "Aucune carte pour l'instant",
+  "@deckCardsEmpty": {
+    "description": "Écran vide d'une catégorie du joueur."
+  },
+
+  "difficultyLabel": "Difficulté",
+  "@difficultyLabel": {
+    "description": "Libellé du réglage de difficulté d'une carte."
+  },
+
+  "difficultyEasy": "Facile",
+  "@difficultyEasy": {
+    "description": "Difficulté 1 (R6.3)."
+  },
+
+  "difficultyMedium": "Moyen",
+  "@difficultyMedium": {
+    "description": "Difficulté 2 (R6.3)."
+  },
+
+  "difficultyHard": "Difficile",
+  "@difficultyHard": {
+    "description": "Difficulté 3 (R6.3)."
+  },
+
+  "deleteCardTitle": "Supprimer « {text} » ?",
+  "@deleteCardTitle": {
+    "description": "Confirmation avant suppression d'une carte.",
+    "placeholders": {
+      "text": { "type": "String" }
+    }
+  },
+
+  "actionSave": "Enregistrer",
+  "@actionSave": {
+    "description": "Valide la modification d'une carte."
+  },
+
+  "actionDelete": "Supprimer",
+  "@actionDelete": {
+    "description": "Confirme une suppression."
   }
 }
