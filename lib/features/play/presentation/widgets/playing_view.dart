@@ -50,7 +50,10 @@ class PlayingView extends ConsumerWidget {
             _ => _CardZone(game: game),
           },
         ),
-        _Actions(game: game),
+        // `SPEC.md` veut deux zones d'action occupant la moitié basse, et non
+        // deux boutons : on tape sans regarder, téléphone tenu à bout de bras
+        // au milieu d'une table qui crie.
+        Expanded(child: _Actions(game: game)),
       ],
     );
   }
@@ -230,9 +233,12 @@ class _Actions extends ConsumerWidget {
                 style: Theme.of(context).textTheme.labelSmall,
               ),
             ),
-          SizedBox(
-            height: 96,
+          Expanded(
             child: Row(
+              // Sans `stretch`, les boutons gardent leur hauteur intrinsèque
+              // et flottent au milieu de la zone : on retomberait sur deux
+              // boutons ordinaires au lieu des deux zones voulues.
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Expanded(
                   child: OutlinedButton(
