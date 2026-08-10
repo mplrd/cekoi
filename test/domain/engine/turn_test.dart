@@ -90,6 +90,31 @@ void main() {
       expect(lines.single.outcome, TurnOutcome.found);
       expect(state.scoreOf('team-1'), 1);
     });
+
+    test('R3.6 — une carte passée garde sa ligne, même revenue en tête', () {
+      // Le paquet fait le tour complet : la carte affichée quand le chrono
+      // tombe est celle qu'on a passée en premier. Elle a été tranchée, donc
+      // elle a sa ligne — sans quoi une carte passée à tort deviendrait
+      // incorrigible.
+      final state = testGame(cardCount: 3);
+      final premiere = state.pile.first;
+
+      final apres = state.apply([
+        const GameEvent.turnStarted(),
+        const GameEvent.cardPassed(),
+        const GameEvent.cardPassed(),
+        const GameEvent.cardPassed(),
+        const GameEvent.ticked(Duration(minutes: 10)),
+      ]);
+
+      expect(
+        apres.phase,
+        GamePhase.turnSummary,
+        reason: 'point de départ : le chrono est bien tombé',
+      );
+      expect(apres.pile.first, premiere);
+      expect(apres.turn!.resultFor(premiere)?.outcome, TurnOutcome.passed);
+    });
   });
 
   group('R3.4 — passer est indisponible sur la dernière carte', () {

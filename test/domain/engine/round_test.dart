@@ -144,40 +144,6 @@ void main() {
       );
     });
 
-    test('une carte passee revenue en tete garde sa ligne', () {
-      // La moitié de R4.6 qu'on oublie : quand le paquet a fait le tour
-      // complet, la carte affichée au chrono zéro est une carte *déjà passée*.
-      // Elle a donc une ligne, et c'est elle qui la rend corrigeable (R3.6).
-      // Filtrer la carte de tête du récapitulatif rendrait incorrigible une
-      // carte passée à tort.
-      final state = testGame(cardCount: 3);
-      final premiere = state.pile.first;
-
-      final apres = state.apply([
-        const GameEvent.turnStarted(),
-        const GameEvent.cardPassed(),
-        const GameEvent.cardPassed(),
-        const GameEvent.cardPassed(),
-        const GameEvent.ticked(Duration(minutes: 10)),
-      ]);
-
-      expect(
-        apres.phase,
-        GamePhase.turnSummary,
-        reason: 'point de départ : le chrono est bien tombé',
-      );
-      expect(
-        apres.pile.first,
-        premiere,
-        reason: 'le paquet a fait le tour complet : on retrouve la première',
-      );
-      expect(
-        apres.turn!.resultFor(premiere)?.outcome,
-        TurnOutcome.passed,
-        reason: 'la carte affichée à la fin a bien été tranchée plus tôt',
-      );
-    });
-
     test('les cartes passees repartent au tour suivant, remises au fond', () {
       // Ce que cette règle ajoute au cas limite 5 (`turn_test.dart`), qui
       // s'arrête à la fin du tour : les cartes passées franchissent le
