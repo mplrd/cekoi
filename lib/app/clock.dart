@@ -22,3 +22,15 @@ MonotonicClock monotonicClock(Ref ref) {
   ref.onDispose(stopwatch.stop);
   return () => stopwatch.elapsed;
 }
+
+/// Fournit les graines d'aléatoire de l'application.
+///
+/// Le domaine n'a pas le droit de lire l'horloge ; la couche d'interface, si.
+/// Vit dans `app/` et non chez `setup` : la configuration en a besoin pour
+/// composer les équipes, le jeu pour retirer un paquet en rejouant — une
+/// feature ne peut pas emprunter le provider d'une autre.
+typedef SeedSource = int Function();
+
+@Riverpod(keepAlive: true)
+SeedSource seedSource(Ref ref) =>
+    () => DateTime.now().microsecondsSinceEpoch & 0x7fffffff;

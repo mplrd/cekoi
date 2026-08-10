@@ -1,4 +1,5 @@
 import 'package:cekoi/app/app.dart';
+import 'package:cekoi/app/clock.dart';
 import 'package:cekoi/app/current_game.dart';
 import 'package:cekoi/app/router.dart';
 import 'package:cekoi/data/db/database.dart';
@@ -9,7 +10,6 @@ import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/deck_origin.dart';
 import 'package:cekoi/domain/entities/difficulty.dart';
 import 'package:cekoi/domain/entities/min_age.dart';
-import 'package:cekoi/features/setup/presentation/setup_controller.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

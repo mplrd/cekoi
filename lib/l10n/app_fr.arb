@@ -554,5 +554,90 @@
   "actionConfirmTurn": "Valider le tour",
   "@actionConfirmTurn": {
     "description": "Valide le récapitulatif et passe à l'équipe suivante."
+  },
+
+  "roundSummaryTitle": "Fin de la manche {number}",
+  "@roundSummaryTitle": {
+    "description": "Titre de l'écran de scores entre deux manches (R4.4).",
+    "placeholders": {
+      "number": { "type": "int" }
+    }
+  },
+
+  "roundSummaryNext": "Ensuite : {round}",
+  "@roundSummaryNext": {
+    "description": "Rappelle la contrainte de la manche à venir.",
+    "placeholders": {
+      "round": { "type": "String" }
+    }
+  },
+
+  "actionNextRound": "Manche suivante",
+  "@actionNextRound": {
+    "description": "Ouvre la manche suivante depuis l'écran de scores."
+  },
+
+  "scoreTotal": "Total",
+  "@scoreTotal": {
+    "description": "En-tête de la colonne de cumul du tableau des scores."
+  },
+
+  "scoreRoundShort": "M{number}",
+  "@scoreRoundShort": {
+    "description": "En-tête de colonne d'une manche, forme courte.",
+    "placeholders": {
+      "number": { "type": "int" }
+    }
+  },
+
+  "podiumTitle": "C'est fini",
+  "@podiumTitle": {
+    "description": "Titre de l'écran de fin de partie."
+  },
+
+  "podiumWinner": "{team} gagne",
+  "@podiumWinner": {
+    "description": "Annonce du vainqueur.",
+    "placeholders": {
+      "team": { "type": "String" }
+    }
+  },
+
+  "actionReplaySameSettings": "Rejouer avec les mêmes réglages",
+  "@actionReplaySameSettings": {
+    "description": "Relance une partie identique, sans repasser par la configuration."
+  },
+
+  "actionNewGame": "Nouvelle partie",
+  "@actionNewGame": {
+    "description": "Repart de la configuration."
+  },
+
+  "replayImpossible": "Plus assez de cartes pour rejouer à l'identique.",
+  "@replayImpossible": {
+    "description": "Le vivier a changé depuis la partie précédente et ne suffit plus (R6.2)."
+  },
+
+  "tieBreakTitle": "Départage",
+  "@tieBreakTitle": {
+    "description": "Titre de la manche de départage (R5.3)."
+  },
+
+  "tieBreakBody": "Une carte, en mime. La première équipe qui trouve gagne.",
+  "@tieBreakBody": {
+    "description": "Règle du départage, rappelée à l'écran."
+  },
+
+  "tieBreakWinner": "{team} a trouvé",
+  "@tieBreakWinner": {
+    "description": "Désigne l'équipe qui remporte le départage.",
+    "placeholders": {
+      "team": { "type": "String" }
+    }
+  },
+
+  "actionTieBreakRestart": "Personne n'a trouvé",
+  "@actionTieBreakRestart": {
+    "description": "Relance le départage avec une autre carte (R5.3)."
   }
 }
