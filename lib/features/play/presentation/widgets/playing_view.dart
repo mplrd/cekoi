@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:cekoi/app/current_game.dart';
 import 'package:cekoi/app/theme/app_colors.dart';
 import 'package:cekoi/domain/engine/game_state.dart';
-import 'package:cekoi/domain/rules/round.dart';
 import 'package:cekoi/features/play/presentation/play_controller.dart';
 import 'package:cekoi/features/play/presentation/widgets/game_card_face.dart';
 import 'package:cekoi/features/play/presentation/widgets/turn_timer_ring.dart';
@@ -141,10 +140,7 @@ class _CardZone extends ConsumerWidget {
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        child: GameCardFace(
-          card: card,
-          showTaboo: game.round == Round.freeDescription,
-        ),
+        child: GameCardFace(card: card),
       ),
     );
   }

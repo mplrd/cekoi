@@ -272,12 +272,6 @@ class DeckSeeder {
           difficulty: Difficulty.fromValue(
             (card['difficulty'] as num?)?.toInt() ?? 2,
           ).value,
-          taboo: Value(
-            jsonEncode(
-              (card['taboo'] as List<dynamic>? ?? const <dynamic>[])
-                  .cast<String>(),
-            ),
-          ),
           origin: DeckOrigin.official,
         );
 

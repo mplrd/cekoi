@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:cekoi/data/db/database.dart';
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/card.dart' as domain;
@@ -92,6 +90,5 @@ class DeckRepository {
     audience: row.audience,
     difficulty: Difficulty.fromValue(row.difficulty),
     origin: row.origin,
-    taboo: (jsonDecode(row.taboo) as List<dynamic>).cast<String>(),
   );
 }

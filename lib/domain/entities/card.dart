@@ -21,12 +21,6 @@ abstract class Card with _$Card {
     required Audience audience,
     required Difficulty difficulty,
     required DeckOrigin origin,
-
-    /// Mots interdits au narrateur en manche 1 (description libre).
-    ///
-    /// Vide pour beaucoup de cartes custom : la saisie de tabous est
-    /// optionnelle côté joueur, on ne transforme pas la création en corvée.
-    @Default(<String>[]) List<String> taboo,
   }) = _Card;
 
   const Card._();

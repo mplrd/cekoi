@@ -95,6 +95,37 @@ void main() {
     });
   });
 
+  /// Insère une catégorie et une carte écrites par le joueur.
+  ///
+  /// C'est le contrat des migrations : les lignes `origin = 'custom'` sont du
+  /// contenu que le joueur a saisi, et qu'aucune migration n'a le droit de
+  /// perdre. Le seeding, lui, ne recrée que l'officiel.
+  Future<void> insertCustomContent() async {
+    await db
+        .into(db.decks)
+        .insert(
+          DecksCompanion.insert(
+            id: 'la-mienne',
+            name: 'La mienne',
+            audience: Audience.family,
+            minAge: 6,
+            origin: DeckOrigin.custom,
+          ),
+        );
+    await db
+        .into(db.cards)
+        .insert(
+          CardsCompanion.insert(
+            id: 'la-mienne:tonton',
+            deckId: 'la-mienne',
+            cardText: 'Tonton Bernard',
+            audience: Audience.family,
+            difficulty: 2,
+            origin: DeckOrigin.custom,
+          ),
+        );
+  }
+
   group('migration de la v1 vers la v2', () {
     /// Redescend la base en v1 avant de migrer.
     ///
@@ -109,32 +140,7 @@ void main() {
         db.customStatement('DROP TABLE saved_games');
 
     test('le contenu écrit par le joueur survit', () async {
-      // Le contrat des migrations : les lignes `origin = 'custom'` sont du
-      // contenu que le joueur a saisi et qu'aucune migration n'a le droit de
-      // perdre.
-      await db
-          .into(db.decks)
-          .insert(
-            DecksCompanion.insert(
-              id: 'la-mienne',
-              name: 'La mienne',
-              audience: Audience.family,
-              minAge: 6,
-              origin: DeckOrigin.custom,
-            ),
-          );
-      await db
-          .into(db.cards)
-          .insert(
-            CardsCompanion.insert(
-              id: 'la-mienne:tonton',
-              deckId: 'la-mienne',
-              cardText: 'Tonton Bernard',
-              audience: Audience.family,
-              difficulty: 2,
-              origin: DeckOrigin.custom,
-            ),
-          );
+      await insertCustomContent();
 
       await downgradeToV1();
       await db.migration.onUpgrade(Migrator(db), 1, 2);
@@ -152,6 +158,74 @@ void main() {
       await repository.save(testGame(), savedAt: _now);
 
       expect(await repository.load(), isNotNull);
+    });
+  });
+
+  group('migration de la v2 vers la v3', () {
+    /// Redescend la table des cartes en v2, colonne `taboo` comprise.
+    ///
+    /// Même piège qu'en v1 : la base de test naît au schéma courant, donc
+    /// migrer par-dessus ne prouverait rien. Ici c'est pire qu'un no-op — la
+    /// migration recrée la table et recopie les lignes, et un test qui part
+    /// d'une table déjà sans la colonne ne verrait jamais si la recopie perd
+    /// des données.
+    Future<void> downgradeToV2() async {
+      await db.customStatement('DROP TABLE cards');
+      await db.customStatement('''
+        CREATE TABLE cards (
+          id TEXT NOT NULL PRIMARY KEY,
+          deck_id TEXT NOT NULL REFERENCES decks (id) ON DELETE CASCADE,
+          text TEXT NOT NULL,
+          audience TEXT NOT NULL,
+          difficulty INTEGER NOT NULL,
+          taboo TEXT NOT NULL DEFAULT '[]',
+          origin TEXT NOT NULL
+        )
+      ''');
+    }
+
+    test(
+      'les cartes du joueur survivent à la suppression de la colonne',
+      () async {
+        await db
+            .into(db.decks)
+            .insert(
+              DecksCompanion.insert(
+                id: 'la-mienne',
+                name: 'La mienne',
+                audience: Audience.family,
+                minAge: 6,
+                origin: DeckOrigin.custom,
+              ),
+            );
+        await downgradeToV2();
+        await db.customStatement(
+          "INSERT INTO cards VALUES ('la-mienne:tonton', 'la-mienne', "
+          "'Tonton Bernard', 'family', 2, '[\"moustache\"]', 'custom')",
+        );
+
+        await db.migration.onUpgrade(Migrator(db), 2, 3);
+
+        final cards = await db.select(db.cards).get();
+        expect(cards, hasLength(1));
+        expect(cards.single.cardText, 'Tonton Bernard');
+        expect(cards.single.origin, DeckOrigin.custom);
+      },
+    );
+
+    test('la colonne des mots interdits a bien disparu', () async {
+      await downgradeToV2();
+
+      await db.migration.onUpgrade(Migrator(db), 2, 3);
+
+      final colonnes = await db.customSelect('PRAGMA table_info(cards)').get();
+      expect(
+        colonnes.map((r) => r.data['name']),
+        isNot(contains('taboo')),
+        reason:
+            'Laisser la colonne ferait diverger le schéma des installations '
+            'neuves de celui des installations migrées',
+      );
     });
   });
 }

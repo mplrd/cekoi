@@ -123,7 +123,6 @@ conséquence directe de la règle d'or n°2. La colonne `origin` est la seule di
 | `text` | TEXT | Le texte affiché. |
 | `audience` | TEXT | Hérite du deck, surchargeable carte par carte. |
 | `difficulty` | INT | 1 à 3. Utilisé par l'équilibrage du tirage (R6.3). |
-| `taboo` | TEXT | JSON array des mots interdits en manche 1. |
 | `origin` | TEXT | |
 
 L'ID stable des cartes officielles est important : il permet de corriger une faute de frappe
