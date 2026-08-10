@@ -768,5 +768,45 @@
   "actionDelete": "Supprimer",
   "@actionDelete": {
     "description": "Confirme une suppression."
+  },
+
+  "actionExportDeck": "Exporter",
+  "@actionExportDeck": {
+    "description": "Enregistre une catégorie dans un fichier, par le partage du système."
+  },
+
+  "actionImportDeck": "Importer",
+  "@actionImportDeck": {
+    "description": "Crée une catégorie à partir d'un fichier choisi sur l'appareil."
+  },
+
+  "importDone": "{name} importée : {count, plural, =1{1 carte} other{{count} cartes}}.",
+  "@importDone": {
+    "description": "Confirmation après un import réussi.",
+    "placeholders": {
+      "name": { "type": "String" },
+      "count": { "type": "int" }
+    }
+  },
+
+  "importFailed": "Fichier illisible. {reason}",
+  "@importFailed": {
+    "description": "Refus d'un fichier, avec la raison destinée au joueur.",
+    "placeholders": {
+      "reason": { "type": "String" }
+    }
+  },
+
+  "exportDone": "{name} enregistrée.",
+  "@exportDone": {
+    "description": "Confirmation après un export réussi.",
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+
+  "shareStaysLocal": "Les catégories ne quittent ce téléphone que si vous envoyez le fichier vous-même.",
+  "@shareStaysLocal": {
+    "description": "Rappelle que rien n'est téléversé (règle d'or n°4)."
   }
 }

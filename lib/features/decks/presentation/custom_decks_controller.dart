@@ -1,4 +1,5 @@
 import 'package:cekoi/data/providers.dart';
+import 'package:cekoi/domain/decks/deck_exchange.dart';
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/card.dart' as domain;
 import 'package:cekoi/domain/entities/deck.dart';
@@ -36,6 +37,30 @@ class CustomDecks extends _$CustomDecks {
   Future<void> delete(String deckId) async {
     await ref.read(deckRepositoryProvider).deleteCustomDeck(deckId);
     ref.invalidateSelf();
+  }
+
+  /// Crée une catégorie à partir d'un fichier déjà lu et validé.
+  ///
+  /// Les doublons ont été écartés à la lecture (R6.4) : ce qui arrive ici est
+  /// propre, et une carte refusée en base signalerait un défaut, pas une
+  /// saisie maladroite.
+  Future<Deck> importDeck(DeckExchange exchange) async {
+    final repository = ref.read(deckRepositoryProvider);
+    final deck = await repository.createCustomDeck(
+      name: exchange.name,
+      audience: exchange.audience,
+    );
+
+    for (final card in exchange.cards) {
+      await repository.addCustomCard(
+        deckId: deck.id,
+        text: card.text,
+        difficulty: card.difficulty,
+      );
+    }
+
+    ref.invalidateSelf();
+    return deck;
   }
 }
 

@@ -1,9 +1,11 @@
 import 'dart:async';
 
 import 'package:cekoi/app/router.dart';
+import 'package:cekoi/domain/decks/deck_exchange.dart';
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/deck.dart';
 import 'package:cekoi/features/decks/presentation/custom_decks_controller.dart';
+import 'package:cekoi/features/decks/presentation/deck_transfer.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -24,7 +26,16 @@ class MyDecksScreen extends ConsumerWidget {
     final decks = ref.watch(customDecksProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.homeMyDecks)),
+      appBar: AppBar(
+        title: Text(l10n.homeMyDecks),
+        actions: [
+          IconButton(
+            onPressed: () => unawaited(_importDeck(context, ref)),
+            icon: const Icon(Icons.file_download_outlined),
+            tooltip: l10n.actionImportDeck,
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => unawaited(_createDeck(context, ref)),
         icon: const Icon(Icons.add),
@@ -52,6 +63,35 @@ class MyDecksScreen extends ConsumerWidget {
     await ref
         .read(customDecksProvider.notifier)
         .create(name: saisie.name, audience: saisie.audience);
+  }
+
+  /// Importe une catégorie depuis un fichier choisi par le joueur.
+  ///
+  /// Un fichier illisible n'est pas une erreur d'application : il vient de le
+  /// choisir lui-même, et le message lui dit ce qui cloche plutôt que de
+  /// remonter une trace technique.
+  Future<void> _importDeck(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+
+    try {
+      final exchange = await ref.read(deckTransferProvider).pick();
+      if (exchange == null) return;
+
+      final deck = await ref
+          .read(customDecksProvider.notifier)
+          .importDeck(exchange);
+
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(l10n.importDone(deck.name, exchange.cards.length)),
+        ),
+      );
+    } on DeckExchangeException catch (erreur) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(l10n.importFailed(erreur.message))),
+      );
+    }
   }
 }
 
@@ -114,6 +154,7 @@ class _DeckTile extends ConsumerWidget {
         onSelected: (action) => unawaited(_onAction(context, ref, action)),
         itemBuilder: (context) => [
           PopupMenuItem(value: 'rename', child: Text(l10n.actionRenameDeck)),
+          PopupMenuItem(value: 'export', child: Text(l10n.actionExportDeck)),
           PopupMenuItem(value: 'delete', child: Text(l10n.actionDeleteDeck)),
         ],
       ),
@@ -126,6 +167,18 @@ class _DeckTile extends ConsumerWidget {
     WidgetRef ref,
     String action,
   ) async {
+    if (action == 'export') {
+      final l10n = AppLocalizations.of(context);
+      final messenger = ScaffoldMessenger.of(context);
+
+      if (await ref.read(deckTransferProvider).export(deck)) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.exportDone(deck.name))),
+        );
+      }
+      return;
+    }
+
     if (action == 'rename') {
       final saisie = await showDialog<_DeckDraft>(
         context: context,
