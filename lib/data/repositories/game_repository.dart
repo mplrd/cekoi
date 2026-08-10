@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:cekoi/data/db/database.dart';
 import 'package:cekoi/data/db/tables/saved_games.dart';
 import 'package:cekoi/domain/engine/game_state.dart';
+import 'package:cekoi/domain/rules/round.dart';
 import 'package:drift/drift.dart';
 
 /// Une partie retrouvée en base, avec la date à laquelle elle a été quittée.
@@ -50,16 +51,30 @@ class GameRepository {
     if (row == null) return null;
 
     try {
-      return SavedGame(
-        game: GameState.fromJson(
-          jsonDecode(row.payload) as Map<String, dynamic>,
-        ),
-        savedAt: row.savedAt,
+      final game = GameState.fromJson(
+        jsonDecode(row.payload) as Map<String, dynamic>,
       );
+      if (!_followsCurrentRounds(game)) {
+        await clear();
+        return null;
+      }
+      return SavedGame(game: game, savedAt: row.savedAt);
     } on Object {
       await clear();
       return null;
     }
+  }
+
+  /// Une partie d'avant R2.2 a pu être sauvegardée avec deux manches, ou dans
+  /// un autre ordre : le décodage l'accepterait sans broncher, et les 24 heures
+  /// de R9.2 la feraient rejouer sous des règles qui n'existent plus. On la
+  /// traite comme une sauvegarde illisible.
+  bool _followsCurrentRounds(GameState game) {
+    if (game.rounds.length != Round.sequence.length) return false;
+    for (var i = 0; i < Round.sequence.length; i++) {
+      if (game.rounds[i] != Round.sequence[i]) return false;
+    }
+    return true;
   }
 
   /// Efface la partie sauvegardée : elle est finie, ou abandonnée.
