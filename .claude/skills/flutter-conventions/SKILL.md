@@ -30,20 +30,27 @@ app/         Router, thème, composition.
 ```
 
 Le sens des dépendances ne s'inverse jamais. Une feature n'importe **jamais** une autre
-feature : ce qui doit être partagé remonte d'un cran.
+feature : ce qui doit être partagé remonte d'un cran. `test/architecture_test.dart` le
+vérifie, sous les deux formes d'écriture — `package:` et relative. L'état applicatif partagé
+entre deux features vit dans `app/` : `currentGameProvider`, `seedSourceProvider`,
+`monotonicClockProvider`, `nowProvider`.
 
 ## Riverpod
 
 Toujours la génération de code, jamais les constructeurs manuels de providers.
 
 ```dart
-@riverpod
-class GameController extends _$GameController {
+@Riverpod(keepAlive: true)
+class PlayController extends _$PlayController {
   @override
-  GameState build() => GameState.initial();
+  int? build() => null;
 
-  void cardGuessed() {
-    state = GameEngine.reduce(state, const GameEvent.cardGuessed());
+  void found() => _dispatch(const GameEvent.cardFound());
+
+  void _dispatch(GameEvent event) {
+    final game = ref.read(currentGameProvider);
+    if (game == null) return;
+    ref.read(currentGameProvider.notifier).game = reduce(game, event);
   }
 }
 
@@ -70,11 +77,13 @@ sont des unions scellées :
 @freezed
 sealed class GameEvent with _$GameEvent {
   const factory GameEvent.turnStarted() = TurnStarted;
-  const factory GameEvent.cardGuessed() = CardGuessed;
+  const factory GameEvent.cardFound() = CardFound;
   const factory GameEvent.cardPassed() = CardPassed;
-  const factory GameEvent.tick(Duration elapsed) = Tick;
-  const factory GameEvent.turnResultCorrected(String cardId, CardResult result) =
-      TurnResultCorrected;
+  const factory GameEvent.ticked(Duration elapsed) = Ticked;
+  const factory GameEvent.resultCorrected({
+    required String cardId,
+    required TurnOutcome outcome,
+  }) = ResultCorrected;
 }
 ```
 
@@ -138,7 +147,8 @@ appel réseau ou publicitaire** — si la pub échoue, la partie démarre quand 
 
 ```bash
 dart run build_runner build --delete-conflicting-outputs
-flutter analyze     # doit être vert, zéro avertissement
+dart format lib test   # la CI le lance avec --set-exit-if-changed
+flutter analyze        # doit être vert, zéro avertissement
 flutter test
 ```
 
