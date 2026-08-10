@@ -62,11 +62,13 @@ class SettingsScreen extends ConsumerWidget {
                   onSelected: () => controller.setCardCount(preset),
                 ),
             ],
-            // Le nombre d'équipes se règle à l'étape suivante et vaut deux par
-            // défaut : le calcul de R6.1 a toujours une réponse à afficher, et
-            // il se met à jour si on revient sur ses pas.
+            // Le nombre d'équipes se règle à l'étape suivante : annoncer un
+            // total ici reviendrait à le calculer sur deux équipes, et à
+            // mentir à qui en prendra trois. L'indice dit le taux de R6.1,
+            // vrai quel que soit le nombre d'équipes ; le récapitulatif, lui,
+            // donne le total une fois les équipes connues.
             hint: setup.cardCount == null
-                ? l10n.valueAutoExplained(setup.resolvedCardCount)
+                ? l10n.valueAutoExplained(GameConfig.cardsPerTeam)
                 : null,
             freeEntry: _CardCountSlider(
               value: setup.cardCount ?? setup.resolvedCardCount,

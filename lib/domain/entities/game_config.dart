@@ -74,15 +74,22 @@ abstract class GameConfig with _$GameConfig {
     Audience.adult: 32,
   };
 
+  /// Cartes par équipe du mode *auto* (R6.1).
+  ///
+  /// Le facteur vaut `5 × 2,4 joueurs par équipe` : la durée d'une partie suit
+  /// le nombre de tours à jouer, donc le nombre d'équipes, bien plus que
+  /// l'effectif exact autour de la table — que l'application ne connaît plus
+  /// (R8.2).
+  static const int cardsPerTeam = 12;
+
   /// Calcul du mode *auto* : `12 × équipes`, arrondi au multiple de 4
   /// supérieur, borné à [16, 80] (R6.1).
   ///
-  /// C'est le réglage qui donne des parties de 30 à 40 minutes. Le facteur
-  /// vaut `5 × 2,4 joueurs par équipe` : la durée d'une partie suit le nombre
-  /// de tours à jouer, donc le nombre d'équipes, bien plus que l'effectif
-  /// exact autour de la table — que l'application ne connaît plus (R8.2).
+  /// C'est le réglage qui donne des parties de 30 à 40 minutes. Le plancher
+  /// n'est plus atteignable depuis que le calcul part des équipes — deux, au
+  /// minimum, en donnent déjà 24. Il reste comme garde si le facteur bouge.
   static int autoCardCount(int teamCount) {
-    final raw = 12 * teamCount;
+    final raw = cardsPerTeam * teamCount;
     final rounded = ((raw + 3) ~/ 4) * 4;
     return rounded.clamp(16, 80);
   }
