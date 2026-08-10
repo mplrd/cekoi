@@ -383,11 +383,6 @@
     }
   },
 
-  "gamePhasePending": "Cet écran arrive dans la tranche suivante. La partie, elle, avance.",
-  "@gamePhasePending": {
-    "description": "Explication temporaire sur les phases de fin de tour, de manche et de partie, pas encore implémentées."
-  },
-
   "actionBackHome": "Revenir à l'accueil",
   "@actionBackHome": {
     "description": "Retour à l'accueil depuis l'écran de partie prête."
@@ -732,11 +727,6 @@
     "description": "Écran vide d'une catégorie du joueur."
   },
 
-  "difficultyLabel": "Difficulté",
-  "@difficultyLabel": {
-    "description": "Libellé du réglage de difficulté d'une carte."
-  },
-
   "difficultyEasy": "Facile",
   "@difficultyEasy": {
     "description": "Difficulté 1 (R6.3)."
@@ -803,10 +793,5 @@
     "placeholders": {
       "name": { "type": "String" }
     }
-  },
-
-  "shareStaysLocal": "Les catégories ne quittent ce téléphone que si vous envoyez le fichier vous-même.",
-  "@shareStaysLocal": {
-    "description": "Rappelle que rien n'est téléversé (règle d'or n°4)."
   }
 }

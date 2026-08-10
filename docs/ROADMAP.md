@@ -3,15 +3,40 @@
 Découpage en lots pensés pour être livrables et testables indépendamment. Chaque lot laisse
 l'app dans un état jouable ou démontrable.
 
+## Où on en est
+
+| Lot | État |
+|---|---|
+| Prérequis — outillage | Fait ; comptes développeur à confirmer |
+| 1 — Fondations | Fait |
+| 2 — Moteur de jeu | Fait |
+| 3 — Parcours de configuration | Fait |
+| 4 — Jouer | Fait, **non vérifié sur iOS** |
+| 5 — Contenu | Outillage d'import fait ; les cartes sont en cours de rédaction |
+| 6 — Catégories custom | Fait, **non vérifié sur iOS** |
+| 7 — Monétisation | Non commencé |
+| 8 — Publication | Non commencé |
+
+**Une partie complète se joue de bout en bout**, se sauvegarde et se reprend. Un APK de test
+se produit avec `flutter build apk --release --split-per-abi` — signé avec la clé de debug,
+donc installable à la main mais pas publiable ; la vraie signature relève du lot 8.
+
+Ce qui reste ouvert et ne dépend pas d'un lot :
+
+- **iOS n'a jamais tourné ailleurs qu'en compilation.** La CI le construit à chaque commit,
+  rien de plus. Le lot 4 écrit le cycle de vie du chrono, et c'est exactement ce qui se juge
+  sur un vrai iPhone — voir la vigilance ci-dessous.
+- **Le son des dix dernières secondes** est celui du système, pas un son dessiné.
+- **Le contenu est le vrai goulot.** Une seule catégorie officielle de 16 cartes est livrée :
+  de quoi juger l'ergonomie, pas le rythme, qui est le cœur du jeu.
+
 ## Prérequis — outillage
 
-À faire avant tout code. Non commencé.
-
-- Installer le SDK Flutter (canal stable) et le mettre dans le `PATH`.
-- Android Studio + SDK Android + un émulateur.
-- `git init`, repo GitHub, `gh` CLI.
-- Comptes développeur : Google Play (25 $ une fois), Apple Developer (99 $/an). Les délais de
-  validation de compte se comptent en jours, à lancer tôt.
+- ~~SDK Flutter, Android Studio, SDK Android, émulateur~~ — fait.
+- ~~`git init`, repo GitHub, `gh` CLI~~ — fait, avec CI GitHub Actions sur Android et iOS.
+- **Comptes développeur : état inconnu de mon côté.** Google Play (25 $ une fois), Apple
+  Developer (99 $/an). Les délais de validation se comptent en jours : à lancer avant le
+  lot 8, pas pendant.
 
 ### Stratégie de développement et de test
 

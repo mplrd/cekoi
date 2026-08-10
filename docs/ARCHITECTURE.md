@@ -31,9 +31,13 @@ d'architecture vérifie cette contrainte automatiquement.
 ```
 lib/
   main.dart
-  app/
+  app/                        # composition, et l'état partagé entre features
     app.dart                  # MaterialApp.router
     router.dart               # go_router
+    current_game.dart         # la partie en cours, point de rendez-vous setup ↔ play
+    clock.dart                # source monotone du chrono, graine d'aléatoire
+    screen_awake.dart         # maintien d'écran, derrière un provider
+    game_persistence.dart     # sauvegarde et reprise (R9.1, R9.2)
     theme/                    # design system, couleurs, typo
   domain/                     # ── DART PUR, zéro import flutter ──
     entities/                 # Card, Deck, Player, Team, GameConfig, énumérations
@@ -43,44 +47,56 @@ lib/
       game_engine.dart        # startGame() et reduce() — le cœur
       game_phase.dart         # les phases dont dépend l'écran affiché
       turn.dart               # PlayedTurn, CardResult, TurnOutcome
-      draw.dart               # tirage du paquet, équilibrage difficulté
+      turn_clock.dart         # temps de jeu net des pauses (R3.7, R3.8)
+      draw.dart               # tirage du paquet, équilibrage, PoolVerdict (R6.2)
       team_builder.dart       # proposition de composition (R8.3)
     rules/
       round.dart              # les trois manches et leur ordre (R2.1, R2.2)
       scoring.dart            # cumul, détail par manche, équipes en tête (R5)
       game_profiles.dart      # profils de partie (R7.5) — données, pas de branchements
+      resume.dart             # fenêtre de reprise de 24 h (R9.2)
+    setup/
+      game_setup.dart         # la configuration en cours de construction (R6, R7, R8)
+      game_launch.dart        # tirage + ouverture de partie, et rejeu à l'identique
+    decks/
+      deck_exchange.dart      # format d'échange des catégories du joueur (lot 6)
     text/
       text_normalization.dart # forme comparable d'un texte de carte (R6.4)
   data/
     db/
-      database.dart           # Drift
+      database.dart           # Drift, migrations versionnées
       tables/
-      daos/
       seed/                   # lecture des JSON, upsert des lignes officielles
-    repositories/             # DeckRepository, GameRepository, SettingsRepository
+    repositories/             # DeckRepository, GameRepository
   features/                   # feature-first : un dossier = un parcours
     home/
     setup/                    # mode → catégories → réglages → équipes → récap
-    play/                     # écran de jeu, chrono, récap de tour
-    results/                  # scores de manche, podium final
-    decks/                    # CRUD des catégories et cartes custom
-    settings/
-  services/
-    ads/                      # google_mobile_ads + UMP, isolé derrière une interface
-    purchases/                # in_app_purchase, idem
-    audio/
+    play/                     # jeu, chrono, récap de tour, scores, départage, podium
+    decks/                    # CRUD des catégories et cartes du joueur
   l10n/
 assets/
   decks/*.json
+tool/
+  import_decks.py             # conversion des livraisons de contenu, hors application
 test/
   domain/                     # l'essentiel des tests, purs et rapides
   data/
   features/                   # widget tests des parcours critiques
+  decks_content_test.dart     # contrôle des JSON livrés, dont R6.4 inter-catégories
 ```
 
 Chaque dossier de `features/` contient sa propre arborescence `presentation/` (écrans,
-widgets, providers). Aucune feature n'importe une autre feature : ce qui est partagé remonte
-dans `domain/`, `data/` ou `app/theme/`.
+widgets, providers). **Aucune feature n'importe une autre feature** : ce qui est partagé
+remonte dans `domain/`, `data/` ou `app/`. `test/architecture_test.dart` le vérifie, sous les
+deux formes d'écriture — `package:` et relative.
+
+Deux écarts assumés par rapport au découpage initial :
+
+- **Pas de dossier `results/`** : les scores de manche, le départage et le podium sont des
+  phases du moteur au même titre que le tour, et l'écran de jeu les affiche à partir de la
+  même `GamePhase`. Les séparer aurait dupliqué la machine à états.
+- **Pas encore de `services/` ni de `settings/`** : la publicité et l'achat in-app relèvent
+  du lot 7, l'écran de réglages n'est pas commencé.
 
 ## Stack
 
@@ -91,10 +107,20 @@ dans `domain/`, `data/` ou `app/theme/`.
 | Base locale | `drift` + `sqlite3` 3.x | Requêtes typées à la compilation, migrations versionnées, tirage aléatoire en SQL. **`sqlite3_flutter_libs` n'est plus utilisé** : il est en fin de vie depuis que `sqlite3` 3.x embarque lui-même les binaires natifs via les build hooks de Dart. |
 | Navigation | `go_router` | Routes déclaratives, deep links pour la v2. |
 | Lints | `very_good_analysis` | Strict par défaut, évite les débats de style. |
+| Écran allumé | `wakelock_plus` | Indispensable : une partie dure 40 min avec peu d'interactions. Le narrateur mime sans toucher l'écran. |
+| Fichiers | `flutter_file_dialog` | Import et export des catégories du joueur. **Pas `file_picker`** : ses versions modernes exigent `win32 ^5` quand `wakelock_plus` exige `win32 ^6`, et sa version compatible appelle `jcenter()`, supprimé de Gradle 9. `flutter_file_dialog` ne cible que le mobile, donc pas de `win32` du tout. |
+| Chemins | `path_provider` | Base locale et fichier temporaire d'export. |
+
+Prévus, pas encore installés — ils relèvent du lot 7 :
+
+| Besoin | Choix | Pourquoi |
+|---|---|---|
 | Pub | `google_mobile_ads` | Inclut le CMP Google UMP dont on a besoin en Europe. |
 | Achat in-app | `in_app_purchase` | Officiel Flutter, couvre les deux stores. |
-| Écran allumé | `wakelock_plus` | Indispensable : une partie dure 40 min avec peu d'interactions. |
-| Sons | `just_audio` | Fin de chrono, dernières secondes. |
+
+Le **son des dix dernières secondes** passe par `SystemSound.play` de Flutter, sans paquet :
+il suit le volume et le mode silencieux de l'appareil, ce qu'un asset joué à plein régime au
+milieu d'un repas ne ferait pas. Un son dessiné et `just_audio` restent possibles ensuite.
 
 ## Modèle de données
 
@@ -105,7 +131,7 @@ conséquence directe de la règle d'or n°2. La colonne `origin` est la seule di
 
 | Colonne | Type | Note |
 |---|---|---|
-| `id` | TEXT PK | Slug stable pour l'officiel (`celebrites-fr`), UUID pour le custom. |
+| `id` | TEXT PK | Slug stable pour l'officiel (`celebrites-fr`), préfixé `custom-` pour le joueur. Le préfixe garantit deux espaces de noms disjoints : le seeder écrit par identifiant, et une catégorie du joueur nommée comme une officielle en ferait l'ombre de l'autre. |
 | `name`, `description`, `icon` | TEXT | |
 | `audience` | TEXT | `family` \| `adult` |
 | `min_age` | INT | 6, 10, 13 ou 18. Filtre les profils de partie (R7.4). |
@@ -128,11 +154,39 @@ conséquence directe de la règle d'or n°2. La colonne `origin` est la seule di
 L'ID stable des cartes officielles est important : il permet de corriger une faute de frappe
 dans un JSON sans casser l'historique des parties déjà jouées.
 
-### Partie en cours
+### `saved_games` — la partie en cours (R9.1)
 
-`games` (config JSON, statut, manche et équipe courantes), `teams`, `players`,
-`game_cards` (le paquet figé au tirage — une partie ne doit pas changer si un deck est
-modifié en cours de route), `turns`, `turn_results`.
+Une seule ligne, d'`id` figé à 1 : Cékoi est mono-partie, et une table qui pourrait en
+contenir plusieurs obligerait chaque lecture à choisir laquelle — un choix qui n'existe pas.
+
+| Colonne | Type | Note |
+|---|---|---|
+| `id` | INT PK | Toujours 1. |
+| `payload` | TEXT | `GameState` sérialisé, paquet figé compris. |
+| `saved_at` | DATETIME | Sert la fenêtre de 24 heures de R9.2. |
+
+**Écart assumé par rapport au découpage initial**, qui prévoyait `games`, `teams`, `players`,
+`game_cards`, `turns` et `turn_results` : l'état est stocké en JSON, pas déplié en tables.
+`GameState` est déjà sérialisable et le restera pour le multi-device de la v2 ; le déplier
+imposerait de faire évoluer le schéma à chaque champ ajouté au moteur, pour une donnée que
+personne ne requête jamais autrement qu'en bloc.
+
+L'écriture n'a pas lieu à chaque événement au sens littéral : le chrono en produit dix par
+seconde. Seuls les changements qui ne portent pas **que** sur le temps écoulé déclenchent une
+sauvegarde. Rien n'est perdu pour autant — passer en arrière-plan met le tour en pause (R3.7),
+et cette pause est justement un changement, donc une écriture avec le temps exact.
+
+### Migrations
+
+| Version | Changement |
+|---|---|
+| 1 | `decks`, `cards`. |
+| 2 | Ajout de `saved_games` (R9.1). |
+| 3 | Suppression de la colonne des mots interdits de `cards`. |
+
+Chaque migration a son test, et ce test part d'une base **réellement** à l'ancienne version.
+La base de test naît au schéma courant : migrer par-dessus ne prouverait rien, et c'est
+exactement le piège qui avait rendu décoratif le premier test de migration.
 
 ## Seeding
 
@@ -150,10 +204,27 @@ Le seeding tourne dans un isolate au premier lancement pour ne pas bloquer l'UI,
 
 Piège classique : `Timer.periodic` dérive et n'est pas fiable en arrière-plan.
 
-L'implémentation s'appuie sur un `Stopwatch` comme source de vérité et un `Ticker` pour le
-rafraîchissement d'affichage. Le temps restant est toujours *calculé*, jamais *décrémenté*.
-Un `AppLifecycleListener` met le `Stopwatch` en pause sur `paused` et déclenche le compte à
-rebours de reprise sur `resumed` (R3.7).
+L'implémentation s'appuie sur une source **monotone** — un `Stopwatch`, jamais l'horloge
+système : changer l'heure de son téléphone en plein tour ne doit pas faire bondir le chrono.
+`TurnClock`, du domaine et pur, en dérive le temps de jeu net des pauses, et le réducteur ne
+reçoit qu'un `Ticked(elapsed)` déjà nettoyé. Il n'a ainsi jamais à savoir que l'application
+est passée en arrière-plan.
+
+Le temps restant est toujours *calculé* depuis le temps consommé, jamais *décrémenté*.
+
+**L'état est la source de vérité du chrono, pas le contrôleur.** Le contrôleur ne survit pas
+à la fermeture de l'application : à chaque redémarrage du chrono, il reprend depuis
+`turn.elapsed`. Sans ça, une partie reprise offrait à l'équipe active le temps déjà consommé,
+et une partie tuée hors pause donnait un tour qui ne se terminait jamais — le réducteur étant
+total, rien n'en paraissait anormal.
+
+Le ticker suit l'état et non les seules actions : une partie posée de l'extérieur — reprise
+après fermeture, rejeu depuis le podium, lancement depuis la configuration — démarre son
+chrono comme les autres.
+
+`inactive` compte comme un arrière-plan. Sur iOS il couvre le centre de contrôle et la
+bannière d'appel entrant : se tromper dans ce sens coûte trois secondes de décompte, se
+tromper dans l'autre laisse une équipe jouer écran masqué. **À vérifier sur un vrai iPhone.**
 
 ## Tests
 
