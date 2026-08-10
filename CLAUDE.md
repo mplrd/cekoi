@@ -49,6 +49,14 @@ flutter run
 `dart format` n'est pas un confort : la CI lance `--set-exit-if-changed` et rougit sur un
 fichier écrit à la main. `flutter analyze` ne le voit pas.
 
+L'import de contenu est en Python, hors de l'application :
+
+```bash
+python tool/import_decks.py livraison.csv --out assets/decks/animaux.json \
+    --id animaux --name Animaux --audience family --min-age 6
+python -m unittest discover -s tool -t tool    # tests de l'import
+```
+
 Après toute modification d'une classe `@freezed`, `@riverpod` ou d'une table Drift, il faut
 relancer `build_runner` — sinon la compilation échoue sur des fichiers `.g.dart` obsolètes.
 Le code généré n'est pas versionné : après un clone ou un changement de branche, `build_runner`
