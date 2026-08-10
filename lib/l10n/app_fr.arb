@@ -216,9 +216,9 @@
     "description": "Valeur automatique du nombre de cartes (R6.1)."
   },
 
-  "valueAutoExplained": "Calculé sur le nombre d'équipes, soit {count} ici.",
+  "valueAutoExplained": "{count} cartes par équipe, une fois les équipes formées à l'étape suivante.",
   "@valueAutoExplained": {
-    "description": "Explication du mode auto, avec le nombre calculé (R6.1).",
+    "description": "Explication du mode auto. Dit le nombre par équipe et non un total : le nombre d'équipes se choisit à l'étape suivante (R6.1).",
     "placeholders": {
       "count": { "type": "int" }
     }
@@ -461,6 +461,11 @@
   "outcomePassed": "Passée",
   "@outcomePassed": {
     "description": "Résultat d'une carte passée, dans le récapitulatif."
+  },
+
+  "outcomeMissed": "Pas trouvée",
+  "@outcomeMissed": {
+    "description": "Résultat d'une carte non devinée en manche 1, où l'on ne passe pas (R3.9)."
   },
 
   "actionConfirmTurn": "Valider le tour",

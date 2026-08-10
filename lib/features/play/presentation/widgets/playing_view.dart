@@ -141,8 +141,9 @@ class _CardZone extends ConsumerWidget {
         if (vitesse > 0) {
           controller.found();
         } else if (vitesse < 0 && game.canPass) {
-          // Muet en manche 1 (R3.9) : le geste ne doit pas contourner une
-          // action que l'écran n'offre pas.
+          // Muet en manche 1 (R3.9), par cohérence avec la zone retirée. Ce
+          // qui rend la règle étanche est le réducteur, qui refuse
+          // l'événement ; cette garde lui évite un envoi sans effet.
           controller.passed();
         }
       },

@@ -75,6 +75,11 @@ class TurnSummaryView extends ConsumerWidget {
                       _ResultTile(
                         text: game.cardById(result.cardId)?.text ?? '',
                         outcome: result.outcome,
+                        // En manche 1 on ne passe pas (R3.9) : une carte non
+                        // devinée n'est pas « passée », elle n'a pas été
+                        // trouvée. Le mot que l'écran de jeu vient d'exclure
+                        // ne doit pas revenir au récapitulatif.
+                        allowsPass: game.round.allowsPass,
                         onToggle: () => ref
                             .read(playControllerProvider.notifier)
                             .correctResult(result.cardId, _opposite(result)),
@@ -104,11 +109,17 @@ class _ResultTile extends StatelessWidget {
   const _ResultTile({
     required this.text,
     required this.outcome,
+    required this.allowsPass,
     required this.onToggle,
   });
 
   final String text;
   final TurnOutcome outcome;
+
+  /// La manche autorise-t-elle à passer (R3.9) — ce qui décide du mot, pas du
+  /// sort de la carte : le domaine ne connaît que `found` et `passed`.
+  final bool allowsPass;
+
   final VoidCallback onToggle;
 
   @override
@@ -125,7 +136,9 @@ class _ResultTile extends StatelessWidget {
       ),
       title: Text(text, style: theme.textTheme.titleMedium),
       trailing: Text(
-        found ? l10n.outcomeFound : l10n.outcomePassed,
+        found
+            ? l10n.outcomeFound
+            : (allowsPass ? l10n.outcomePassed : l10n.outcomeMissed),
         style: theme.textTheme.labelMedium?.copyWith(
           color: found ? AppColors.found : theme.colorScheme.onSurfaceVariant,
         ),

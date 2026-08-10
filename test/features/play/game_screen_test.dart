@@ -4,6 +4,7 @@ import 'package:cekoi/app/router.dart';
 import 'package:cekoi/app/screen_awake.dart';
 import 'package:cekoi/domain/engine/game_phase.dart';
 import 'package:cekoi/domain/engine/game_state.dart';
+import 'package:cekoi/domain/engine/turn.dart';
 import 'package:cekoi/domain/entities/card.dart' as domain;
 import 'package:cekoi/domain/entities/difficulty.dart';
 import 'package:cekoi/features/play/presentation/game_screen.dart';
@@ -320,8 +321,11 @@ void main() {
     testWidgets('le glissement vers la gauche ne passe pas non plus', (
       tester,
     ) async {
-      // Le geste double les deux zones : sans garde, il contournerait une
-      // action que l'écran n'offre pas.
+      // Le geste double les deux zones. Ce qui rend la manche 1 étanche est le
+      // réducteur, pas la garde d'écran : retirer `game.canPass` de
+      // `_CardZone` ne fait rougir aucun test, parce que l'événement part et
+      // se fait refuser sans rien changer. La garde évite l'envoi inutile ; la
+      // règle, elle, tient plus bas.
       await pumpScreen(tester, game: testGame(roundIndex: 0));
       await startTurn(tester);
       final avant = partie();
@@ -335,6 +339,31 @@ void main() {
 
       expect(partie().pile, avant.pile);
       expect(partie().turn!.results, isEmpty);
+      await stopGame(tester);
+    });
+
+    testWidgets('le même glissement passe bien la carte en manche 2', (
+      tester,
+    ) async {
+      // Cas de contrôle du test précédent : sans lui, un geste mort dans
+      // toutes les manches le laisserait vert.
+      await pumpScreen(tester, game: testGame(roundIndex: 1));
+      await startTurn(tester);
+      final avant = partie();
+
+      await tester.fling(
+        find.byType(GameCardFace),
+        const Offset(-300, 0),
+        1000,
+      );
+      await tester.pump();
+
+      expect(partie().pile, isNot(avant.pile));
+      expect(
+        partie().turn!.results.single.outcome,
+        TurnOutcome.passed,
+        reason: 'le glissement gauche passe la carte',
+      );
       await stopGame(tester);
     });
   });
