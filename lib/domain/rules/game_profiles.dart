@@ -101,9 +101,20 @@ class ProfileAvailability {
 }
 
 /// Les catégories qu'un profil présélectionne (R7.1 + R7.4).
+///
+/// Les catégories premium en sont exclues. L'écran de sélection les verrouille
+/// tant qu'elles ne sont pas débloquées : un profil qui en cochait une donnait
+/// au joueur des cartes qu'il ne peut ni retirer — la case est grisée — ni
+/// avoir payées. Elles ne comptent pas non plus dans le volume qui décide de
+/// la jouabilité d'un profil (R7.8), sans quoi il s'annoncerait jouable grâce
+/// à des cartes que le tirage ne prendra pas.
+///
+/// Quand le déblocage existera, c'est ici que la possession se consultera —
+/// une catégorie débloquée redeviendra sélectionnable par profil.
 List<Deck> decksForProfile(GameProfile profile, List<Deck> decks) => [
   for (final deck in decks)
-    if (deck.isDrawableIn(profile.mode) &&
+    if (!deck.isPremium &&
+        deck.isDrawableIn(profile.mode) &&
         deck.minAge.isAllowedBy(profile.maxDeckAge))
       deck,
 ];

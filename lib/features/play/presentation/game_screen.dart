@@ -36,17 +36,58 @@ class GameScreen extends ConsumerWidget {
       );
     }
 
-    return Scaffold(
-      body: SafeArea(
-        child: switch (game.phase) {
-          GamePhase.turnIntro => TurnIntroView(game: game),
-          GamePhase.playing => PlayingView(game: game),
-          GamePhase.turnSummary => TurnSummaryView(game: game),
-          GamePhase.roundSummary => RoundSummaryView(game: game),
-          GamePhase.tieBreak => TieBreakView(game: game),
-          GamePhase.finished => PodiumView(game: game),
-        },
+    return PopScope(
+      // Une partie terminée se quitte librement : il n'y a plus rien à perdre.
+      canPop: game.phase == GamePhase.finished,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop || !context.mounted) return;
+        if (await _confirmQuit(context) && context.mounted) {
+          ref.read(currentGameProvider.notifier).game = null;
+          context.go(AppRoutes.home);
+        }
+      },
+      child: Scaffold(
+        body: SafeArea(
+          child: switch (game.phase) {
+            GamePhase.turnIntro => TurnIntroView(game: game),
+            GamePhase.playing => PlayingView(game: game),
+            GamePhase.turnSummary => TurnSummaryView(game: game),
+            GamePhase.roundSummary => RoundSummaryView(game: game),
+            GamePhase.tieBreak => TieBreakView(game: game),
+            GamePhase.finished => PodiumView(game: game),
+          },
+        ),
       ),
     );
+  }
+
+  /// Demande confirmation avant d'abandonner (`SPEC.md` : aucun geste
+  /// irréversible sans confirmation).
+  ///
+  /// Un retour système en plein tour est vite arrivé, et perdre le tour d'une
+  /// équipe en fait partie. La confirmation rappelle au passage que la partie
+  /// peut être reprise depuis l'accueil (R9.1) plutôt qu'abandonnée.
+  Future<bool> _confirmQuit(BuildContext context) async {
+    final l10n = AppLocalizations.of(context);
+
+    final quitte = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.quitGameTitle),
+        content: Text(l10n.quitGameBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(l10n.actionKeepPlaying),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(l10n.actionQuitGame),
+          ),
+        ],
+      ),
+    );
+
+    return quitte ?? false;
   }
 }

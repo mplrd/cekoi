@@ -64,12 +64,14 @@ Deck testDeck(
   String id, {
   MinAge minAge = MinAge.six,
   Audience audience = Audience.family,
+  bool isPremium = false,
 }) => Deck(
   id: id,
   name: id,
   audience: audience,
   minAge: minAge,
   origin: DeckOrigin.official,
+  isPremium: isPremium,
 );
 
 Player testPlayer(String id, {bool isChild = false}) =>

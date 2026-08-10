@@ -25,8 +25,13 @@ class PlayingView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final countdown = ref.watch(playControllerProvider);
 
-    // Retour haptique sur chaque seconde de la fin (`SPEC.md`). Le narrateur
-    // regarde la carte, pas le chrono : c'est par la main qu'il le sent.
+    // Son discret et retour haptique sur chaque seconde de la fin (`SPEC.md`).
+    // Le narrateur regarde la carte, pas le chrono : il doit sentir la fin
+    // arriver sans lever les yeux.
+    //
+    // Le son est celui du système plutôt qu'un fichier : il suit le volume et
+    // le mode silencieux de l'appareil, ce qu'un asset joué à plein régime au
+    // milieu d'un repas ne ferait pas. Un son dessiné pourra le remplacer.
     ref.listen(
       currentGameProvider.select(
         (g) => (g?.remaining ?? Duration.zero).inSeconds,
@@ -35,6 +40,7 @@ class PlayingView extends ConsumerWidget {
         if (avant == apres || apres <= 0) return;
         if (apres < TurnTimerRing.urgentBelow.inSeconds) {
           unawaited(HapticFeedback.lightImpact());
+          unawaited(SystemSound.play(SystemSoundType.click));
         }
       },
     );

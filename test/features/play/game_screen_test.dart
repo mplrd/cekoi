@@ -1,6 +1,8 @@
 import 'package:cekoi/app/clock.dart';
 import 'package:cekoi/app/current_game.dart';
+import 'package:cekoi/app/router.dart';
 import 'package:cekoi/app/screen_awake.dart';
+import 'package:cekoi/domain/engine/game_phase.dart';
 import 'package:cekoi/domain/engine/game_state.dart';
 import 'package:cekoi/domain/entities/card.dart' as domain;
 import 'package:cekoi/domain/entities/difficulty.dart';
@@ -8,8 +10,10 @@ import 'package:cekoi/features/play/presentation/game_screen.dart';
 import 'package:cekoi/features/play/presentation/widgets/game_card_face.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../support/fixtures.dart';
 import '../../support/providers.dart';
@@ -39,8 +43,29 @@ void main() {
   late FakeClock clock;
   late ProviderContainer container;
 
+  /// Appels natifs déclenchés par l'écran, par nom de méthode.
+  ///
+  /// Le son et la vibration passent par le canal `flutter/platform`, sans
+  /// effet observable dans l'arbre de widgets : sans les compter, leur
+  /// suppression ne ferait rougir aucun test.
+  late List<String> platformCalls;
+
   setUpAll(() async {
     l10n = await AppLocalizations.delegate.load(const Locale('fr'));
+  });
+
+  setUp(() {
+    platformCalls = [];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+          platformCalls.add(call.method);
+          return null;
+        });
+  });
+
+  tearDown(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, null);
   });
 
   /// Monte l'écran de jeu sur une partie donnée.
@@ -56,11 +81,26 @@ void main() {
           monotonicClockProvider.overrideWithValue(clock.read),
           screenAwakeProvider.overrideWithValue(fakeScreenAwake()),
         ],
-        child: const MaterialApp(
-          locale: Locale('fr'),
+        // Routeur minimal plutôt qu'un simple `home` : quitter la partie
+        // ramène à l'accueil, et sans routeur dans le contexte l'écran lève
+        // au lieu de naviguer.
+        child: MaterialApp.router(
+          locale: const Locale('fr'),
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          home: GameScreen(),
+          routerConfig: GoRouter(
+            initialLocation: AppRoutes.game,
+            routes: [
+              GoRoute(
+                path: AppRoutes.home,
+                builder: (_, _) => const Scaffold(body: Text('accueil')),
+              ),
+              GoRoute(
+                path: AppRoutes.game,
+                builder: (_, _) => const GameScreen(),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -80,6 +120,18 @@ void main() {
     await tester.pump();
     await clock.advance(tester, const Duration(seconds: 3));
   }
+
+  /// Déclenche un retour système, comme le bouton ou le geste d'Android.
+  Future<void> simulateSystemBack() => TestDefaultBinaryMessengerBinding
+      .instance
+      .defaultBinaryMessenger
+      .handlePlatformMessage(
+        'flutter/navigation',
+        const JSONMethodCodec().encodeMethodCall(
+          const MethodCall('popRoute'),
+        ),
+        (_) {},
+      );
 
   /// Termine proprement : sans ça, le `Timer` du chrono survit au test.
   Future<void> stopGame(WidgetTester tester) async {
@@ -234,6 +286,108 @@ void main() {
         ),
         findsOneWidget,
       );
+      await stopGame(tester);
+    });
+  });
+
+  group('les dix dernières secondes se sentent sans regarder', () {
+    testWidgets('chaque seconde de la fin sonne et vibre', (tester) async {
+      // Le narrateur a les yeux sur la carte : c'est par l'oreille et la main
+      // qu'il doit sentir la fin arriver.
+      await pumpScreen(
+        tester,
+        game: testGame(turnDuration: const Duration(seconds: 12)),
+      );
+      await startTurn(tester);
+
+      await clock.advance(tester, const Duration(seconds: 2));
+      platformCalls.clear();
+      expect(partie().remaining, const Duration(seconds: 10));
+
+      await clock.advance(tester, const Duration(seconds: 3));
+
+      expect(
+        platformCalls.where((m) => m == 'SystemSound.play'),
+        hasLength(3),
+        reason: 'Une fois par seconde, pas une fois par tic',
+      );
+      expect(
+        platformCalls.where((m) => m == 'HapticFeedback.vibrate'),
+        hasLength(3),
+      );
+      await stopGame(tester);
+    });
+
+    testWidgets('au-dessus du seuil, rien ne se déclenche', (tester) async {
+      await pumpScreen(
+        tester,
+        game: testGame(turnDuration: const Duration(seconds: 60)),
+      );
+      await startTurn(tester);
+      platformCalls.clear();
+
+      await clock.advance(tester, const Duration(seconds: 5));
+
+      expect(
+        platformCalls.where(
+          (m) => m == 'SystemSound.play' || m == 'HapticFeedback.vibrate',
+        ),
+        isEmpty,
+        reason: 'Sonner pendant tout le tour rendrait le signal inutile',
+      );
+      await stopGame(tester);
+    });
+  });
+
+  group('quitter une partie demande confirmation', () {
+    testWidgets('le retour système ne quitte pas tout seul', (tester) async {
+      // `SPEC.md` : aucun geste irréversible sans confirmation. Perdre le tour
+      // d'une équipe en est un, et le retour système est vite déclenché.
+      await pumpScreen(tester);
+      await startTurn(tester);
+
+      await simulateSystemBack();
+      await tester.pumpAndSettle();
+
+      expect(find.text(l10n.quitGameTitle), findsOneWidget);
+      expect(
+        container.read(currentGameProvider),
+        isNotNull,
+        reason: 'La partie est toujours là tant que rien n’est confirmé',
+      );
+
+      await tester.tap(find.text(l10n.actionKeepPlaying));
+      await tester.pumpAndSettle();
+      expect(find.text(l10n.quitGameTitle), findsNothing);
+      await stopGame(tester);
+    });
+
+    testWidgets('confirmer abandonne la partie', (tester) async {
+      await pumpScreen(tester);
+      await startTurn(tester);
+
+      await simulateSystemBack();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(l10n.actionQuitGame));
+      await tester.pumpAndSettle();
+
+      expect(container.read(currentGameProvider), isNull);
+    });
+
+    testWidgets('une partie terminée se quitte sans rien demander', (
+      tester,
+    ) async {
+      // Il n'y a plus rien à perdre : demander confirmation serait une friction
+      // gratuite au moment où tout le monde repose le téléphone.
+      await pumpScreen(
+        tester,
+        game: testGame().copyWith(phase: GamePhase.finished),
+      );
+
+      await simulateSystemBack();
+      await tester.pumpAndSettle();
+
+      expect(find.text(l10n.quitGameTitle), findsNothing);
       await stopGame(tester);
     });
   });
