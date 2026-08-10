@@ -1,5 +1,5 @@
 import 'package:cekoi/features/home/presentation/home_screen.dart';
-import 'package:cekoi/features/play/presentation/game_ready_screen.dart';
+import 'package:cekoi/features/play/presentation/game_screen.dart';
 import 'package:cekoi/features/setup/presentation/decks_screen.dart';
 import 'package:cekoi/features/setup/presentation/mode_screen.dart';
 import 'package:cekoi/features/setup/presentation/settings_screen.dart';
@@ -65,7 +65,7 @@ GoRouter createAppRouter() => GoRouter(
     GoRoute(
       path: AppRoutes.game,
       name: 'game',
-      builder: (context, state) => const GameReadyScreen(),
+      builder: (context, state) => const GameScreen(),
     ),
   ],
 );

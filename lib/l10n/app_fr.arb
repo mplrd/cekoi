@@ -383,26 +383,138 @@
     }
   },
 
-  "gameReadyTitle": "Partie prête",
-  "@gameReadyTitle": {
-    "description": "Titre de l'écran affiché après le tirage, en attendant l'écran de jeu."
-  },
-
-  "gameReadyDeck": "{count, plural, =1{1 carte tirée} other{{count} cartes tirées}}",
-  "@gameReadyDeck": {
-    "description": "Taille du paquet tiré, sur l'écran de partie prête.",
-    "placeholders": {
-      "count": { "type": "int" }
-    }
-  },
-
-  "gameReadyPending": "L'écran de jeu arrive au lot suivant. Le paquet, lui, est bien tiré.",
-  "@gameReadyPending": {
-    "description": "Explication temporaire tant que l'écran de jeu n'existe pas."
+  "gamePhasePending": "Cet écran arrive dans la tranche suivante. La partie, elle, avance.",
+  "@gamePhasePending": {
+    "description": "Explication temporaire sur les phases de fin de tour, de manche et de partie, pas encore implémentées."
   },
 
   "actionBackHome": "Revenir à l'accueil",
   "@actionBackHome": {
     "description": "Retour à l'accueil depuis l'écran de partie prête."
+  },
+
+  "roundNameFree": "Description libre",
+  "@roundNameFree": {
+    "description": "Nom de la manche 1."
+  },
+
+  "roundNameOneWord": "Un seul mot",
+  "@roundNameOneWord": {
+    "description": "Nom de la manche 2."
+  },
+
+  "roundNameMime": "Mime",
+  "@roundNameMime": {
+    "description": "Nom de la manche 3."
+  },
+
+  "roundRuleFree": "Dis ce que tu veux, sauf les mots de la carte. Pas de gestes.",
+  "@roundRuleFree": {
+    "description": "Contrainte de la manche 1, rappelée avant le tour."
+  },
+
+  "roundRuleOneWord": "Un seul mot, répétable à volonté. Rien d'autre, aucun geste.",
+  "@roundRuleOneWord": {
+    "description": "Contrainte de la manche 2."
+  },
+
+  "roundRuleMime": "Silence total. Gestes uniquement.",
+  "@roundRuleMime": {
+    "description": "Contrainte de la manche 3."
+  },
+
+  "roundStep": "Manche {current} sur {total}",
+  "@roundStep": {
+    "description": "Position de la manche en cours.",
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+
+  "turnIntroTeam": "Au tour de {team}",
+  "@turnIntroTeam": {
+    "description": "Annonce de l'équipe active avant un tour.",
+    "placeholders": {
+      "team": { "type": "String" }
+    }
+  },
+
+  "turnIntroNarrator": "Passez le téléphone à {narrator}",
+  "@turnIntroNarrator": {
+    "description": "Consigne de passage du téléphone, pour que la manche ne s'enchaîne pas avant que l'appareil ait changé de mains.",
+    "placeholders": {
+      "narrator": { "type": "String" }
+    }
+  },
+
+  "actionStartTurn": "C'est parti",
+  "@actionStartTurn": {
+    "description": "Déclenche le compte à rebours qui précède le tour."
+  },
+
+  "actionFound": "Trouvé",
+  "@actionFound": {
+    "description": "Action de carte devinée, à droite de l'écran de jeu."
+  },
+
+  "actionPass": "Passer",
+  "@actionPass": {
+    "description": "Action de carte passée, à gauche de l'écran de jeu."
+  },
+
+  "actionPause": "Pause",
+  "@actionPause": {
+    "description": "Bouton de pause de l'écran de jeu."
+  },
+
+  "actionResume": "Reprendre",
+  "@actionResume": {
+    "description": "Lève une pause demandée à la main."
+  },
+
+  "gamePausedTitle": "Partie en pause",
+  "@gamePausedTitle": {
+    "description": "Titre de l'écran de pause, qui masque la carte."
+  },
+
+  "gamePausedBody": "La carte est masquée et le chrono est arrêté.",
+  "@gamePausedBody": {
+    "description": "Explication de l'écran de pause."
+  },
+
+  "gamePassLocked": "Dernière carte : impossible de passer.",
+  "@gamePassLocked": {
+    "description": "Raison du grisage de Passer sur la dernière carte (R3.4)."
+  },
+
+  "gameTabooTitle": "Interdits",
+  "@gameTabooTitle": {
+    "description": "En-tête de la liste des mots tabous, en manche 1."
+  },
+
+  "gameRemainingCards": "{count, plural, =1{1 carte restante} other{{count} cartes restantes}}",
+  "@gameRemainingCards": {
+    "description": "Cartes encore dans le paquet de la manche.",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+
+  "gameTeamScore": "{team} · {score}",
+  "@gameTeamScore": {
+    "description": "Équipe active et son score courant, discrets en haut de l'écran de jeu.",
+    "placeholders": {
+      "team": { "type": "String" },
+      "score": { "type": "int" }
+    }
+  },
+
+  "gameSecondsLeft": "{count}",
+  "@gameSecondsLeft": {
+    "description": "Secondes restantes, en très grand au centre de l'anneau.",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
   }
 }
