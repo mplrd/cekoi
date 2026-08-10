@@ -20,9 +20,12 @@ class TeamsScreen extends ConsumerStatefulWidget {
 }
 
 class _TeamsScreenState extends ConsumerState<TeamsScreen> {
-  /// Un contrôleur par équipe, créés à la demande et jamais détruits avant
-  /// `dispose` : réduire le nombre d'équipes puis remonter doit retrouver le
-  /// nom qu'on avait tapé tant qu'on n'a pas quitté l'écran.
+  /// Un contrôleur par équipe, créés à la demande.
+  ///
+  /// Le domaine fait foi sur les noms : redescendre le nombre d'équipes coupe
+  /// celles du bas, et remonter ne les ressuscite pas (R8.4, cas limite 14).
+  /// Les contrôleurs doivent donc disparaître avec elles — les garder ferait
+  /// afficher un nom que la partie n'emporterait pas.
   final _controllers = <int, TextEditingController>{};
 
   @override
@@ -37,6 +40,18 @@ class _TeamsScreenState extends ConsumerState<TeamsScreen> {
     final existing = _controllers[index];
     if (existing != null) return existing;
     return _controllers[index] = TextEditingController(text: value);
+  }
+
+  /// Change le nombre d'équipes en jetant les champs des équipes retirées.
+  ///
+  /// Le tri se fait ici et non pendant `build` : écrire dans un
+  /// `TextEditingController` en cours de construction ferait reconstruire le
+  /// champ qui l'écoute.
+  void _setTeamCount(int count) {
+    for (final index in _controllers.keys.toList()) {
+      if (index >= count) _controllers.remove(index)!.dispose();
+    }
+    ref.read(setupControllerProvider.notifier).setTeamCount(count);
   }
 
   @override
@@ -57,7 +72,7 @@ class _TeamsScreenState extends ConsumerState<TeamsScreen> {
         children: [
           _TeamCountSelector(
             value: setup.teamCount,
-            onChanged: controller.setTeamCount,
+            onChanged: _setTeamCount,
           ),
           const SizedBox(height: 8),
           Text(
@@ -132,7 +147,9 @@ class _TeamCountSelector extends StatelessWidget {
             ActionChip(
               avatar: const Icon(Icons.add),
               label: Text(l10n.teamCountMore),
-              onPressed: () => onChanged(top + 1),
+              // Une équipe de plus que celles qu'on joue, pas une de plus que
+              // la rangée : à deux équipes, « Plus » en donne trois.
+              onPressed: () => onChanged(value + 1),
               padding: const EdgeInsets.symmetric(
                 horizontal: 16,
                 vertical: 12,

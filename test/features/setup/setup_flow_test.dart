@@ -192,6 +192,70 @@ void main() {
     );
   });
 
+  testWidgets('R8.1 — « Plus » ajoute une équipe, pas cinq', (tester) async {
+    // La rangée de pastilles s'arrête à six. Le bouton doit compter depuis les
+    // équipes qu'on joue et non depuis le bout de la rangée, sinon deux
+    // équipes en deviennent sept d'un tap — et le paquet auto passe à 80.
+    await installDeck('animaux', easy: 15, medium: 15, hard: 15);
+    await pumpApp(tester);
+
+    await tapText(tester, l10n.homePlay);
+    await tapText(tester, l10n.modeFamily);
+    await tapText(tester, l10n.setupCustomize);
+    await tapText(tester, 'animaux');
+    await tapText(tester, l10n.actionContinue);
+    await tapText(tester, l10n.actionContinue);
+
+    expect(find.byType(TextField), findsNWidgets(2));
+
+    await tapText(tester, l10n.teamCountMore);
+
+    expect(find.byType(TextField), findsNWidgets(3));
+  });
+
+  testWidgets('R8.4 — un nom coupé ne revient pas si on remonte', (
+    tester,
+  ) async {
+    // Cas limite 14. L'écran garde un champ par équipe : si ces champs
+    // survivent à la baisse du nombre d'équipes, il affiche un nom que le
+    // domaine a jeté, et la partie part sous un autre — visible dès le
+    // premier tour.
+    await installDeck('animaux', easy: 15, medium: 15, hard: 15);
+    await pumpApp(tester);
+
+    await tapText(tester, l10n.homePlay);
+    await tapText(tester, l10n.modeFamily);
+    await tapText(tester, l10n.setupCustomize);
+    await tapText(tester, 'animaux');
+    await tapText(tester, l10n.actionContinue);
+    await tapText(tester, l10n.actionContinue);
+
+    await tapText(tester, '3');
+    await tester.enterText(find.byType(TextField).at(0), 'Les Verts');
+    await tester.enterText(find.byType(TextField).at(2), 'Les Bleus');
+    await tester.pumpAndSettle();
+
+    await tapText(tester, '2');
+    await tapText(tester, '3');
+
+    expect(
+      tester.widget<TextField>(find.byType(TextField).at(2)).controller?.text,
+      isEmpty,
+      reason: "le champ montre ce que la partie emportera, pas ce qu'on a tapé",
+    );
+
+    await tapText(tester, l10n.actionContinue);
+    await tapText(tester, l10n.actionStartGame);
+
+    // « Les Verts » n'a jamais été coupé, lui : R8.4 garde les noms des
+    // équipes qui restent, et c'est ce qui distingue la correction d'un simple
+    // effacement de tous les champs.
+    expect(
+      launchedGame(tester).teams.map((t) => t.name),
+      ['Les Verts', l10n.teamDefaultName(2), l10n.teamDefaultName(3)],
+    );
+  });
+
   testWidgets(
     'un profil sans assez de cartes est visible mais inactif (R7.8)',
     (tester) async {
