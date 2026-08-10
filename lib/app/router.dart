@@ -1,3 +1,5 @@
+import 'package:cekoi/features/decks/presentation/deck_cards_screen.dart';
+import 'package:cekoi/features/decks/presentation/my_decks_screen.dart';
 import 'package:cekoi/features/home/presentation/home_screen.dart';
 import 'package:cekoi/features/play/presentation/game_screen.dart';
 import 'package:cekoi/features/setup/presentation/decks_screen.dart';
@@ -23,6 +25,10 @@ abstract final class AppRoutes {
   static const String setupTeams = '/jouer/equipes';
   static const String setupSummary = '/jouer/recap';
   static const String game = '/partie';
+  static const String myDecks = '/mes-categories';
+
+  /// Cartes d'une catégorie du joueur.
+  static String deckCards(String deckId) => '$myDecks/$deckId';
 }
 
 /// Fabrique un routeur neuf.
@@ -66,6 +72,19 @@ GoRouter createAppRouter() => GoRouter(
       path: AppRoutes.game,
       name: 'game',
       builder: (context, state) => const GameScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.myDecks,
+      name: 'my-decks',
+      builder: (context, state) => const MyDecksScreen(),
+      routes: [
+        GoRoute(
+          path: ':deckId',
+          name: 'deck-cards',
+          builder: (context, state) =>
+              DeckCardsScreen(deckId: state.pathParameters['deckId']!),
+        ),
+      ],
     ),
   ],
 );

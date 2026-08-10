@@ -79,7 +79,10 @@ class _Menu extends ConsumerWidget {
           child: Text(l10n.homePlay),
         ),
         const SizedBox(height: 16),
-        OutlinedButton(onPressed: null, child: Text(l10n.homeMyDecks)),
+        OutlinedButton(
+          onPressed: () => unawaited(context.push(AppRoutes.myDecks)),
+          child: Text(l10n.homeMyDecks),
+        ),
         const SizedBox(height: 16),
         OutlinedButton(onPressed: null, child: Text(l10n.homeSettings)),
         const SizedBox(height: 32),
