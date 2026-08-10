@@ -60,7 +60,6 @@ class _QuickAdd extends ConsumerStatefulWidget {
 class _QuickAddState extends ConsumerState<_QuickAdd> {
   final _text = TextEditingController();
   final _focus = FocusNode();
-  Difficulty _difficulty = Difficulty.medium;
   bool _doublon = false;
 
   @override
@@ -74,9 +73,13 @@ class _QuickAddState extends ConsumerState<_QuickAdd> {
     final propre = _text.text.trim();
     if (propre.isEmpty) return;
 
+    // Pas de niveau à la saisie : une carte entre en moyen et se règle ensuite
+    // d'un tap sur elle. Un sélecteur en tête d'écran se lisait comme le niveau
+    // de la catégorie, alors que « Vacances » contient des faciles comme des
+    // difficiles — la difficulté n'appartient qu'à la carte.
     final ajoutee = await ref
         .read(deckCardsProvider(widget.deckId).notifier)
-        .add(propre, difficulty: _difficulty);
+        .add(propre);
 
     if (!mounted) return;
     setState(() => _doublon = !ajoutee);
@@ -85,8 +88,6 @@ class _QuickAddState extends ConsumerState<_QuickAdd> {
     // reste sous les yeux pour être corrigé plutôt que retapé.
     if (ajoutee) {
       _text.clear();
-      // La difficulté, elle, ne se réinitialise pas : on saisit souvent une
-      // série de cartes de même niveau.
       _focus.requestFocus();
     }
   }
@@ -95,22 +96,14 @@ class _QuickAddState extends ConsumerState<_QuickAdd> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
 
-    // Le formulaire se lit de haut en bas et **finit par son action** : la
-    // difficulté d'abord, le texte ensuite, le bouton en dernier. Il a d'abord
-    // été écrit dans l'autre sens — un « + » collé au champ, la difficulté en
-    // dessous — et le retour d'usage a été immédiat : on ne sait pas si la
-    // carte part avec le niveau affiché, puisqu'il reste des champs après le
-    // bouton.
+    // Le formulaire se lit de haut en bas et **finit par son action** : le
+    // texte, puis le bouton. Il n'y a plus rien après lui — c'est ce qui rend
+    // évident que taper « Ajouter » envoie exactement ce qu'on vient d'écrire.
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _DifficultyPicker(
-            value: _difficulty,
-            onChanged: (d) => setState(() => _difficulty = d),
-          ),
-          const SizedBox(height: 12),
           TextField(
             controller: _text,
             focusNode: _focus,
