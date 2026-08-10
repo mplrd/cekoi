@@ -76,6 +76,85 @@ void main() {
     });
   });
 
+  group('R4.5 — une manche dure autant de tours qu il en faut', () {
+    test('cas limite 16 : un tour fini paquet non vide relance la manche', () {
+      // La manche ne s'arrête pas au bout d'un tour : le paquet fait le tour
+      // de la table autant de fois qu'il le faut. Sans ça, les cartes jamais
+      // vues sortiraient de la partie et la manche suivante ne rejouerait plus
+      // le même paquet — le principe même du jeu (section 1).
+      final state = playTurn(testGame(cardCount: 12, roundIndex: 0), found: 3);
+
+      expect(
+        state.phase,
+        GamePhase.turnIntro,
+        reason: 'un nouveau tour s ouvre, pas les scores intermédiaires',
+      );
+      expect(state.roundIndex, 0, reason: 'toujours la manche 1');
+      expect(state.pile, hasLength(9));
+      expect(state.turn!.teamId, 'team-2');
+    });
+
+    test('on ne passe a la manche suivante que le paquet vide', () {
+      // Trois tours pour venir à bout de douze cartes : la manche ne bascule
+      // qu'au dernier, quand il ne reste rien.
+      var state = testGame(cardCount: 12, roundIndex: 0);
+
+      state = playTurn(state, found: 5);
+      expect(state.phase, GamePhase.turnIntro);
+      state = playTurn(state, found: 5);
+      expect(state.phase, GamePhase.turnIntro);
+      expect(state.pile, hasLength(2));
+
+      state = playTurn(state, found: 2);
+
+      expect(state.phase, GamePhase.roundSummary);
+      expect(state.pile, isEmpty);
+    });
+  });
+
+  group('R4.6 — une carte non trouvee reste en jeu', () {
+    test('cas limite 15 : la carte affichee au chrono zero repart', () {
+      // Elle n'est ni perdue ni comptée : elle reste en tête du paquet pour
+      // l'équipe suivante. Rien ne sort du paquet sans avoir été trouvé.
+      final state = testGame(cardCount: 6, roundIndex: 0);
+      final enCours = state.pile[2];
+
+      final apres = state.apply([
+        const GameEvent.turnStarted(),
+        const GameEvent.cardFound(),
+        const GameEvent.cardFound(),
+        const GameEvent.ticked(Duration(minutes: 10)),
+      ]);
+
+      expect(
+        apres.pile.first,
+        enCours,
+        reason: 'la carte affichée quand le chrono tombe garde sa place',
+      );
+      expect(apres.pile, hasLength(4));
+      expect(
+        apres.turn!.results.map((r) => r.cardId),
+        isNot(contains(enCours)),
+        reason: "elle n'a pas été tranchée : rien à corriger au récapitulatif",
+      );
+    });
+
+    test(
+      'les cartes passees et non trouvees se retrouvent au tour suivant',
+      () {
+        // Un tour entier sans rien trouver : le paquet doit être intact au tour
+        // suivant, en nombre comme en contenu.
+        final state = testGame(cardCount: 6);
+        final avant = [...state.pile];
+
+        final apres = playTurn(state);
+
+        expect(apres.pile.toSet(), avant.toSet());
+        expect(apres.pile, hasLength(6));
+      },
+    );
+  });
+
   group('R4.2 — toutes les cartes sont remises en jeu et remélangées', () {
     test('la manche suivante rejoue le paquet entier', () {
       final state = testGame(roundIndex: 0).apply([

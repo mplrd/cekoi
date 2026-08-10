@@ -18,9 +18,13 @@ manches plus rapides — c'est le ressort du jeu, pas un effet de bord.
 
 | # | Nom | Contrainte |
 |---|---|---|
-| 1 | Description libre | Le narrateur dit ce qu'il veut, **sauf** les mots figurant sur la carte et leurs dérivés. Ni mime, ni geste, ni bruitage. **On ne passe pas** (R3.9). |
+| 1 | Description libre | Le narrateur dit ce qu'il veut, **sauf** les mots figurant sur la carte, leurs dérivés **et leurs synonymes**. Ni mime, ni geste, ni bruitage. **On ne passe pas** (R3.9). |
 | 2 | Un seul mot | Un unique mot, choisi librement. L'équipe **ne se concerte pas** : seule la première proposition compte, sinon on passe. Ni mime, ni geste, ni bruitage. |
 | 3 | Mime | Mimes, gestes et bruitages — mais **aucun mot**. Une seule proposition, sans se concerter. |
+
+Le synonyme est explicitement exclu en manche 1 : « le félin qui fait miaou » pour *chat* vide
+la manche de sa difficulté, alors que le jeu repose sur le contournement. C'est la règle qui se
+discute le plus à la table — elle est donc écrite ici, et rappelée à l'écran d'annonce (R2.3).
 
 **R2.1** — Les manches se jouent toujours dans cet ordre.
 
@@ -78,13 +82,36 @@ peut valider des cartes chrono arrêté. La reprise suit le même compte à rebo
 
 ## 4. Fin de manche
 
+**R4.5** — **Une manche dure autant de tours qu'il en faut.** Tant que le paquet n'est pas
+vide, un nouveau tour s'ouvre avec l'équipe suivante, dans la même manche. On ne passe à la
+manche suivante que lorsque **toutes** les cartes ont été trouvées : le paquet fait le tour de
+la table autant de fois que nécessaire.
+
+C'est ce qui fait tenir le principe de la section 1 — le même paquet rejoué intégralement à
+chaque manche. Une manche qui s'arrêterait au bout d'un tour laisserait des cartes jamais vues,
+et la manche suivante ne serait plus une reprise du même paquet.
+
+**R4.6** — **Une carte non trouvée reste en jeu.** Quand le chrono tombe, la carte affichée
+n'est ni perdue ni comptée : elle reste en tête du paquet et repart au tour suivant, pour
+l'équipe suivante. Les cartes passées, elles, sont déjà revenues au fond du paquet (R3.3). Rien
+ne sort du paquet sans avoir été trouvé.
+
+Une carte affichée au moment où le chrono tombe **n'a pas de ligne au récapitulatif** : elle
+n'a pas été tranchée, il n'y a rien à corriger.
+
 **R4.1** — Quand la dernière carte du paquet est trouvée, la manche s'arrête **immédiatement**,
 même en plein milieu d'un tour. Le temps restant est perdu et n'est pas reporté.
 
-**R4.2** — Toutes les cartes sont remises en jeu et remélangées pour la manche suivante.
+**R4.2** — Toutes les cartes sont remises en jeu et **remélangées** pour la manche suivante. Le
+mélange est dérivé de la graine de la partie et du numéro de manche : rejouer la même partie
+depuis ses événements redonne le même ordre.
 
 **R4.3** — La manche suivante démarre avec **l'équipe qui suit** celle qui a terminé la manche
 précédente. Sans cette règle, l'équipe qui vide le paquet enchaînerait deux tours d'affilée.
+
+À deux équipes, cela revient à dire que la manche est ouverte par **celle qui n'a pas terminé
+la précédente**. Au-delà de deux, c'est bien « celle qui suit » qui fait foi : « celle qui n'a
+pas terminé » n'y désigne plus une équipe unique.
 
 **R4.4** — Un écran de scores intermédiaires est affiché entre deux manches, avec le détail
 par manche et le cumul.
@@ -234,3 +261,7 @@ dédié dans `test/domain/`.
     (R3.8). Le chrono figé rend l'action gratuite, c'est ce qui la rend tentante.
 14. Trois équipes demandées après en avoir nommé deux → les deux noms restent, la troisième
     prend son nom par défaut (R8.4). Repasser à deux ne doit pas ressusciter un nom effacé.
+15. Le chrono tombe alors qu'une carte est affichée → elle reste en tête du paquet pour le tour
+    suivant et n'apparaît pas au récapitulatif (R4.6).
+16. Un tour se termine avec des cartes au paquet → la manche continue avec l'équipe suivante,
+    et l'écran de scores intermédiaires n'apparaît pas (R4.5).
