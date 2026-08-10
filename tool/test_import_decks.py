@@ -9,7 +9,12 @@ Lancer : `python -m unittest discover -s tool`
 
 import unittest
 
-from import_decks import ImportError_, parse_csv
+from import_decks import (
+    ImportError_,
+    parse_csv,
+    slugify,
+    split_by_category,
+)
 
 
 def csv_of(*lines: str) -> str:
@@ -160,6 +165,79 @@ class Doublons(unittest.TestCase):
         cards = parse_csv(csv_of("texte,difficulte", "Girafe,1", "girafe,2"))
 
         self.assertEqual(len(cards), 2)
+
+
+class PlusieursCategoriesDansUnFichier(unittest.TestCase):
+    """Une feuille unique couvrant plusieurs catégories.
+
+    C'est la forme la plus probable d'une livraison de plusieurs centaines de
+    cartes : une seule feuille, une colonne pour dire de quelle catégorie
+    relève chaque ligne.
+    """
+
+    def test_la_categorie_est_lue_quand_la_colonne_existe(self):
+        cards = parse_csv(
+            csv_of(
+                "categorie,texte,difficulte",
+                "Animaux,Girafe,1",
+                "Métiers,Boulanger,2",
+            )
+        )
+
+        self.assertEqual(cards[0]["category"], "Animaux")
+        self.assertEqual(cards[1]["category"], "Métiers")
+
+    def test_sans_colonne_categorie_aucune_n_est_inventee(self):
+        cards = parse_csv(csv_of("texte,difficulte", "Girafe,1"))
+
+        self.assertNotIn("category", cards[0])
+
+    def test_regroupement_par_categorie(self):
+        cards = parse_csv(
+            csv_of(
+                "categorie,texte",
+                "Animaux,Girafe",
+                "Métiers,Boulanger",
+                "Animaux,Tatou",
+            )
+        )
+
+        groupes = split_by_category(cards)
+
+        self.assertEqual(list(groupes), ["Animaux", "Métiers"])
+        self.assertEqual(len(groupes["Animaux"]), 2)
+        self.assertNotIn("category", groupes["Animaux"][0])
+
+    def test_categorie_vide_refusee(self):
+        # Une ligne sans catégorie dans une feuille qui en a une n'irait nulle
+        # part : elle serait perdue en silence.
+        with self.assertRaises(ImportError_) as e:
+            parse_csv(csv_of("categorie,texte", "Animaux,Girafe", ",Tatou"))
+
+        self.assertIn("ligne 3", str(e.exception))
+
+    def test_doublon_dans_deux_categories_refuse(self):
+        # R6.4 : le tirage n'en garderait qu'une, et le volume annoncé au
+        # joueur serait faux.
+        with self.assertRaises(ImportError_) as e:
+            parse_csv(
+                csv_of(
+                    "categorie,texte",
+                    "Animaux,Girafe",
+                    "Savane,Girafe",
+                )
+            )
+
+        self.assertIn("ligne 3", str(e.exception))
+
+
+class Identifiants(unittest.TestCase):
+    def test_slug_de_categorie(self):
+        self.assertEqual(slugify("Métiers & professions"), "metiers-professions")
+        self.assertEqual(slugify("Le trac"), "le-trac")
+
+    def test_slug_stable_a_la_casse_et_aux_espaces(self):
+        self.assertEqual(slugify("  ANIMAUX  "), slugify("animaux"))
 
 
 class ToutesLesErreursDUnCoup(unittest.TestCase):
