@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:cekoi/data/db/tables/cards.dart';
 import 'package:cekoi/data/db/tables/decks.dart';
+import 'package:cekoi/data/db/tables/saved_games.dart';
 // Utilisés par database.g.dart pour les colonnes textEnum : le fichier généré
 // est un `part` de celui-ci et ne porte pas ses propres imports.
 import 'package:cekoi/domain/entities/audience.dart';
@@ -13,7 +14,7 @@ import 'package:path_provider/path_provider.dart';
 
 part 'database.g.dart';
 
-@DriftDatabase(tables: [Decks, Cards])
+@DriftDatabase(tables: [Decks, Cards, SavedGames])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
@@ -21,12 +22,21 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.memory() : super(NativeDatabase.memory());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) async {
       await m.createAll();
+    },
+    onUpgrade: (m, from, to) async {
+      // v2 — la reprise de partie (R9.1). Ajout d'une table seule : les
+      // catégories et les cartes ne sont pas touchées, et surtout pas les
+      // lignes `origin = 'custom'`, qui sont du contenu que le joueur a écrit
+      // et qu'aucune migration n'a le droit de perdre.
+      if (from < 2) {
+        await m.createTable(savedGames);
+      }
     },
     beforeOpen: (details) async {
       // Sans cette ligne, la cascade de suppression des cartes d'un deck ne

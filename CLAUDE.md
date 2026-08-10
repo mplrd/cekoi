@@ -39,10 +39,15 @@ Ne réimplémente pas ce qui est déjà décidé. Avant de coder, lis le documen
 ```bash
 flutter pub get
 dart run build_runner build --delete-conflicting-outputs   # freezed, riverpod, drift
+flutter gen-l10n                                            # après toute modif des ARB
+dart format lib test                                        # la CI le vérifie, cf. ci.yml
 flutter test                                                # tests domaine + widgets
 flutter analyze
 flutter run
 ```
+
+`dart format` n'est pas un confort : la CI lance `--set-exit-if-changed` et rougit sur un
+fichier écrit à la main. `flutter analyze` ne le voit pas.
 
 Après toute modification d'une classe `@freezed`, `@riverpod` ou d'une table Drift, il faut
 relancer `build_runner` — sinon la compilation échoue sur des fichiers `.g.dart` obsolètes.

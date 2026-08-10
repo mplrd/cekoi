@@ -96,3 +96,6 @@ app.*.map.json
 
 # Claude Code — réglages locaux non partagés
 .claude/settings.local.json
+
+# Rapport de couverture, produit par flutter test --coverage.
+coverage/

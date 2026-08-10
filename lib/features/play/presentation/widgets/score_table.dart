@@ -1,0 +1,97 @@
+import 'package:cekoi/app/theme/app_colors.dart';
+import 'package:cekoi/domain/engine/game_state.dart';
+import 'package:cekoi/features/play/presentation/widgets/round_labels.dart';
+import 'package:cekoi/l10n/generated/app_localizations.dart';
+import 'package:flutter/material.dart';
+
+/// Les scores par équipe, détaillés par manche et cumulés (R4.4).
+///
+/// Le même tableau sert entre deux manches et au podium : c'est la même
+/// information, et deux implémentations finiraient par ne plus additionner
+/// pareil.
+class ScoreTable extends StatelessWidget {
+  const ScoreTable({required this.game, super.key});
+
+  final GameState game;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final byRound = game.scoresByRound;
+
+    // Seules les manches déjà jouées ont une colonne : afficher les suivantes
+    // à zéro laisserait croire qu'elles ont été jouées sans marquer.
+    final played = [
+      for (final round in game.rounds)
+        if (byRound.containsKey(round)) round,
+    ];
+
+    final classees = [...game.teams]
+      ..sort((a, b) => game.scoreOf(b.id).compareTo(game.scoreOf(a.id)));
+
+    return Table(
+      columnWidths: const {0: FlexColumnWidth(3)},
+      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+      children: [
+        TableRow(
+          children: [
+            const SizedBox.shrink(),
+            for (final round in played)
+              _Cell(
+                text: l10n.scoreRoundShort(round.number),
+                style: theme.textTheme.labelSmall,
+                tooltip: round.label(l10n),
+              ),
+            _Cell(text: l10n.scoreTotal, style: theme.textTheme.labelSmall),
+          ],
+        ),
+        for (final team in classees)
+          TableRow(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Text(
+                  team.name,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: AppColors.team(team.colorId),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              for (final round in played)
+                _Cell(
+                  text: '${byRound[round]?[team.id] ?? 0}',
+                  style: theme.textTheme.bodyMedium,
+                ),
+              _Cell(
+                text: '${game.scoreOf(team.id)}',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+      ],
+    );
+  }
+}
+
+class _Cell extends StatelessWidget {
+  const _Cell({required this.text, this.style, this.tooltip});
+
+  final String text;
+  final TextStyle? style;
+  final String? tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    final cell = Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Text(text, textAlign: TextAlign.center, style: style),
+    );
+
+    final message = tooltip;
+    return message == null ? cell : Tooltip(message: message, child: cell);
+  }
+}

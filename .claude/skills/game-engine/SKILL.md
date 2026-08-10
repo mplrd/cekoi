@@ -32,7 +32,7 @@ sans lever d'exception. L'UI ne doit jamais pouvoir faire planter le moteur.
 
 ## Ajouter un événement
 
-1. Ajoute le cas dans l'union `GameEvent`.
+1. Ajoute le cas dans l'union `GameEvent` (`domain/engine/game_event.dart`).
 2. Lance `build_runner`.
 3. La compilation casse sur le `switch` du réducteur : c'est voulu, c'est le filet. Traite le
    cas.
@@ -70,8 +70,13 @@ réducteur doit recalculer entièrement la situation, pas appliquer un delta de 
 tour tourne en boucle.
 
 **Le chrono.** Le temps restant se calcule depuis le temps écoulé cumulé, il ne se décrémente
-jamais. Une pause n'est qu'une absence de `tick` — le réducteur n'a pas besoin de savoir que
-l'application est en arrière-plan.
+jamais. Le réducteur n'a pas à savoir que l'application est en arrière-plan : `TurnClock`
+(`domain/engine/turn_clock.dart`) lui livre un temps déjà net de ses pauses.
+
+En revanche une pause **n'est pas** qu'une absence de `Ticked` : R3.8 gèle aussi les actions de
+carte, sans quoi une équipe marque des points chrono arrêté. D'où les événements `Paused` et
+`Resumed`, et `PlayedTurn.isPaused` que `canAct` consulte. C'est un défaut réel trouvé en revue
+du lot 2, pas une précaution théorique.
 
 ## Tester
 
@@ -79,17 +84,24 @@ Les tests vivent dans `test/domain/` et **citent les numéros de règles dans le
 
 ```dart
 test('R4.1 — la manche se termine dès la dernière carte trouvée, temps restant perdu', () {
-  var state = aGameInProgress(cardsRemaining: 1, elapsed: const Duration(seconds: 25));
-  state = GameEngine.reduce(state, const GameEvent.cardGuessed());
+  final state = testGame(cardCount: 1).copyWith(phase: GamePhase.playing);
 
-  expect(state.currentRound.isComplete, isTrue);
-  expect(state.currentTurn, isNull);
+  final after = reduce(state, const GameEvent.cardFound());
+
+  expect(after.pile, isEmpty);
+  expect(after.phase, GamePhase.turnSummary);
 });
 ```
 
-Utilise des constructeurs de test (`aGameInProgress`, `aTeam`) plutôt que de monter un état à
-la main dans chaque test — sinon un changement de forme de `GameState` casse cinquante tests
-d'un coup.
+`reduce` est une fonction libre de `domain/engine/game_engine.dart`, pas une méthode statique.
+Les fabriques de test vivent dans `test/support/fixtures.dart` — `testGame`, `testCards`,
+`testTeam`, `testPlayer` — plutôt que de monter un état à la main dans chaque test : sinon un
+changement de forme de `GameState` casse cinquante tests d'un coup.
+
+**Attention aux fixtures dégénérées.** `testGame` rend un paquet volontairement non mélangé et
+des curseurs de narrateur à zéro. Un test qui assert « le curseur repart de zéro » sur cette
+base est vrai avant même l'appel : il faut partir d'un état où la propriété est fausse. Voir
+`docs/RULES.md` et les tests de `test/domain/setup/relaunch_test.dart` pour l'exemple.
 
 Le test le plus utile du projet fait dérouler **une partie complète** de la configuration au
 podium, en n'émettant que des événements, et vérifie les scores finaux. Il attrape les

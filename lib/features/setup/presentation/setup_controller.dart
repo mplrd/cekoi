@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:cekoi/app/clock.dart';
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/deck.dart';
 import 'package:cekoi/domain/entities/player.dart';
@@ -8,17 +9,6 @@ import 'package:cekoi/domain/setup/game_setup.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'setup_controller.g.dart';
-
-/// Fournit les graines d'aléatoire de l'application.
-///
-/// Le domaine n'a pas le droit de lire l'horloge ; la couche d'interface, si.
-/// Isolé derrière un provider pour qu'un test puisse rendre un parcours
-/// entièrement reproductible.
-typedef SeedSource = int Function();
-
-@Riverpod(keepAlive: true)
-SeedSource seedSource(Ref ref) =>
-    () => DateTime.now().microsecondsSinceEpoch & 0x7fffffff;
 
 /// La configuration en cours, partagée par les cinq écrans.
 ///

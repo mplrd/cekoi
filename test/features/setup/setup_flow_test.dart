@@ -1,17 +1,22 @@
 import 'package:cekoi/app/app.dart';
+import 'package:cekoi/app/clock.dart';
+import 'package:cekoi/app/current_game.dart';
 import 'package:cekoi/app/router.dart';
+import 'package:cekoi/app/screen_awake.dart';
 import 'package:cekoi/data/db/database.dart';
 import 'package:cekoi/data/db/seed/deck_seeder.dart';
 import 'package:cekoi/data/providers.dart';
+import 'package:cekoi/domain/engine/game_state.dart';
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/deck_origin.dart';
 import 'package:cekoi/domain/entities/difficulty.dart';
 import 'package:cekoi/domain/entities/min_age.dart';
-import 'package:cekoi/features/setup/presentation/setup_controller.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../support/providers.dart';
 
 /// Parcours de configuration de bout en bout, sur une base en mémoire.
 ///
@@ -90,12 +95,23 @@ void main() {
           // déjà remplie à la main ci-dessus.
           deckSeedingProvider.overrideWith((ref) async => const SeedReport()),
           seedSourceProvider.overrideWithValue(() => 42),
+          screenAwakeProvider.overrideWithValue(fakeScreenAwake()),
         ],
         child: CekoiApp(router: createAppRouter()),
       ),
     );
     await tester.pumpAndSettle();
   }
+
+  /// La partie réellement ouverte, lue à la source.
+  ///
+  /// La taille du paquet ne s'affiche plus nulle part depuis que l'écran
+  /// d'attente a cédé la place au vrai écran de jeu, qui ouvre sur l'annonce
+  /// du tour. Elle reste la vérification qui compte ici — le parcours doit
+  /// aboutir à un paquet tiré, pas seulement à un écran.
+  GameState launchedGame(WidgetTester tester) => ProviderScope.containerOf(
+    tester.element(find.byType(CekoiApp)),
+  ).read(currentGameProvider)!;
 
   Future<void> tapText(WidgetTester tester, String label) async {
     await tester.tap(find.text(label));
@@ -145,8 +161,15 @@ void main() {
     await tapText(tester, l10n.actionStartGame);
 
     // Le paquet est tiré : 5 × 4 joueurs arrondi au multiple de 4 (R6.1).
-    expect(find.text(l10n.gameReadyTitle), findsOneWidget);
-    expect(find.text(l10n.gameReadyDeck(20)), findsOneWidget);
+    expect(launchedGame(tester).deck, hasLength(20));
+
+    // Et la partie s'ouvre sur l'annonce du premier tour, pas sur une carte :
+    // le téléphone doit avoir le temps de changer de mains.
+    expect(
+      find.text(l10n.turnIntroTeam(l10n.teamDefaultName(1))),
+      findsOneWidget,
+    );
+    expect(find.text(l10n.roundNameFree), findsOneWidget);
   });
 
   testWidgets(
@@ -235,7 +258,7 @@ void main() {
       );
 
       await tapText(tester, l10n.actionStartGame);
-      expect(find.text(l10n.gameReadyDeck(16)), findsOneWidget);
+      expect(launchedGame(tester).deck, hasLength(16));
     });
 
     testWidgets("rien n'est annoncé quand le vivier suffit", (tester) async {
@@ -248,7 +271,7 @@ void main() {
       expect(find.textContaining(l10n.launchTruncated(30)), findsNothing);
       expect(find.text(l10n.launchTruncated(20)), findsNothing);
       await tapText(tester, l10n.actionStartGame);
-      expect(find.text(l10n.gameReadyDeck(20)), findsOneWidget);
+      expect(launchedGame(tester).deck, hasLength(20));
     });
   });
 
