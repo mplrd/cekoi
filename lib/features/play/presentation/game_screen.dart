@@ -3,6 +3,7 @@ import 'package:cekoi/app/router.dart';
 import 'package:cekoi/domain/engine/game_phase.dart';
 import 'package:cekoi/features/play/presentation/widgets/playing_view.dart';
 import 'package:cekoi/features/play/presentation/widgets/turn_intro_view.dart';
+import 'package:cekoi/features/play/presentation/widgets/turn_summary_view.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -37,9 +38,9 @@ class GameScreen extends ConsumerWidget {
         child: switch (game.phase) {
           GamePhase.turnIntro => TurnIntroView(game: game),
           GamePhase.playing => PlayingView(game: game),
+          GamePhase.turnSummary => TurnSummaryView(game: game),
           // Les phases suivantes arrivent dans la tranche d'après ; l'écran
           // reste navigable en attendant plutôt que de rendre du vide.
-          GamePhase.turnSummary ||
           GamePhase.roundSummary ||
           GamePhase.tieBreak ||
           GamePhase.finished => _Pending(l10n: l10n),

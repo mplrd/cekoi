@@ -516,5 +516,43 @@
     "placeholders": {
       "count": { "type": "int" }
     }
+  },
+
+  "turnSummaryTitle": "Fin du tour",
+  "@turnSummaryTitle": {
+    "description": "Titre du récapitulatif de fin de tour."
+  },
+
+  "turnSummaryHint": "Touchez une carte pour corriger son résultat.",
+  "@turnSummaryHint": {
+    "description": "Explique que chaque ligne est corrigeable (R3.6)."
+  },
+
+  "turnSummaryScore": "{count, plural, =0{Aucun point ce tour} =1{1 point ce tour} other{{count} points ce tour}}",
+  "@turnSummaryScore": {
+    "description": "Score du tour, recalculé en direct à chaque correction.",
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+
+  "turnSummaryEmpty": "Aucune carte vue pendant ce tour.",
+  "@turnSummaryEmpty": {
+    "description": "Cas où le chrono s'est écoulé sans qu'aucune carte soit tranchée."
+  },
+
+  "outcomeFound": "Trouvée",
+  "@outcomeFound": {
+    "description": "Résultat d'une carte devinée, dans le récapitulatif."
+  },
+
+  "outcomePassed": "Passée",
+  "@outcomePassed": {
+    "description": "Résultat d'une carte passée, dans le récapitulatif."
+  },
+
+  "actionConfirmTurn": "Valider le tour",
+  "@actionConfirmTurn": {
+    "description": "Valide le récapitulatif et passe à l'équipe suivante."
   }
 }
