@@ -54,6 +54,7 @@ CANDIDATE_DELIMITERS = [",", ";", "\t"]
 HEADER_ALIASES = {
     "text": {"texte", "text", "carte", "mot"},
     "difficulty": {"difficulte", "difficulty", "niveau"},
+    "category": {"categorie", "category", "theme", "thematique", "deck"},
 }
 
 
@@ -104,6 +105,35 @@ def _map_columns(fieldnames: list[str]) -> dict[str, str]:
                 mapping[champ] = nom
                 break
     return mapping
+
+
+def slugify(value: str) -> str:
+    """Identifiant de deck dérivé d'un nom de catégorie.
+
+    Ne sert **qu'aux identifiants de deck**, jamais aux cartes : celles-ci
+    reçoivent leur identifiant du seeder, en Dart, sous la forme
+    `<deckId>:<slug du texte>`. Aucun risque de divergence avec la
+    normalisation de R6.4, qui vit ailleurs et ne passe pas par ici.
+    """
+    plat = "".join(
+        c
+        for c in unicodedata.normalize("NFD", value)
+        if unicodedata.category(c) != "Mn"
+    ).lower()
+    mots = [m for m in "".join(c if c.isalnum() else " " for c in plat).split()]
+    return "-".join(mots)
+
+
+def split_by_category(
+    cards: list[dict[str, object]],
+) -> dict[str, list[dict[str, object]]]:
+    """Regroupe les cartes par catégorie, dans l'ordre d'apparition."""
+    groupes: dict[str, list[dict[str, object]]] = {}
+    for card in cards:
+        categorie = str(card.get("category", ""))
+        sans = {k: v for k, v in card.items() if k != "category"}
+        groupes.setdefault(categorie, []).append(sans)
+    return groupes
 
 
 def _parse_difficulty(cell: str, line: int, problems: list[str]) -> int:
@@ -181,7 +211,18 @@ def parse_csv(content: str) -> list[dict[str, object]]:
             index,
             problems,
         )
-        cards.append({"text": texte, "difficulty": difficulte})
+        carte: dict[str, object] = {"text": texte, "difficulty": difficulte}
+
+        if "category" in colonnes:
+            categorie = _clean_cell(row.get(colonnes["category"]))
+            # Une ligne sans catégorie, dans une feuille qui en a une, n'irait
+            # nulle part : elle serait perdue en silence.
+            if not categorie:
+                problems.append(f"ligne {index} : catégorie vide")
+                continue
+            carte["category"] = categorie
+
+        cards.append(carte)
 
     if problems:
         raise ImportError_(
@@ -226,10 +267,78 @@ def build_deck(
     return {k: v for k, v in deck.items() if v is not None}
 
 
+def _write_deck(
+    path: Path,
+    cards: list[dict[str, object]],
+    overrides: dict[str, object],
+) -> dict[str, object]:
+    """Écrit un deck, en reprenant les métadonnées déjà en place."""
+    existing = None
+    if path.exists():
+        existing = json.loads(path.read_text(encoding="utf-8"))
+        existing.pop("cards", None)
+
+    deck = build_deck(cards, existing=existing, overrides=overrides)
+    path.write_text(
+        json.dumps(deck, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    return deck
+
+
+def _write_many(
+    args: argparse.Namespace,
+    groupes: dict[str, list[dict[str, object]]],
+) -> int:
+    """Écrit un fichier par catégorie.
+
+    L'identifiant vient du nom de la catégorie : il doit rester stable d'une
+    livraison à l'autre, sinon le seeder croit à une catégorie neuve et
+    l'ancienne reste en base à côté. Renommer une catégorie dans la feuille
+    revient donc à en créer une autre — c'est signalé en fin de course.
+    """
+    args.out_dir.mkdir(parents=True, exist_ok=True)
+
+    for nom, cards in groupes.items():
+        identifiant = slugify(nom)
+        chemin = args.out_dir / f"{identifiant}.json"
+        connu = chemin.exists()
+
+        deck = _write_deck(
+            chemin,
+            cards,
+            {
+                "id": identifiant,
+                "name": nom,
+                "audience": args.audience,
+                "minAge": args.min_age,
+                "sortOrder": args.sort_order,
+                "isPremium": args.premium,
+            },
+        )
+
+        etat = "mise à jour" if connu else "NOUVELLE"
+        print(
+            f"{len(cards):4d} cartes → {chemin.name} "
+            f"(contentVersion {deck['contentVersion']}, {etat})"
+        )
+
+    print(
+        "\nVérifie les catégories marquées NOUVELLE : un nom modifié dans la "
+        "feuille produit un identifiant neuf, et l'ancien deck reste en base."
+    )
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("csv", type=Path, help="livraison à convertir")
-    parser.add_argument("--out", type=Path, required=True, help="JSON produit")
+    parser.add_argument("--out", type=Path, help="JSON produit, une catégorie")
+    parser.add_argument(
+        "--out-dir",
+        type=Path,
+        help="dossier de sortie, une livraison à colonne « catégorie »",
+    )
     parser.add_argument("--id")
     parser.add_argument("--name")
     parser.add_argument("--description")
@@ -248,6 +357,25 @@ def main(argv: list[str] | None = None) -> int:
     except OSError as erreur:
         print(f"Livraison illisible : {erreur}", file=sys.stderr)
         return 1
+
+    par_categorie = any("category" in c for c in cards)
+
+    if par_categorie and not args.out_dir:
+        print(
+            "Cette livraison porte une colonne « catégorie » : utilise "
+            "--out-dir pour écrire un fichier par catégorie.",
+            file=sys.stderr,
+        )
+        return 1
+    if not par_categorie and not args.out:
+        print(
+            "Livraison sans colonne « catégorie » : --out est requis.",
+            file=sys.stderr,
+        )
+        return 1
+
+    if par_categorie:
+        return _write_many(args, split_by_category(cards))
 
     existing = None
     if args.out.exists():

@@ -52,8 +52,14 @@ fichier écrit à la main. `flutter analyze` ne le voit pas.
 L'import de contenu est en Python, hors de l'application :
 
 ```bash
+# Une feuille par catégorie
 python tool/import_decks.py livraison.csv --out assets/decks/animaux.json \
     --id animaux --name Animaux --audience family --min-age 6
+
+# Une feuille unique avec une colonne « catégorie » : un fichier par catégorie
+python tool/import_decks.py livraison.csv --out-dir assets/decks \
+    --audience family --min-age 6
+
 python -m unittest discover -s tool -t tool    # tests de l'import
 ```
 
