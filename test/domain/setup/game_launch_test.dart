@@ -128,7 +128,8 @@ void main() {
       expect(
         outcome.draw.available,
         8,
-        reason: "Le tirage est rendu quand même : c'est lui qui porte le "
+        reason:
+            "Le tirage est rendu quand même : c'est lui qui porte le "
             'chiffre à afficher au joueur',
       );
       expect(outcome.draw.isPlayable, isFalse);
@@ -202,9 +203,11 @@ void main() {
     test('même graine, même paquet ; graine différente, autre paquet', () {
       final setup = _ready();
       List<String> ids(int seed) => [
-        for (final card in launchGame(setup: setup, pool: _pool(), seed: seed)
-            .draw
-            .cards)
+        for (final card in launchGame(
+          setup: setup,
+          pool: _pool(),
+          seed: seed,
+        ).draw.cards)
           card.id,
       ];
 
