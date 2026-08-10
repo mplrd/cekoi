@@ -121,6 +121,10 @@ leur saisie (R8.2). Le facteur 12 vaut `5 × 2,4 joueurs par équipe` : à deux 
 donne 24 cartes, là où six joueurs en donnaient 32. La durée d'une partie suit le nombre de
 tours à jouer, donc le nombre d'équipes, bien plus que l'effectif exact autour de la table.
 
+Depuis ce changement, le plancher de 16 n'est plus atteignable : le minimum de deux équipes
+(R8.5) donne déjà 24. Il reste écrit ici comme garde, et non comme un cas que le joueur peut
+rencontrer — seule une baisse du facteur le réveillerait.
+
 **R6.2** — Si les catégories sélectionnées contiennent moins de cartes que le nombre demandé,
 la partie utilise tout ce qui est disponible et le signale explicitement avant de démarrer.
 Un minimum de 12 cartes est requis pour lancer une partie.
