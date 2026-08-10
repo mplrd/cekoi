@@ -41,9 +41,14 @@ sans lever d'exception. L'UI ne doit jamais pouvoir faire planter le moteur.
 
 ## Structure de l'état
 
-`GameState` porte l'intégralité de ce qui décrit une partie : configuration, équipes et leurs
-curseurs de narrateur, manche courante, paquet restant, cartes trouvées de la manche, tour en
-cours avec son temps écoulé, scores cumulés, graine d'aléatoire.
+`GameState` porte l'intégralité de ce qui décrit une partie : configuration, équipes, manche
+courante, paquet restant, cartes trouvées de la manche, tour en cours avec son temps écoulé,
+scores cumulés, graine d'aléatoire.
+
+Une équipe est un nom et un score, rien d'autre : depuis le retour d'usage d'août 2026,
+l'application ne connaît pas les joueurs (R8.2). Qui fait deviner se décide à la table. N'y
+réintroduis ni `Player`, ni curseur de narrateur — c'est la saisie qui a été jugée trop
+coûteuse au début de partie, pas son ergonomie.
 
 Ne dérive jamais dans l'état ce qui peut être calculé : le score total se calcule depuis les
 résultats de tours, il n'est pas stocké en double. Une donnée dupliquée finit toujours par
@@ -59,8 +64,11 @@ immédiatement et le temps restant est perdu (R4.1). Il est tentant de laisser l
 c'est faux.
 
 **Rotation après une manche.** La manche suivante démarre avec l'équipe *suivante*, pas celle
-qui a vidé le paquet (R4.3). Chaque équipe garde en plus son propre curseur de narrateur
-(R3.1) — c'est ce qui permet des équipes de tailles inégales.
+qui a vidé le paquet (R4.3).
+
+**Passer n'existe pas en manche 1** (R3.9). `Round.allowsPass` le porte, `canPass` le compose,
+et le réducteur refuse `cardPassed` quoi qu'envoie l'interface. C'est là que la règle est
+étanche : une garde d'écran seule ne la tiendrait pas.
 
 **Correction post-tour.** Corriger un résultat (R3.6) peut vider le paquet, donc terminer la
 manche, ou au contraire le re-remplir et faire redémarrer une manche qu'on croyait finie. Le
@@ -95,13 +103,15 @@ test('R4.1 — la manche se termine dès la dernière carte trouvée, temps rest
 
 `reduce` est une fonction libre de `domain/engine/game_engine.dart`, pas une méthode statique.
 Les fabriques de test vivent dans `test/support/fixtures.dart` — `testGame`, `testCards`,
-`testTeam`, `testPlayer` — plutôt que de monter un état à la main dans chaque test : sinon un
-changement de forme de `GameState` casse cinquante tests d'un coup.
+`testTeam` — plutôt que de monter un état à la main dans chaque test : sinon un changement de
+forme de `GameState` casse cinquante tests d'un coup.
 
-**Attention aux fixtures dégénérées.** `testGame` rend un paquet volontairement non mélangé et
-des curseurs de narrateur à zéro. Un test qui assert « le curseur repart de zéro » sur cette
-base est vrai avant même l'appel : il faut partir d'un état où la propriété est fausse. Voir
-`docs/RULES.md` et les tests de `test/domain/setup/relaunch_test.dart` pour l'exemple.
+**Attention aux fixtures dégénérées.** Un test qui assert une propriété déjà vraie dans la
+fixture est vert avant même l'appel : il faut partir d'un état où elle est fausse. C'est pour
+ça que `testGame` démarre **en manche 2** : en manche 1, `canPass` répond déjà non à tout, et
+les tests de R3.4 (« passer est indisponible sur la dernière carte ») passeraient pour la
+mauvaise raison. Même discipline dans `test/domain/setup/relaunch_test.dart`, qui part d'un
+état non neutre.
 
 Le test le plus utile du projet fait dérouler **une partie complète** de la configuration au
 podium, en n'émettant que des événements, et vérifie les scores finaux. Il attrape les

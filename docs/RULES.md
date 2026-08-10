@@ -117,7 +117,7 @@ multiple de 4 supérieur, borné à [16, 80]. C'est le réglage qui donne des pa
 30 à 40 minutes.
 
 Le calcul portait sur le nombre de joueurs jusqu'au retour d'usage d'août 2026, qui a retiré
-leur saisie (R3.1, R8.3). Le facteur 12 vaut `5 × 2,4 joueurs par équipe` : à deux équipes il
+leur saisie (R8.2). Le facteur 12 vaut `5 × 2,4 joueurs par équipe` : à deux équipes il
 donne 24 cartes, là où six joueurs en donnaient 32. La durée d'une partie suit le nombre de
 tours à jouer, donc le nombre d'équipes, bien plus que l'effectif exact autour de la table.
 
