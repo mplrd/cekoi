@@ -30,7 +30,6 @@ PlayedTurn _turn({
 }) => PlayedTurn(
   round: game.rounds[roundIndex],
   teamId: teamId,
-  narratorId: '$teamId-1',
   results: [
     for (final card in game.deck.skip(offset).take(found))
       CardResult(cardId: card.id, outcome: TurnOutcome.found),
@@ -119,7 +118,7 @@ void main() {
   group('R4.4 — les scores entre deux manches', () {
     /// Manche 1 terminée : 3 points pour team-1, 1 pour team-2.
     GameState afterFirstRound() {
-      final game = testGame(cardCount: 8);
+      final game = testGame(cardCount: 8, roundIndex: 0);
       return game.copyWith(
         phase: GamePhase.roundSummary,
         pile: const [],
@@ -191,7 +190,7 @@ void main() {
   group('R5.3 — le départage', () {
     /// Trois équipes à égalité parfaite : cas limite 7.
     GameState threeWayTie() {
-      final game = testGame(cardCount: 9, teamSizes: [2, 2, 2]);
+      final game = testGame(cardCount: 9, teamCount: 3);
       return game.copyWith(
         phase: GamePhase.tieBreak,
         roundIndex: game.rounds.length - 1,

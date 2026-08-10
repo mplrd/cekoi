@@ -141,6 +141,8 @@ class _CardZone extends ConsumerWidget {
         if (vitesse > 0) {
           controller.found();
         } else if (vitesse < 0 && game.canPass) {
+          // Muet en manche 1 (R3.9) : le geste ne doit pas contourner une
+          // action que l'écran n'offre pas.
           controller.passed();
         }
       },
@@ -210,7 +212,12 @@ class _PausePanel extends StatelessWidget {
   }
 }
 
-/// Les deux zones d'action, moitié basse : Passer à gauche, Trouvé à droite.
+/// Les zones d'action, moitié basse : Passer à gauche, Trouvé à droite.
+///
+/// En manche 1, *Passer* n'existe pas (R3.9) : la zone est **retirée**, pas
+/// grisée, et *Trouvé* prend toute la largeur. Un bouton mort pendant une
+/// manche entière se lit comme une panne, et l'écran de jeu est celui où on ne
+/// doit jamais se demander si l'application a compris.
 class _Actions extends ConsumerWidget {
   const _Actions({required this.game});
 
@@ -220,13 +227,16 @@ class _Actions extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final controller = ref.read(playControllerProvider.notifier);
+    final offersPass = game.round.allowsPass;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (!game.canPass && game.pile.length == 1)
+          // Le rappel ne vaut que pour le verrou de la dernière carte (R3.4) :
+          // en manche 1, il n'y a pas de bouton à expliquer.
+          if (offersPass && !game.canPass && game.pile.length == 1)
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
               child: Text(
@@ -242,13 +252,15 @@ class _Actions extends ConsumerWidget {
               // boutons ordinaires au lieu des deux zones voulues.
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: game.canPass ? controller.passed : null,
-                    child: Text(l10n.actionPass),
+                if (offersPass) ...[
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: game.canPass ? controller.passed : null,
+                      child: Text(l10n.actionPass),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
+                  const SizedBox(width: 12),
+                ],
                 Expanded(
                   child: FilledButton(
                     style: FilledButton.styleFrom(

@@ -3,34 +3,30 @@
 /// L'ordre n'est jamais modifiable : c'est la montée en contrainte qui fait le
 /// jeu, les joueurs mémorisant progressivement le même paquet.
 enum Round {
-  /// Manche 1 — description libre, sauf les mots de la carte. Gestes interdits.
+  /// Manche 1 — description libre, sauf les mots de la carte. Ni geste, ni
+  /// bruitage, et on ne passe pas (R3.9).
   freeDescription(1),
 
-  /// Manche 2 — un seul mot, répétable à volonté. Aucun geste.
+  /// Manche 2 — un seul mot, sans concertation : seule la première proposition
+  /// compte. Ni geste, ni bruitage.
   oneWord(2),
 
-  /// Manche 3 — mime. Silence total.
+  /// Manche 3 — mimes, gestes et bruitages, mais aucun mot.
   mime(3);
 
   const Round(this.number);
 
   final int number;
 
-  /// Les nombres de manches proposés (R2.2). Deux valeurs, pas une échelle :
-  /// retirer plus d'une manche viderait le jeu de son ressort.
-  static const List<int> allowedCounts = [2, 3];
-
-  /// Les manches réellement jouées pour un nombre de manches donné (R2.2).
+  /// Les manches d'une partie (R2.2).
   ///
-  /// En deux manches on joue la 1 et la 3 : « un seul mot » est celle qui
-  /// bloque le plus les jeunes enfants, c'est donc elle qu'on retire.
-  static List<Round> sequenceFor(int roundCount) => switch (roundCount) {
-    2 => const [Round.freeDescription, Round.mime],
-    3 => const [Round.freeDescription, Round.oneWord, Round.mime],
-    _ => throw ArgumentError.value(
-      roundCount,
-      'roundCount',
-      'Le nombre de manches vaut ${allowedCounts.join(' ou ')}',
-    ),
-  };
+  /// Toujours les trois : le nombre de manches n'est pas un réglage, en retirer
+  /// une viderait le jeu de son ressort.
+  static const List<Round> sequence = [freeDescription, oneWord, mime];
+
+  /// *Passer* n'existe qu'à partir de la manche 2 (R3.9).
+  ///
+  /// En description libre, aucune carte n'est infaisable — seulement plus
+  /// longue. Passer y trierait le paquet à bon compte.
+  bool get allowsPass => this != Round.freeDescription;
 }

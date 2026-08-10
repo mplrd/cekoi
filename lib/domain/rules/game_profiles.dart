@@ -30,9 +30,9 @@ abstract class GameProfile with _$GameProfile {
     required Set<Difficulty> difficulties,
     required Duration turnDuration,
 
-    /// `null` signifie *auto* : `5 × joueurs`, voir [GameConfig.autoCardCount].
+    /// `null` signifie *auto* : `12 × équipes`, voir
+    /// [GameConfig.autoCardCount].
     int? cardCount,
-    @Default(3) int roundCount,
   }) = _GameProfile;
 
   const GameProfile._();
@@ -161,10 +161,9 @@ List<ProfileAvailability> evaluateProfiles({
 /// réglages, d'un bloc.
 ///
 /// Valeur de transport uniquement. La sélection vivante, celle que le joueur
-/// modifie, est `GameSetup` — qui porte aussi les joueurs et les équipes.
-/// Cette classe a un temps dupliqué son `toggleDeck` ; deux implémentations
-/// d'une même règle finissent toujours par diverger, et c'est la copie morte
-/// qui restait testée.
+/// modifie, est `GameSetup` — qui porte aussi les équipes. Cette classe a un
+/// temps dupliqué son `toggleDeck` ; deux implémentations d'une même règle
+/// finissent toujours par diverger, et c'est la copie morte qui restait testée.
 @freezed
 abstract class ProfileSelection with _$ProfileSelection {
   const factory ProfileSelection({
@@ -172,7 +171,6 @@ abstract class ProfileSelection with _$ProfileSelection {
     required List<String> deckIds,
     required Set<Difficulty> difficulties,
     required Duration turnDuration,
-    required int roundCount,
     String? profileId,
     int? cardCount,
   }) = _ProfileSelection;
@@ -186,6 +184,5 @@ ProfileSelection selectionFor(GameProfile profile, List<Deck> decks) =>
       deckIds: [for (final deck in decksForProfile(profile, decks)) deck.id],
       difficulties: profile.difficulties,
       turnDuration: profile.turnDuration,
-      roundCount: profile.roundCount,
       cardCount: profile.cardCount,
     );

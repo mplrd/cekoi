@@ -13,7 +13,6 @@ import 'package:cekoi/domain/entities/deck.dart';
 import 'package:cekoi/domain/entities/difficulty.dart';
 import 'package:cekoi/domain/entities/game_config.dart';
 import 'package:cekoi/domain/entities/min_age.dart';
-import 'package:cekoi/domain/entities/player.dart';
 import 'package:cekoi/domain/entities/team.dart';
 import 'package:cekoi/domain/rules/game_profiles.dart';
 import 'package:cekoi/domain/rules/round.dart';
@@ -40,12 +39,6 @@ final List<Card> _cards = [
       ),
 ];
 
-final List<Player> _players = [
-  for (var i = 1; i <= 6; i++) testPlayer('grand-$i'),
-  testPlayer('petit-1', isChild: true),
-  testPlayer('petit-2', isChild: true),
-];
-
 /// Tout ce qu'une partie produit, du choix du profil au podium.
 class Session {
   const Session({
@@ -54,29 +47,53 @@ class Session {
     required this.drawn,
     required this.finalState,
     required this.roundOpeners,
+    required this.passAttempts,
   });
 
   final ProfileAvailability availability;
   final List<Team> teams;
   final DrawResult drawn;
   final GameState finalState;
+  final PassAttempts passAttempts;
 
   /// L'équipe qui a ouvert chaque manche, pour vérifier R4.3.
   final Map<Round, String> roundOpeners;
 }
 
+/// Le sort des tentatives de passage, par manche.
+///
+/// Le pilote tente de passer **sans consulter `canPass`** : c'est au réducteur
+/// de refuser, et c'est ce refus qu'on veut observer (R3.9). Une interface
+/// peut toujours envoyer un événement qui n'a pas de sens — un tap parti trop
+/// tard, un geste mal reconnu — et le moteur doit tenir.
+class PassAttempts {
+  final Map<Round, int> accepted = {};
+  final Map<Round, int> refused = {};
+
+  int acceptedIn(Round round) => accepted[round] ?? 0;
+  int refusedIn(Round round) => refused[round] ?? 0;
+}
+
 /// Un joueur simulé, qui ne connaît du moteur que sa phase courante et les
 /// événements publics — exactement ce dont disposera l'interface.
-GameState driveOneStep(GameState state, Random random) => switch (state.phase) {
-  GamePhase.turnIntro => reduce(state, const GameEvent.turnStarted()),
-  GamePhase.playing => _playSomeCards(state, random),
-  GamePhase.turnSummary => _reviewAndConfirm(state, random),
-  GamePhase.roundSummary => reduce(state, const GameEvent.nextRoundStarted()),
-  GamePhase.tieBreak => _settleTieBreak(state, random),
-  GamePhase.finished => state,
-};
+GameState driveOneStep(GameState state, Random random, PassAttempts attempts) =>
+    switch (state.phase) {
+      GamePhase.turnIntro => reduce(state, const GameEvent.turnStarted()),
+      GamePhase.playing => _playSomeCards(state, random, attempts),
+      GamePhase.turnSummary => _reviewAndConfirm(state, random),
+      GamePhase.roundSummary => reduce(
+        state,
+        const GameEvent.nextRoundStarted(),
+      ),
+      GamePhase.tieBreak => _settleTieBreak(state, random),
+      GamePhase.finished => state,
+    };
 
-GameState _playSomeCards(GameState state, Random random) {
+GameState _playSomeCards(
+  GameState state,
+  Random random,
+  PassAttempts attempts,
+) {
   var next = state;
 
   // Le téléphone part en arrière-plan de temps en temps : le tour doit
@@ -89,11 +106,18 @@ GameState _playSomeCards(GameState state, Random random) {
 
   final actions = 1 + random.nextInt(5);
   for (var i = 0; i < actions && next.phase == GamePhase.playing; i++) {
-    final passes = next.canPass && random.nextInt(4) == 0;
-    next = reduce(
-      next,
-      passes ? const GameEvent.cardPassed() : const GameEvent.cardFound(),
-    );
+    if (random.nextInt(4) == 0) {
+      final round = next.round;
+      final after = reduce(next, const GameEvent.cardPassed());
+      if (after != next) {
+        attempts.accepted[round] = attempts.acceptedIn(round) + 1;
+        next = after;
+        continue;
+      }
+      // Refusé : le tour doit tout de même avancer, sinon il boucle.
+      attempts.refused[round] = attempts.refusedIn(round) + 1;
+    }
+    next = reduce(next, const GameEvent.cardFound());
   }
 
   // Le tour n'est pas allé au bout du paquet : le chrono a le dernier mot.
@@ -148,11 +172,7 @@ Session playFullGame(int seed) {
     cards: _cards,
   );
 
-  final teams = proposeTeams(
-    players: _players,
-    teamNames: const ['Les Rouges', 'Les Bleus'],
-    random: random,
-  );
+  final teams = teamsFromNames(const ['Les Rouges', 'Les Bleus']);
 
   final retained = availability.deckIds.toSet();
   final drawn = drawCards(
@@ -160,7 +180,7 @@ Session playFullGame(int seed) {
       for (final card in _cards)
         if (retained.contains(card.deckId)) card,
     ],
-    requested: GameConfig.autoCardCount(_players.length),
+    requested: GameConfig.autoCardCount(teams.length),
     mode: profile.mode,
     random: random,
     allowedDifficulties: profile.difficulties,
@@ -171,10 +191,8 @@ Session playFullGame(int seed) {
       mode: profile.mode,
       deckIds: availability.deckIds,
       turnDuration: profile.turnDuration,
-      roundCount: profile.roundCount,
       profileId: profile.id,
     ),
-    players: _players,
     teams: teams,
     deck: drawn.cards,
     tieBreakReserve: drawn.tieBreakReserve,
@@ -182,12 +200,13 @@ Session playFullGame(int seed) {
   );
 
   final roundOpeners = <Round, String>{};
+  final attempts = PassAttempts();
   var steps = 0;
   while (!state.isOver) {
     if (state.phase == GamePhase.turnIntro) {
       roundOpeners.putIfAbsent(state.round, () => state.turn!.teamId);
     }
-    state = driveOneStep(state, random);
+    state = driveOneStep(state, random, attempts);
     if (++steps > 2000) {
       fail('La partie ne converge pas : $steps événements sans fin de partie');
     }
@@ -199,6 +218,7 @@ Session playFullGame(int seed) {
     drawn: drawn,
     finalState: state,
     roundOpeners: roundOpeners,
+    passAttempts: attempts,
   );
 }
 
@@ -215,22 +235,26 @@ void main() {
       reason: "« Mix familial » s'arrête à 13 ans, le 18+ reste dehors",
     );
     expect(
-      session.teams.map((t) => t.playerIds.length),
-      [4, 4],
-      reason: 'Huit joueurs en deux équipes (R8.3)',
+      session.teams.map((t) => t.name),
+      ['Les Rouges', 'Les Bleus'],
+      reason: 'Une équipe est un nom, rien de plus (R8.2)',
     );
 
     // ── Tirage ──────────────────────────────────────────────────────────
-    expect(session.drawn.cards, hasLength(40), reason: '5 × 8 joueurs (R6.1)');
+    expect(
+      session.drawn.cards,
+      hasLength(24),
+      reason: '12 × 2 équipes (R6.1)',
+    );
     expect(session.drawn.isTruncated, isFalse);
     expect(
       session.drawn.cards.map((c) => c.normalizedText).toSet(),
-      hasLength(40),
+      hasLength(24),
       reason: 'R6.4 — aucun doublon de texte dans le paquet',
     );
-    expect(countOf(session.drawn.cards, Difficulty.easy), 12);
-    expect(countOf(session.drawn.cards, Difficulty.medium), 20);
-    expect(countOf(session.drawn.cards, Difficulty.hard), 8);
+    expect(countOf(session.drawn.cards, Difficulty.easy), 7);
+    expect(countOf(session.drawn.cards, Difficulty.medium), 12);
+    expect(countOf(session.drawn.cards, Difficulty.hard), 5);
 
     // ── Déroulé ─────────────────────────────────────────────────────────
     expect(state.phase, GamePhase.finished);
@@ -238,10 +262,10 @@ void main() {
 
     expect(
       state.scores.values.reduce((a, b) => a + b),
-      3 * 40,
+      3 * 24,
       reason:
           "Une manche ne s'achève que le paquet vide, et chaque carte trouvée "
-          'vaut un point : les trois manches valent 120 points '
+          'vaut un point : les trois manches valent 72 points '
           '(R4.1, R4.2, R5.1)',
     );
 
@@ -249,7 +273,7 @@ void main() {
     for (final round in state.rounds) {
       expect(
         state.scoresByRound[round]!.values.reduce((a, b) => a + b),
-        40,
+        24,
         reason: 'La manche ${round.number} a fait deviner tout le paquet',
       );
     }
@@ -275,19 +299,26 @@ void main() {
       );
     }
 
-    // R3.1 — au sein d'une équipe, personne n'a narré nettement plus que ses
-    // coéquipiers : la rotation est bien restée interne à chaque équipe.
-    for (final team in state.teams) {
-      final counts = [
-        for (final playerId in team.playerIds)
-          state.history.where((t) => t.narratorId == playerId).length,
-      ];
-      expect(
-        counts.reduce(max) - counts.reduce(min),
-        lessThanOrEqualTo(1),
-        reason: 'Rotation déséquilibrée dans ${team.id} : $counts',
-      );
-    }
+    // R3.9 — le pilote tente de passer sans consulter `canPass`. En manche 1
+    // le moteur refuse tout, ailleurs il accepte.
+    final attempts = session.passAttempts;
+    expect(
+      attempts.refusedIn(Round.freeDescription),
+      greaterThan(0),
+      reason: 'Le pilote a bien essayé de passer en description libre',
+    );
+    expect(
+      attempts.acceptedIn(Round.freeDescription),
+      0,
+      reason: "Passer n'existe pas en description libre",
+    );
+    expect(
+      attempts.acceptedIn(Round.oneWord) + attempts.acceptedIn(Round.mime),
+      greaterThan(0),
+      reason:
+          "Sans passage accepté ailleurs, l'assertion précédente serait vraie "
+          'même en supprimant toute la logique de passage',
+    );
 
     // R3.8 — aucun tour figé n'a rejoint l'historique : une pause bloque le
     // chrono comme les cartes, donc aucun tour ne peut s'y terminer.
@@ -306,8 +337,8 @@ void main() {
             for (final line in turn.results)
               if (line.outcome == TurnOutcome.found) line.cardId,
       ];
-      expect(found.toSet(), hasLength(40), reason: 'Manche ${round.number}');
-      expect(found, hasLength(40), reason: 'Aucune carte trouvée deux fois');
+      expect(found.toSet(), hasLength(24), reason: 'Manche ${round.number}');
+      expect(found, hasLength(24), reason: 'Aucune carte trouvée deux fois');
     }
 
     // ── Podium ──────────────────────────────────────────────────────────

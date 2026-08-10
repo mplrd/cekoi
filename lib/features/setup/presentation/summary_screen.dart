@@ -7,6 +7,7 @@ import 'package:cekoi/domain/entities/card.dart' as domain;
 import 'package:cekoi/domain/entities/deck.dart';
 import 'package:cekoi/domain/entities/game_config.dart';
 import 'package:cekoi/domain/setup/game_launch.dart';
+import 'package:cekoi/domain/setup/game_setup.dart';
 import 'package:cekoi/features/setup/presentation/deck_catalog.dart';
 import 'package:cekoi/features/setup/presentation/setup_controller.dart';
 import 'package:cekoi/features/setup/presentation/widgets/setup_scaffold.dart';
@@ -14,6 +15,15 @@ import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+/// Les noms d'équipe par défaut, « Équipe 1 », « Équipe 2 »… (R8.3).
+///
+/// Ils vivent ici et non dans le domaine, qui ne fabrique aucun libellé : c'est
+/// la présentation qui comble les noms laissés vides, au moment de construire
+/// les équipes.
+List<String> fallbackTeamNames(GameSetup setup, AppLocalizations l10n) => [
+  for (var i = 0; i < setup.teamCount; i++) l10n.teamDefaultName(i + 1),
+];
 
 /// Étape 5 — récapitulatif et lancement.
 ///
@@ -60,14 +70,15 @@ class SummaryScreen extends ConsumerWidget {
             value: l10n.summarySettingsValue(
               setup.turnDuration.inSeconds,
               setup.resolvedCardCount,
-              setup.roundCount,
             ),
           ),
           _SummaryRow(
             label: l10n.summaryTeams,
             value: [
-              for (final team in setup.teams)
-                l10n.summaryTeamValue(team.name, team.playerIds.length),
+              for (final team in setup.teamsNamed(
+                fallbackTeamNames(setup, l10n),
+              ))
+                team.name,
             ].join(' · '),
           ),
         ],
@@ -156,8 +167,12 @@ class _LaunchButton extends ConsumerWidget {
   }
 
   void _launch(BuildContext context, WidgetRef ref, List<domain.Card> pool) {
+    final setup = ref.read(setupControllerProvider);
     final outcome = launchGame(
-      setup: ref.read(setupControllerProvider),
+      setup: setup,
+      teams: setup.teamsNamed(
+        fallbackTeamNames(setup, AppLocalizations.of(context)),
+      ),
       pool: pool,
       seed: ref.read(seedSourceProvider)(),
     );

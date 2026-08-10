@@ -5,11 +5,15 @@ import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// L'écran d'annonce d'un tour : qui joue, qui narre, sous quelle contrainte.
+/// L'écran d'annonce d'un tour : quelle équipe, sous quelle contrainte.
 ///
 /// `SPEC.md` en fait un écran à part entière et non une transition animée :
 /// il existe pour que le téléphone ait le temps de changer de mains avant que
 /// le chrono parte.
+///
+/// Le narrateur n'y est pas nommé : l'équipe le désigne elle-même (R3.1). La
+/// règle de la manche, elle, y est rappelée en toutes lettres (R2.3) — c'est
+/// le seul moment de la partie où tout le monde écoute.
 class TurnIntroView extends ConsumerWidget {
   const TurnIntroView({required this.game, super.key});
 
@@ -20,11 +24,6 @@ class TurnIntroView extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final countdown = ref.watch(playControllerProvider);
-
-    final narrator = game.players
-        .where((p) => p.id == game.turn?.narratorId)
-        .map((p) => p.name)
-        .firstOrNull;
 
     return Padding(
       padding: const EdgeInsets.all(32),
@@ -61,14 +60,14 @@ class TurnIntroView extends ConsumerWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
-          if (narrator != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              l10n.turnIntroNarrator(narrator),
-              textAlign: TextAlign.center,
-              style: theme.textTheme.titleMedium,
+          const SizedBox(height: 8),
+          Text(
+            l10n.turnIntroPassPhone,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
             ),
-          ],
+          ),
           const SizedBox(height: 48),
           if (countdown == null)
             FilledButton(

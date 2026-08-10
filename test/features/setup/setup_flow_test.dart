@@ -118,12 +118,6 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  Future<void> addPlayer(WidgetTester tester, String name) async {
-    await tester.enterText(find.byType(TextField), name);
-    await tester.testTextInput.receiveAction(TextInputAction.done);
-    await tester.pumpAndSettle();
-  }
-
   testWidgets('les cinq étapes mènent à un paquet tiré', (tester) async {
     await installDeck('animaux');
     await installDeck('metiers', minAge: MinAge.ten);
@@ -143,14 +137,8 @@ void main() {
     expect(find.text(l10n.setupSettingsTitle), findsOneWidget);
     await tapText(tester, l10n.actionContinue);
 
-    // 4 — les joueurs et les équipes
+    // 4 — les équipes : deux par défaut, sans rien taper (R8.3)
     expect(find.text(l10n.setupTeamsTitle), findsOneWidget);
-    for (final name in ['Léa', 'Tom', 'Ana', 'Hugo']) {
-      await addPlayer(tester, name);
-    }
-    expect(find.text(l10n.playerCount(4)), findsOneWidget);
-
-    await tapText(tester, l10n.actionProposeTeams);
     expect(find.text(l10n.teamDefaultName(1)), findsOneWidget);
     expect(find.text(l10n.teamDefaultName(2)), findsOneWidget);
     await tapText(tester, l10n.actionContinue);
@@ -160,8 +148,8 @@ void main() {
     expect(find.text(l10n.summaryMode), findsOneWidget);
     await tapText(tester, l10n.actionStartGame);
 
-    // Le paquet est tiré : 5 × 4 joueurs arrondi au multiple de 4 (R6.1).
-    expect(launchedGame(tester).deck, hasLength(20));
+    // Le paquet est tiré : 12 × 2 équipes (R6.1).
+    expect(launchedGame(tester).deck, hasLength(24));
 
     // Et la partie s'ouvre sur l'annonce du premier tour, pas sur une carte :
     // le téléphone doit avoir le temps de changer de mains.
@@ -170,6 +158,38 @@ void main() {
       findsOneWidget,
     );
     expect(find.text(l10n.roundNameFree), findsOneWidget);
+  });
+
+  testWidgets('R8.3 — les équipes se nomment, ou pas', (tester) async {
+    // Vivier large : trois équipes demandent 36 cartes, et un paquet tronqué
+    // ferait passer l'assertion de R6.1 pour une histoire de pénurie.
+    await installDeck('animaux', easy: 15, medium: 15, hard: 15);
+    await pumpApp(tester);
+
+    await tapText(tester, l10n.homePlay);
+    await tapText(tester, l10n.modeFamily);
+    await tapText(tester, l10n.setupCustomize);
+    await tapText(tester, 'animaux');
+    await tapText(tester, l10n.actionContinue);
+    await tapText(tester, l10n.actionContinue);
+
+    // Trois équipes, dont une seule nommée : R8.4 garde la saisie, R8.3
+    // comble le reste.
+    await tapText(tester, '3');
+    await tester.enterText(find.byType(TextField).at(1), 'Les Zèbres');
+    await tester.pumpAndSettle();
+    await tapText(tester, l10n.actionContinue);
+    await tapText(tester, l10n.actionStartGame);
+
+    expect(
+      launchedGame(tester).teams.map((t) => t.name),
+      [l10n.teamDefaultName(1), 'Les Zèbres', l10n.teamDefaultName(3)],
+    );
+    expect(
+      launchedGame(tester).deck,
+      hasLength(36),
+      reason: 'Trois équipes, donc 12 × 3 cartes (R6.1)',
+    );
   });
 
   testWidgets(
@@ -218,7 +238,7 @@ void main() {
   });
 
   /// Traverse les étapes 1 à 4 jusqu'au récapitulatif, avec [deck] coché à la
-  /// main et quatre joueurs — soit 20 cartes demandées (R6.1).
+  /// main et deux équipes — soit 24 cartes demandées (R6.1).
   Future<void> goToSummary(WidgetTester tester, String deck) async {
     await tapText(tester, l10n.homePlay);
     await tapText(tester, l10n.modeFamily);
@@ -226,11 +246,6 @@ void main() {
     await tapText(tester, deck);
     await tapText(tester, l10n.actionContinue);
     await tapText(tester, l10n.actionContinue);
-
-    for (final name in ['Léa', 'Tom', 'Ana', 'Hugo']) {
-      await addPlayer(tester, name);
-    }
-    await tapText(tester, l10n.actionProposeTeams);
     await tapText(tester, l10n.actionContinue);
     expect(find.text(l10n.setupSummaryTitle), findsOneWidget);
   }
@@ -239,7 +254,7 @@ void main() {
     testWidgets('le récapitulatif dit avec combien de cartes on jouera', (
       tester,
     ) async {
-      // 16 cartes pour 20 demandées : au-dessus du plancher de 12, donc la
+      // 16 cartes pour 24 demandées : au-dessus du plancher de 12, donc la
       // partie se lance — mais pas avec ce qui était demandé, et R6.2 exige
       // que ce soit dit et non découvert en jouant.
       await installDeck('animaux', easy: 6, medium: 6, hard: 4);
@@ -269,9 +284,9 @@ void main() {
       await goToSummary(tester, 'animaux');
 
       expect(find.textContaining(l10n.launchTruncated(30)), findsNothing);
-      expect(find.text(l10n.launchTruncated(20)), findsNothing);
+      expect(find.text(l10n.launchTruncated(24)), findsNothing);
       await tapText(tester, l10n.actionStartGame);
-      expect(launchedGame(tester).deck, hasLength(20));
+      expect(launchedGame(tester).deck, hasLength(24));
     });
   });
 

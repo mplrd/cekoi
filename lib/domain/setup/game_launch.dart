@@ -4,6 +4,7 @@ import 'package:cekoi/domain/engine/draw.dart';
 import 'package:cekoi/domain/engine/game_engine.dart';
 import 'package:cekoi/domain/engine/game_state.dart';
 import 'package:cekoi/domain/entities/card.dart';
+import 'package:cekoi/domain/entities/team.dart';
 import 'package:cekoi/domain/setup/game_setup.dart';
 
 /// Ce que donne une tentative de lancement.
@@ -45,17 +46,13 @@ LaunchOutcome relaunchGame({
       deckIds: config.deckIds,
       difficulties: config.difficulties,
       turnDuration: config.turnDuration,
-      roundCount: config.roundCount,
       cardCount: config.cardCount,
       profileId: config.profileId,
-      players: previous.players,
-      teamCount: previous.teams.length,
-      // Les curseurs de narrateur repartent de zéro : hériter de celui d'une
-      // partie finie ferait commencer la suivante par un joueur au hasard.
-      teams: [
-        for (final team in previous.teams) team.copyWith(narratorIndex: 0),
-      ],
+      teamNames: [for (final team in previous.teams) team.name],
     ),
+    // Les équipes sont reprises telles quelles : leurs noms sont déjà résolus,
+    // il n'y a plus de repli à appliquer.
+    teams: previous.teams,
     pool: pool,
     seed: seed,
   );
@@ -68,6 +65,7 @@ LaunchOutcome relaunchGame({
 /// l'écran de sélection — deux filtrages, deux occasions de diverger.
 LaunchOutcome launchGame({
   required GameSetup setup,
+  required List<Team> teams,
   required List<Card> pool,
   required int seed,
 }) {
@@ -89,8 +87,7 @@ LaunchOutcome launchGame({
     draw: draw,
     game: startGame(
       config: setup.toConfig(),
-      players: setup.players,
-      teams: setup.teams,
+      teams: teams,
       deck: draw.cards,
       tieBreakReserve: draw.tieBreakReserve,
       seed: seed,

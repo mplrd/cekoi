@@ -126,6 +126,82 @@ void main() {
     });
   });
 
+  group("R3.9 — passer n'existe pas en manche 1", () {
+    test('cas limite 6 : passer en description libre est refusé', () {
+      final game = testGame(
+        roundIndex: 0,
+      ).apply([const GameEvent.turnStarted()]);
+      expect(game.canPass, isFalse);
+
+      final state = game.apply([const GameEvent.cardPassed()]);
+
+      expect(
+        state,
+        game,
+        reason:
+            'Ni le paquet ni le récapitulatif ne bougent : rien ne doit '
+            "trahir qu'une action a été reçue",
+      );
+      expect(state.turn!.results, isEmpty);
+    });
+
+    test('la même action est acceptée en manche 2', () {
+      // Le pendant du test précédent. Sans lui, supprimer *toute* la logique
+      // de passage laisserait le premier au vert.
+      final game = testGame(
+        roundIndex: 1,
+      ).apply([const GameEvent.turnStarted()]);
+      final first = game.currentCardId;
+
+      final state = game.apply([const GameEvent.cardPassed()]);
+
+      expect(state.canPass, isTrue);
+      expect(state.pile.last, first);
+      expect(state.turn!.results, hasLength(1));
+    });
+
+    test('la manche 3 autorise aussi de passer', () {
+      final game = testGame(
+        roundIndex: 2,
+      ).apply([const GameEvent.turnStarted()]);
+
+      expect(game.canPass, isTrue);
+      expect(game.apply([const GameEvent.cardPassed()]), isNot(game));
+    });
+
+    test('trouvé reste disponible en manche 1', () {
+      // R3.9 retire une action, pas les deux : une garde trop large rendrait
+      // la première manche injouable.
+      final game = testGame(
+        roundIndex: 0,
+      ).apply([const GameEvent.turnStarted()]);
+
+      final state = game.apply([const GameEvent.cardFound()]);
+
+      expect(state.pile, hasLength(5));
+      expect(state.scoreOf('team-1'), 1);
+    });
+
+    test('corriger une carte en « pas trouvée » reste possible (R3.6)', () {
+      // `passed` au récapitulatif veut dire « pas trouvée » : c'est
+      // l'annulation d'un tap de trop, pas un contournement de R3.9.
+      var state = testGame(cardCount: 2, roundIndex: 0).apply([
+        const GameEvent.turnStarted(),
+        const GameEvent.cardFound(),
+        const GameEvent.cardFound(),
+      ]);
+      expect(state.phase, GamePhase.turnSummary);
+
+      final last = state.turn!.results.last.cardId;
+      state = state.apply([
+        GameEvent.resultCorrected(cardId: last, outcome: TurnOutcome.passed),
+      ]);
+
+      expect(state.pile, [last]);
+      expect(state.scoreOf('team-1'), 1);
+    });
+  });
+
   group('R3.5 — fin du tour', () {
     test('le tour se termine quand le chrono atteint zéro', () {
       final state = testGame().apply([

@@ -95,42 +95,42 @@ class _QuickAddState extends ConsumerState<_QuickAdd> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
 
+    // Le formulaire se lit de haut en bas et **finit par son action** : la
+    // difficulté d'abord, le texte ensuite, le bouton en dernier. Il a d'abord
+    // été écrit dans l'autre sens — un « + » collé au champ, la difficulté en
+    // dessous — et le retour d'usage a été immédiat : on ne sait pas si la
+    // carte part avec le niveau affiché, puisqu'il reste des champs après le
+    // bouton.
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _text,
-                  focusNode: _focus,
-                  autofocus: true,
-                  textInputAction: TextInputAction.done,
-                  onChanged: (_) {
-                    if (_doublon) setState(() => _doublon = false);
-                  },
-                  onSubmitted: (_) => unawaited(_add()),
-                  decoration: InputDecoration(
-                    labelText: l10n.cardTextHint,
-                    border: const OutlineInputBorder(),
-                    errorText: _doublon ? l10n.cardAlreadyThere : null,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              IconButton.filled(
-                onPressed: () => unawaited(_add()),
-                icon: const Icon(Icons.add),
-                tooltip: l10n.actionAddCard,
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
           _DifficultyPicker(
             value: _difficulty,
             onChanged: (d) => setState(() => _difficulty = d),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _text,
+            focusNode: _focus,
+            autofocus: true,
+            textInputAction: TextInputAction.done,
+            onChanged: (_) {
+              if (_doublon) setState(() => _doublon = false);
+            },
+            onSubmitted: (_) => unawaited(_add()),
+            decoration: InputDecoration(
+              labelText: l10n.cardTextHint,
+              border: const OutlineInputBorder(),
+              errorText: _doublon ? l10n.cardAlreadyThere : null,
+            ),
+          ),
+          const SizedBox(height: 12),
+          FilledButton.icon(
+            onPressed: () => unawaited(_add()),
+            icon: const Icon(Icons.add),
+            label: Text(l10n.actionAddCard),
           ),
         ],
       ),

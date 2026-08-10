@@ -4,7 +4,6 @@ import 'package:cekoi/domain/engine/game_phase.dart';
 import 'package:cekoi/domain/engine/turn.dart';
 import 'package:cekoi/domain/entities/card.dart';
 import 'package:cekoi/domain/entities/game_config.dart';
-import 'package:cekoi/domain/entities/player.dart';
 import 'package:cekoi/domain/entities/team.dart';
 import 'package:cekoi/domain/rules/round.dart';
 import 'package:cekoi/domain/rules/scoring.dart';
@@ -23,7 +22,6 @@ part 'game_state.g.dart';
 abstract class GameState with _$GameState {
   const factory GameState({
     required GameConfig config,
-    required List<Player> players,
     required List<Team> teams,
 
     /// Le paquet figé au tirage. Modifier une catégorie en cours de partie ne
@@ -107,9 +105,9 @@ abstract class GameState with _$GameState {
   /// (R3.8).
   bool get canAct => phase == GamePhase.playing && !isPaused;
 
-  /// Passer est indisponible sur la dernière carte (R3.4) : elle reviendrait
-  /// aussitôt et le tour ne pourrait plus avancer.
-  bool get canPass => canAct && pile.length > 1;
+  /// Passer n'existe pas en manche 1 (R3.9), et pas sur la dernière carte
+  /// (R3.4) — elle reviendrait aussitôt et le tour ne pourrait plus avancer.
+  bool get canPass => canAct && round.allowsPass && pile.length > 1;
 
   /// Les tours joués, le tour courant compris tant qu'il n'est pas validé.
   List<PlayedTurn> get allTurns => [...history, ?turn];

@@ -18,21 +18,27 @@ manches plus rapides — c'est le ressort du jeu, pas un effet de bord.
 
 | # | Nom | Contrainte |
 |---|---|---|
-| 1 | Description libre | Le narrateur peut dire ce qu'il veut, **sauf** les mots figurant sur la carte et leurs dérivés. Gestes interdits. |
-| 2 | Un seul mot | Un unique mot, choisi librement, qu'il peut répéter autant qu'il veut. Aucun autre son, aucun geste. |
-| 3 | Mime | Silence total. Gestes uniquement. Aucun bruitage, aucun objet de la pièce désigné du doigt. |
+| 1 | Description libre | Le narrateur dit ce qu'il veut, **sauf** les mots figurant sur la carte et leurs dérivés. Ni mime, ni geste, ni bruitage. **On ne passe pas** (R3.9). |
+| 2 | Un seul mot | Un unique mot, choisi librement. L'équipe **ne se concerte pas** : seule la première proposition compte, sinon on passe. Ni mime, ni geste, ni bruitage. |
+| 3 | Mime | Mimes, gestes et bruitages — mais **aucun mot**. Une seule proposition, sans se concerter. |
 
 **R2.1** — Les manches se jouent toujours dans cet ordre.
 
-**R2.2** — Le nombre de manches est configurable (2 ou 3). En 2 manches, on joue la 1 et la 3
-— la manche « un seul mot » est celle qui bloque le plus les jeunes enfants.
+**R2.2** — **Une partie, c'est les trois manches.** Le nombre de manches n'est pas un réglage :
+c'est la montée en contrainte sur un paquet qu'on mémorise qui fait le jeu, et en retirer une
+le vide de son ressort. Retour d'usage d'août 2026 — le réglage n'était jamais touché et
+allongeait un écran de configuration qu'on veut traverser sans y penser.
+
+**R2.3** — La règle de la manche est rappelée avant chaque tour, à l'écran d'annonce. Elle est
+formulée pour être lue à voix haute par celui qui tient le téléphone : c'est le seul moment où
+tout le monde écoute.
 
 ## 3. Déroulé d'un tour
 
-**R3.1** — L'équipe active désigne un narrateur. La rotation est automatique et **interne à
-chaque équipe** : chaque équipe garde son propre curseur de narrateur. Des équipes de tailles
-inégales sont donc autorisées sans qu'un joueur narre plus souvent que les autres de son
-équipe.
+**R3.1** — L'équipe active désigne son narrateur **elle-même**, à la table. L'application ne
+connaît pas les joueurs et ne suit aucune rotation : elle annonce l'équipe, les joueurs savent
+à qui c'est. Retour d'usage d'août 2026 — saisir les prénoms était la corvée du début de
+partie, et personne ne consultait le narrateur désigné à l'écran.
 
 **R3.2** — Le chrono démarre à l'affichage de la première carte, pas à l'arrivée sur l'écran.
 Un compte à rebours de 3 secondes précède le départ.
@@ -45,6 +51,15 @@ Un compte à rebours de 3 secondes précède le départ.
 **R3.4** — Le bouton *Passer* est **désactivé quand il ne reste qu'une seule carte** dans le
 paquet. Sans cette règle, passer la dernière carte la ferait réapparaître immédiatement, ce
 qui bloque le tour.
+
+**R3.9** — *Passer* **n'existe pas en manche 1**. Le narrateur a le droit de tout dire sauf les
+mots de la carte : il n'y a pas de carte infaisable, seulement une carte qui prend du temps.
+Passer y serait un moyen gratuit de trier le paquet à son avantage. En manches 2 et 3, la
+contrainte peut rendre une carte réellement impossible, et *Passer* redevient la sortie prévue
+— c'est même la règle en manche 2, où une proposition erronée coûte la carte.
+
+L'action est **absente de l'écran**, pas grisée : un bouton grisé pendant toute une manche se
+lit comme une panne.
 
 **R3.5** — Le tour se termine quand le chrono atteint zéro, ou quand le paquet est vide.
 
@@ -69,8 +84,7 @@ même en plein milieu d'un tour. Le temps restant est perdu et n'est pas report�
 **R4.2** — Toutes les cartes sont remises en jeu et remélangées pour la manche suivante.
 
 **R4.3** — La manche suivante démarre avec **l'équipe qui suit** celle qui a terminé la manche
-précédente, et avec le narrateur suivant dans cette équipe. Sans cette règle, l'équipe qui
-vide le paquet enchaînerait deux tours d'affilée.
+précédente. Sans cette règle, l'équipe qui vide le paquet enchaînerait deux tours d'affilée.
 
 **R4.4** — Un écran de scores intermédiaires est affiché entre deux manches, avec le détail
 par manche et le cumul.
@@ -96,12 +110,16 @@ paquet joué — un départage au réflexe reste préférable à pas de départa
 |---|---|---|---|
 | Durée du tour | 30 / 45 / 60 / 90 s, ou libre (15–180) | 60 s | 45 s |
 | Nombre de cartes | 24 / 32 / 40 / 48, ou auto, ou libre | auto | 32 |
-| Nombre de manches | 2 ou 3 | 3 | 3 |
 | Nombre d'équipes | 2 à illimité | 2 | 2 |
 
-**R6.1** — Le mode *auto* pour le nombre de cartes calcule `5 × nombre de joueurs`, arrondi au
+**R6.1** — Le mode *auto* pour le nombre de cartes calcule `12 × nombre d'équipes`, arrondi au
 multiple de 4 supérieur, borné à [16, 80]. C'est le réglage qui donne des parties d'environ
 30 à 40 minutes.
+
+Le calcul portait sur le nombre de joueurs jusqu'au retour d'usage d'août 2026, qui a retiré
+leur saisie (R3.1, R8.3). Le facteur 12 vaut `5 × 2,4 joueurs par équipe` : à deux équipes il
+donne 24 cartes, là où six joueurs en donnaient 32. La durée d'une partie suit le nombre de
+tours à jouer, donc le nombre d'équipes, bien plus que l'effectif exact autour de la table.
 
 **R6.2** — Si les catégories sélectionnées contiennent moins de cartes que le nombre demandé,
 la partie utilise tout ce qui est disponible et le signale explicitement avant de démarrer.
@@ -161,17 +179,17 @@ désactivé, avec la raison indiquée. Il ne disparaît pas silencieusement de l
 **R8.1** — Aucune limite haute sur le nombre d'équipes. L'interface doit rester utilisable
 jusqu'à 10 équipes ; au-delà, elle ne doit pas casser.
 
-**R8.2** — Les équipes peuvent avoir des effectifs différents. Voir R3.1 pour la rotation.
+**R8.2** — L'application **ne connaît pas les joueurs** : ni leur nom, ni leur nombre, ni leur
+répartition. Une équipe est un nom et un score. Qui est dans quelle équipe se règle à la table,
+en trois secondes, mieux que par un écran.
 
-**R8.3** — La **proposition de composition** prend la liste des joueurs saisis et un nombre
-d'équipes, puis répartit aléatoirement en équilibrant les effectifs (écart maximum de 1
-joueur entre deux équipes). Si des joueurs sont marqués *enfant*, elle les répartit
-uniformément plutôt que de les concentrer dans une seule équipe.
+**R8.3** — La configuration des équipes tient en deux choses : **combien**, et **comment elles
+s'appellent**. Un nom laissé vide vaut « Équipe N » — on lance une partie sans rien taper.
 
-**R8.4** — La proposition est relançable autant de fois que voulu, et reste entièrement
-modifiable à la main ensuite. Ce n'est qu'une suggestion.
+**R8.4** — Les noms saisis survivent à un changement du nombre d'équipes : passer de 2 à 3 ne
+doit pas effacer les deux noms déjà donnés.
 
-**R8.5** — Une partie nécessite au minimum 2 équipes de 2 joueurs.
+**R8.5** — Une partie nécessite au minimum 2 équipes.
 
 ## 9. Persistance
 
@@ -196,8 +214,8 @@ dédié dans `test/domain/`.
    reprendre avec cette carte au paquet.
 5. Toutes les cartes passées, aucune trouvée pendant un tour entier → le paquet doit être
    identique en fin de tour, sans boucle infinie.
-6. Une équipe de 2 joueurs et une équipe de 5 → chaque équipe fait tourner ses narrateurs
-   indépendamment (R3.1).
+6. *Passer* en manche 1, paquet plein → refusé, le paquet ne bouge pas et aucune ligne
+   n'apparaît au récapitulatif (R3.9). La même action en manche 2 est acceptée.
 7. Trois équipes à égalité parfaite en fin de partie → départage à trois (R5.3).
 8. Mise en arrière-plan à 1 s de la fin du chrono → au retour, il reste bien 1 s (R3.7).
 9. Partie configurée à 48 cartes alors que les catégories n'en contiennent que 30 → on joue à
@@ -210,3 +228,5 @@ dédié dans `test/domain/`.
     (R7.6).
 13. Pause en cours, le narrateur appuie sur *Trouvé* → aucun point, le paquet ne bouge pas
     (R3.8). Le chrono figé rend l'action gratuite, c'est ce qui la rend tentante.
+14. Trois équipes demandées après en avoir nommé deux → les deux noms restent, la troisième
+    prend son nom par défaut (R8.4). Repasser à deux ne doit pas ressusciter un nom effacé.

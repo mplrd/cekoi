@@ -9,9 +9,9 @@ import '../../support/fixtures.dart';
 
 /// Une partie terminée, avec de l'histoire derrière elle.
 ///
-/// Les curseurs de narrateur y sont **avancés**, comme après de vrais tours :
-/// les laisser à zéro rendrait vraie sans rien prouver l'assertion sur leur
-/// remise à zéro.
+/// Elle s'arrête sur la **seconde** équipe et à la dernière manche : partir
+/// d'un état déjà neutre rendrait vraies sans rien prouver les assertions sur
+/// la remise à zéro.
 GameState _finishedGame() {
   final game = testGame(cardCount: 12);
   return game.copyWith(
@@ -21,13 +21,12 @@ GameState _finishedGame() {
     pile: const [],
     turn: null,
     teams: [
-      for (final team in game.teams) team.copyWith(narratorIndex: 1),
+      for (final team in game.teams) team.copyWith(name: 'Les ${team.id}'),
     ],
     history: [
       PlayedTurn(
         round: game.rounds.first,
         teamId: 'team-1',
-        narratorId: 'team-1-1',
         results: [
           for (final card in game.deck.take(4))
             CardResult(cardId: card.id, outcome: TurnOutcome.found),
@@ -49,10 +48,11 @@ void main() {
       ).game!;
 
       expect(game.config, previous.config);
-      expect(game.players, previous.players);
-      expect(game.teams.map((t) => t.playerIds), [
-        for (final team in previous.teams) team.playerIds,
-      ]);
+      expect(
+        game.teams,
+        previous.teams,
+        reason: 'Mêmes équipes, mêmes noms, mêmes couleurs',
+      );
     });
 
     test('le paquet est retiré, pas recopié', () {
@@ -90,10 +90,11 @@ void main() {
       expect(game.phase, GamePhase.turnIntro);
     });
 
-    test('la première équipe rouvre, avec son premier narrateur', () {
+    test('la première équipe rouvre la partie', () {
       // La partie précédente s'est arrêtée sur la seconde équipe : hériter de
-      // ce curseur ferait commencer la nouvelle par un joueur au hasard.
+      // son curseur ferait commencer la nouvelle au milieu de la table.
       final previous = _finishedGame();
+      expect(previous.activeTeamIndex, 1, reason: 'point de départ');
 
       final game = relaunchGame(
         previous: previous,
@@ -102,8 +103,23 @@ void main() {
       ).game!;
 
       expect(game.activeTeamIndex, 0);
-      expect(game.teams.every((t) => t.narratorIndex == 0), isTrue);
-      expect(game.turn!.narratorId, previous.teams.first.playerIds.first);
+      expect(game.turn!.teamId, previous.teams.first.id);
+    });
+
+    test('la partie repart de la première manche', () {
+      // La précédente s'est terminée sur le mime : reprendre son index ferait
+      // démarrer la nouvelle par la manche la plus dure (R2.1).
+      final previous = _finishedGame();
+      expect(previous.roundIndex, 2, reason: 'point de départ');
+
+      final game = relaunchGame(
+        previous: previous,
+        pool: testCards(40, prefix: 'neuve'),
+        seed: 9,
+      ).game!;
+
+      expect(game.round, game.rounds.first);
+      expect(game.rounds, hasLength(3));
     });
 
     test('un vivier devenu trop maigre refuse, sans planter', () {
