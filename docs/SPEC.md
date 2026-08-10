@@ -128,9 +128,14 @@ un défaut raisonnable, pour ne pas transformer la saisie en corvée.
 Une catégorie custom est marquée `family` ou `adult` à la création, ce qui détermine dans
 quel mode elle apparaîtra.
 
-Import et export en JSON sont prévus pour permettre de récupérer une liste écrite sur un
-ordinateur — mais **strictement en local, par le partage de fichiers du système**. Aucun
-upload, aucun partage entre utilisateurs en v1 (règle d'or n°4).
+L'import et l'export en JSON permettent de récupérer une liste écrite sur un ordinateur, ou
+de passer une catégorie d'un téléphone à un autre — mais **strictement en local, par le
+partage de fichiers du système**. Aucun upload, aucun partage entre utilisateurs en v1
+(règle d'or n°4).
+
+Le format est celui de `assets/decks/` : un export s'importe tel quel ailleurs, et un fichier
+écrit à la main s'importe aussi. L'import **crée une catégorie**, il ne fusionne pas avec une
+existante — fusionner demanderait d'arbitrer les cartes modifiées des deux côtés.
 
 ## Accueil
 
