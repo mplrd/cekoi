@@ -52,18 +52,67 @@ void main() {
       expect(setup.cardCount, 32);
     });
 
-    test('changer de mode repart des défauts de ce mode', () {
+    test('changer de mode repart des défauts du nouveau mode', () {
       // R7.2 : le mode ne change pas en cours de partie. Il peut changer en
-      // cours de configuration, et tout ce qui en dépend doit suivre.
-      final custom = setupForMode(
-        Audience.adult,
-      ).toggleDeck('apero').withTurnDuration(const Duration(seconds: 90));
+      // cours de configuration, et tout ce qui dépend du vivier doit suivre —
+      // « apero » n'existe même pas en mode Famille (R7.1).
+      final custom = setupForMode(Audience.adult)
+          .toggleDeck('apero')
+          .withTurnDuration(const Duration(seconds: 90))
+          .withCardCount(48);
 
-      final switched = setupForMode(Audience.family);
+      final switched = custom.withMode(Audience.family);
 
-      expect(switched.deckIds, isEmpty);
+      expect(switched.mode, Audience.family);
+      expect(switched.deckIds, isEmpty, reason: 'catégorie hors du vivier');
       expect(switched.turnDuration, const Duration(seconds: 60));
+      expect(switched.cardCount, isNull, reason: 'auto, défaut famille');
       expect(custom.deckIds, ['apero'], reason: "l'ancienne reste intacte");
+    });
+
+    test('un profil ne survit pas au changement de mode', () {
+      // Un profil vise un mode (R7.5) et `withProfile` refuse les autres. Le
+      // laisser en place afficherait « Les minis » sur une partie adultes, et
+      // `toConfig` emporterait ce mensonge dans la partie.
+      final switched = setupForMode(
+        Audience.family,
+      ).withProfile(_profile('minis'), _decks).withMode(Audience.adult);
+
+      expect(switched.profileId, isNull);
+      expect(switched.isCustomSelection, isTrue);
+      expect(switched.difficulties, Difficulty.values.toSet());
+    });
+
+    test('les joueurs et les équipes survivent au changement de mode', () {
+      // On revient à la première étape depuis n'importe où. Reperdre huit noms
+      // et leur répartition parce qu'on a touché au mode serait une punition :
+      // l'effectif n'a rien à voir avec le contenu.
+      final composed =
+          _withPlayers(setupForMode(Audience.family), 8, children: 2)
+              .withTeamCount(3)
+              .withProposedTeams(
+                names: ['A', 'B', 'C'],
+                random: Random(1),
+              );
+
+      final switched = composed.withMode(Audience.adult);
+
+      expect(switched.players, composed.players);
+      expect(switched.teamCount, 3);
+      expect(switched.teams, composed.teams);
+    });
+
+    test('rechoisir le mode déjà en cours ne touche à rien', () {
+      // L'écran du mode se retraverse en revenant en arrière : retaper le même
+      // bouton ne doit pas faire fondre la sélection faite depuis.
+      final setup = setupForMode(
+        Audience.family,
+      ).toggleDeck('animaux').withTurnDuration(const Duration(seconds: 30));
+
+      final again = setup.withMode(Audience.family);
+
+      expect(again.deckIds, ['animaux']);
+      expect(again.turnDuration, const Duration(seconds: 30));
     });
   });
 

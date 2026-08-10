@@ -35,12 +35,7 @@ class SetupController extends _$SetupController {
   @override
   GameSetup build() => setupForMode(Audience.family);
 
-  /// Repart des défauts du mode (R6). Le mode conditionne le vivier, les
-  /// catégories visibles et les réglages : rien de ce qui précède ne survit.
-  void chooseMode(Audience mode) {
-    _playerCounter = 0;
-    state = setupForMode(mode);
-  }
+  void chooseMode(Audience mode) => state = state.withMode(mode);
 
   void chooseProfile(GameProfile profile, List<Deck> decks) =>
       state = state.withProfile(profile, decks);

@@ -68,6 +68,24 @@ abstract class GameSetup with _$GameSetup {
     return teams.every((t) => t.playerIds.every(known.contains));
   }
 
+  /// Change le mode de contenu.
+  ///
+  /// Tout ce qui dépend du vivier repart des défauts du nouveau mode : les
+  /// catégories retenues n'y existent peut-être pas, et les réglages par
+  /// défaut diffèrent (R6, R7.1). Les **joueurs et les équipes survivent** :
+  /// ils n'ont rien à voir avec le contenu, et les resaisir parce qu'on est
+  /// revenu à la première étape serait une punition.
+  ///
+  /// Retaper le mode déjà choisi ne change rien du tout.
+  GameSetup withMode(Audience mode) {
+    if (mode == this.mode) return this;
+    return setupForMode(mode).copyWith(
+      players: players,
+      teamCount: teamCount,
+      teams: teams,
+    );
+  }
+
   /// Applique un profil : catégories, difficultés et réglages d'un coup
   /// (R7.5). Les joueurs déjà saisis sont conservés.
   GameSetup withProfile(GameProfile profile, List<Deck> decks) {
