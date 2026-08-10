@@ -96,6 +96,18 @@ void main() {
   });
 
   group('migration de la v1 vers la v2', () {
+    /// Redescend la base en v1 avant de migrer.
+    ///
+    /// `AppDatabase.memory()` déclenche `onCreate`, qui crée **toutes** les
+    /// tables au schéma courant, `saved_games` comprise. Migrer par-dessus ne
+    /// prouverait rien : `createTable` émet `CREATE TABLE IF NOT EXISTS`, donc
+    /// l'appel serait un no-op silencieux et vider le corps de la migration
+    /// laisserait le test vert — alors qu'en production, tout appareil mis à
+    /// jour depuis la v1 publiée n'aurait pas la table et **chaque
+    /// sauvegarde échouerait**.
+    Future<void> downgradeToV1() =>
+        db.customStatement('DROP TABLE saved_games');
+
     test('le contenu écrit par le joueur survit', () async {
       // Le contrat des migrations : les lignes `origin = 'custom'` sont du
       // contenu que le joueur a saisi et qu'aucune migration n'a le droit de
@@ -124,6 +136,7 @@ void main() {
             ),
           );
 
+      await downgradeToV1();
       await db.migration.onUpgrade(Migrator(db), 1, 2);
 
       final decks = await db.select(db.decks).get();
@@ -133,6 +146,7 @@ void main() {
     });
 
     test('la table de sauvegarde est utilisable après migration', () async {
+      await downgradeToV1();
       await db.migration.onUpgrade(Migrator(db), 1, 2);
 
       await repository.save(testGame(), savedAt: _now);

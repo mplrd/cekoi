@@ -110,9 +110,17 @@ void main() {
     test('une lecture antérieure ne fait pas reculer le temps consommé', () {
       // La source est censée être monotone. Si elle ne l'est pas, le tour ne
       // doit pas rajeunir : le narrateur récupérerait du temps.
-      final clock = const TurnClock().startedAt(at(100));
+      //
+      // Le chrono part d'un temps déjà consommé, sans quoi « ne recule pas »
+      // et « rend zéro » seraient la même valeur et l'assertion ne
+      // distinguerait pas les deux — une source qui recule d'une milliseconde
+      // pourrait effacer tout le tour sans que le test bronche.
+      final clock = const TurnClock()
+          .startedAt(at(0))
+          .pausedAt(at(20))
+          .resumedAt(at(100));
 
-      expect(clock.elapsedAt(at(90)), Duration.zero);
+      expect(clock.elapsedAt(at(90)), at(20));
     });
   });
 }

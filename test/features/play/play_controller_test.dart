@@ -1,5 +1,6 @@
 import 'package:cekoi/app/clock.dart';
 import 'package:cekoi/app/current_game.dart';
+import 'package:cekoi/app/screen_awake.dart';
 import 'package:cekoi/domain/engine/game_phase.dart';
 import 'package:cekoi/domain/engine/game_state.dart';
 import 'package:cekoi/domain/engine/turn.dart';
@@ -9,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fixtures.dart';
+import '../../support/providers.dart';
 
 /// Une horloge monotone que le test avance à la main.
 ///
@@ -42,6 +44,9 @@ void main() {
   late FakeClock clock;
   late ProviderContainer container;
 
+  /// Dernier ordre reçu par le maintien d'écran, `null` si aucun.
+  bool? screenAwake;
+
   /// Monte le contrôleur sur une partie prête à jouer.
   ///
   /// Un widget est nécessaire : les `Timer` et le cycle de vie ne sont
@@ -51,9 +56,15 @@ void main() {
     GameState? game,
   }) async {
     clock = FakeClock();
+    screenAwake = null;
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [monotonicClockProvider.overrideWithValue(clock.read)],
+        overrides: [
+          monotonicClockProvider.overrideWithValue(clock.read),
+          screenAwakeProvider.overrideWithValue(
+            fakeScreenAwake(({required enable}) => screenAwake = enable),
+          ),
+        ],
         child: const SizedBox.shrink(),
       ),
     );
@@ -175,6 +186,37 @@ void main() {
       controller.requestResume();
       await clock.advance(tester, const Duration(seconds: 3));
       expect(controller.isTicking, isTrue);
+    });
+  });
+
+  group("l'écran ne s'éteint pas pendant un tour", () {
+    testWidgets('allumé pendant le tour, relâché autour', (tester) async {
+      // En manche 3 le narrateur mime sans toucher l'écran : sans ce maintien,
+      // la veille système coupe l'écran et met le tour en pause tout seul.
+      final controller = await pumpGame(
+        tester,
+        game: testGame(turnDuration: const Duration(seconds: 30)),
+      );
+      expect(screenAwake, isNot(isTrue), reason: 'rien ne tourne encore');
+
+      controller.startTurn();
+      await clock.advance(tester, const Duration(seconds: 3));
+      expect(screenAwake, isTrue);
+
+      controller.pause();
+      await tester.pump();
+      expect(screenAwake, isFalse, reason: 'en pause, la veille reprend');
+
+      controller.requestResume();
+      await clock.advance(tester, const Duration(seconds: 3));
+      expect(screenAwake, isTrue);
+
+      await clock.advance(tester, const Duration(seconds: 30));
+      expect(
+        screenAwake,
+        isFalse,
+        reason: "Le tour fini, l'écran n'a plus de raison de rester allumé",
+      );
     });
   });
 

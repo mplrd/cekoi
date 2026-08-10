@@ -1,5 +1,6 @@
 import 'package:cekoi/app/clock.dart';
 import 'package:cekoi/app/current_game.dart';
+import 'package:cekoi/app/screen_awake.dart';
 import 'package:cekoi/domain/engine/game_state.dart';
 import 'package:cekoi/domain/entities/card.dart' as domain;
 import 'package:cekoi/domain/entities/difficulty.dart';
@@ -10,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fixtures.dart';
+import '../../support/providers.dart';
 import 'play_controller_test.dart' show FakeClock;
 
 /// Une partie dont la carte du dessus porte des mots interdits.
@@ -50,7 +52,10 @@ void main() {
 
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [monotonicClockProvider.overrideWithValue(clock.read)],
+        overrides: [
+          monotonicClockProvider.overrideWithValue(clock.read),
+          screenAwakeProvider.overrideWithValue(fakeScreenAwake()),
+        ],
         child: const MaterialApp(
           locale: Locale('fr'),
           localizationsDelegates: AppLocalizations.localizationsDelegates,

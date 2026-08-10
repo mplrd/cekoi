@@ -1,5 +1,6 @@
 import 'package:cekoi/app/clock.dart';
 import 'package:cekoi/app/current_game.dart';
+import 'package:cekoi/app/screen_awake.dart';
 import 'package:cekoi/data/db/database.dart';
 import 'package:cekoi/data/providers.dart';
 import 'package:cekoi/domain/engine/game_phase.dart';
@@ -16,6 +17,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fixtures.dart';
+import '../../support/providers.dart';
 import 'play_controller_test.dart' show FakeClock;
 
 /// Un tour archivé où [found] cartes ont été trouvées.
@@ -89,6 +91,7 @@ void main() {
           monotonicClockProvider.overrideWithValue(FakeClock().read),
           appDatabaseProvider.overrideWithValue(db),
           seedSourceProvider.overrideWithValue(() => 7),
+          screenAwakeProvider.overrideWithValue(fakeScreenAwake()),
         ],
         child: const MaterialApp(
           locale: Locale('fr'),

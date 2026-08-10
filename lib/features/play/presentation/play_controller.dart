@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cekoi/app/clock.dart';
 import 'package:cekoi/app/current_game.dart';
+import 'package:cekoi/app/screen_awake.dart';
 import 'package:cekoi/domain/engine/game_engine.dart';
 import 'package:cekoi/domain/engine/game_event.dart';
 import 'package:cekoi/domain/engine/game_phase.dart';
@@ -46,17 +47,31 @@ class PlayController extends _$PlayController {
 
   @override
   int? build() {
+    // Capturé maintenant : `onDispose` s'exécute sur un `ref` démonté, où
+    // toute lecture de provider lève.
+    final releaseScreen = ref.read(screenAwakeProvider);
+
     final bridge = _LifecycleBridge(
       onBackground: _pauseForBackground,
       onForeground: _resumeFromBackground,
     );
     WidgetsBinding.instance.addObserver(bridge);
 
-    ref.onDispose(() {
-      _ticker?.cancel();
-      _countdown?.cancel();
-      WidgetsBinding.instance.removeObserver(bridge);
-    });
+    // Le chrono suit l'état, y compris quand la partie est posée de
+    // l'extérieur : reprise après fermeture, rejeu depuis le podium, lancement
+    // depuis la configuration. Le brancher uniquement sur `_dispatch` laissait
+    // ces trois chemins sans chrono — et le réducteur, qui ignore en silence
+    // tout `Ticked` hors tour, ne montrait rien d'anormal.
+    ref
+      ..listen(currentGameProvider, (_, _) => _syncTicker())
+      ..onDispose(() {
+        _ticker?.cancel();
+        _countdown?.cancel();
+        WidgetsBinding.instance.removeObserver(bridge);
+        // Laisser l'écran forcé allumé après la partie viderait la batterie
+        // sans que personne ne comprenne pourquoi.
+        unawaited(releaseScreen(enable: false));
+      });
 
     return null;
   }
@@ -144,6 +159,10 @@ class PlayController extends _$PlayController {
       return;
     }
 
+    // Un dernier tic avant de geler : c'est l'état qui sera sauvegardé puis
+    // relu, il doit porter le temps exact et non celui du tic précédent.
+    _dispatch(GameEvent.ticked(_clock.elapsedAt(_now)));
+
     _clock = _clock.pausedAt(_now);
     _pausedByLifecycle = byLifecycle;
     _dispatch(const GameEvent.paused());
@@ -154,8 +173,10 @@ class PlayController extends _$PlayController {
     _startCountdown(_resume);
   }
 
+  /// Ne touche pas au chrono : [_syncTicker] en est le seul propriétaire, et
+  /// le repart du temps que porte l'état. Le redémarrer ici lui ferait sauter
+  /// cette reprise, et une partie rouverte repartirait du temps plein.
   void _resume() {
-    _clock = _clock.resumedAt(_now);
     _pausedByLifecycle = false;
     _dispatch(const GameEvent.resumed());
   }
@@ -192,10 +213,24 @@ class PlayController extends _$PlayController {
     final shouldRun =
         game != null && game.phase == GamePhase.playing && !game.isPaused;
 
+    // L'écran reste allumé tant qu'un tour tourne, et seulement là.
+    unawaited(ref.read(screenAwakeProvider)(enable: shouldRun));
+
     if (!shouldRun) {
       _ticker?.cancel();
       _ticker = null;
       return;
+    }
+
+    // Une partie adoptée de l'extérieur arrive avec son temps déjà consommé,
+    // que ce contrôleur ne connaît pas : il vient de naître. Sans cette
+    // reprise depuis l'état, le tour repartirait du temps plein — et pire,
+    // un tour restauré en cours resterait figé par le garde de monotonie du
+    // réducteur, donc ne se terminerait jamais.
+    if (!_clock.isRunning) {
+      _clock = TurnClock(
+        consumed: game.turn?.elapsed ?? Duration.zero,
+      ).resumedAt(_now);
     }
 
     _ticker ??= Timer.periodic(_tickPeriod, (_) => _tick());
