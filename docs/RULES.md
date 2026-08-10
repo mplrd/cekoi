@@ -92,12 +92,26 @@ chaque manche. Une manche qui s'arrêterait au bout d'un tour laisserait des car
 et la manche suivante ne serait plus une reprise du même paquet.
 
 **R4.6** — **Une carte non trouvée reste en jeu.** Quand le chrono tombe, la carte affichée
-n'est ni perdue ni comptée : elle reste en tête du paquet et repart au tour suivant, pour
-l'équipe suivante. Les cartes passées, elles, sont déjà revenues au fond du paquet (R3.3). Rien
-ne sort du paquet sans avoir été trouvé.
+n'est ni perdue ni comptée : elle repart au tour suivant, pour l'équipe suivante. Les cartes
+passées, elles, sont déjà revenues au fond du paquet (R3.3). **Rien ne sort du paquet sans
+avoir été trouvé** — c'est la formulation qui fait foi, et les trois seuls retraits possibles
+sont une carte trouvée pendant le tour, une carte corrigée en *trouvée* au récapitulatif (R3.6)
+et le remélange de fin de manche (R4.2).
 
-Une carte affichée au moment où le chrono tombe **n'a pas de ligne au récapitulatif** : elle
-n'a pas été tranchée, il n'y a rien à corriger.
+Sa position : la carte affichée reste **en tête** du paquet, sauf si une correction post-tour
+la retire ou en réinsère une autre (R3.6) — le paquet est recalculé avant l'ouverture du tour
+suivant.
+
+Sa ligne au récapitulatif dépend de son histoire dans le tour, **pas** du fait qu'elle soit
+affichée à la fin :
+
+- jamais tranchée pendant ce tour → **aucune ligne**, il n'y a rien à corriger ;
+- déjà passée plus tôt dans le même tour, puis revenue en tête parce que le paquet a fait le
+  tour complet (R3.3) → **sa ligne de passage subsiste**, et c'est elle qui la rend corrigeable
+  au titre de R3.6.
+
+Le second cas n'est pas théorique : il survient dès qu'il reste peu de cartes en manche 2 ou 3.
+Filtrer la carte de tête du récapitulatif rendrait incorrigible une carte passée à tort.
 
 **R4.1** — Quand la dernière carte du paquet est trouvée, la manche s'arrête **immédiatement**,
 même en plein milieu d'un tour. Le temps restant est perdu et n'est pas reporté.
@@ -261,7 +275,9 @@ dédié dans `test/domain/`.
     (R3.8). Le chrono figé rend l'action gratuite, c'est ce qui la rend tentante.
 14. Trois équipes demandées après en avoir nommé deux → les deux noms restent, la troisième
     prend son nom par défaut (R8.4). Repasser à deux ne doit pas ressusciter un nom effacé.
-15. Le chrono tombe alors qu'une carte est affichée → elle reste en tête du paquet pour le tour
-    suivant et n'apparaît pas au récapitulatif (R4.6).
+15. Le chrono tombe alors qu'une carte jamais tranchée est affichée → elle reste en tête du
+    paquet pour le tour suivant et n'a pas de ligne au récapitulatif (R4.6). Variante à couvrir
+    aussi : la carte affichée à cet instant avait été **passée** plus tôt dans le même tour et
+    est revenue en tête — sa ligne de passage subsiste et reste corrigeable (R3.3, R3.6).
 16. Un tour se termine avec des cartes au paquet → la manche continue avec l'équipe suivante,
     et l'écran de scores intermédiaires n'apparaît pas (R4.5).
