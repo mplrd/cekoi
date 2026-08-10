@@ -309,6 +309,40 @@ void main() {
       await stopGame(tester);
     });
 
+    testWidgets('seule, la zone Trouvé est plus basse qu à deux', (
+      tester,
+    ) async {
+      // Retour d'usage : seule au bas de l'écran, la zone gardait la moitié de
+      // la hauteur et paraissait démesurée. Elle descend à un tiers — mais
+      // reste une zone qu'on tape sans viser, pas un bouton ordinaire.
+      Future<double> hauteurDeTrouve(int roundIndex) async {
+        await pumpScreen(tester, game: testGame(roundIndex: roundIndex));
+        await startTurn(tester);
+        final hauteur = tester
+            .getSize(find.widgetWithText(FilledButton, l10n.actionFound))
+            .height;
+        await stopGame(tester);
+        return hauteur;
+      }
+
+      final seule = await hauteurDeTrouve(0);
+      final partagee = await hauteurDeTrouve(1);
+
+      expect(
+        seule,
+        lessThan(partagee),
+        reason: 'la zone seule ne garde pas la moitié basse',
+      );
+      // Une proportion, et non un nombre de pixels : la vue de test fait 2000
+      // de haut, si bien qu'un seuil absolu de 120 resterait vert même en
+      // réduisant la zone à 6 % de l'écran — il ne garderait rien.
+      expect(
+        seule,
+        greaterThan(partagee * 0.5),
+        reason: 'elle doit rester une cible qu on tape sans regarder',
+      );
+    });
+
     testWidgets('elle revient en manche 2', (tester) async {
       // Cas de contrôle : sans lui, retirer *toujours* la zone passerait.
       await pumpScreen(tester, game: testGame(roundIndex: 1));

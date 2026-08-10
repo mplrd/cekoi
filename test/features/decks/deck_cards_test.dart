@@ -72,25 +72,40 @@ void main() {
   }
 
   group('le formulaire se lit de haut en bas et finit par son action', () {
-    testWidgets('le bouton Ajouter est sous le champ et sous la difficulté', (
+    testWidgets('le bouton Ajouter est sous le champ, et rien après lui', (
       tester,
     ) async {
-      // Retour d'usage : un « + » collé au champ, avec le sélecteur de
-      // difficulté *en dessous*, laisse penser que la carte part sans le
-      // niveau affiché. L'ordre visuel est donc la règle, pas un détail.
+      // Retour d'usage : un « + » collé au champ laissait douter de ce qui
+      // partait. L'ordre visuel est donc la règle, pas un détail.
       await pumpScreen(tester);
 
       double bas(Finder finder) => tester.getRect(finder).bottom;
 
       expect(
-        bas(find.byType(SegmentedButton<Difficulty>)),
-        lessThan(bas(find.byType(TextField).first)),
-        reason: 'La difficulté se choisit avant de taper le texte',
-      );
-      expect(
         bas(find.byType(TextField).first),
         lessThan(bas(find.widgetWithText(FilledButton, l10n.actionAddCard))),
         reason: "Rien ne doit rester sous le bouton d'ajout",
+      );
+    });
+
+    testWidgets('aucun niveau ne se choisit avant la carte', (tester) async {
+      // Retour d'usage : un sélecteur en tête d'écran se lit comme le niveau
+      // de la catégorie, alors qu'une même catégorie contient des faciles et
+      // des difficiles. La difficulté n'appartient qu'à la carte, et se règle
+      // en touchant celle-ci une fois écrite.
+      await pumpScreen(tester);
+
+      expect(find.byType(SegmentedButton<Difficulty>), findsNothing);
+
+      await typeCard(tester, 'Le camping');
+
+      final cards = await container
+          .read(deckRepositoryProvider)
+          .cardsOfDeck(deckId);
+      expect(
+        cards.single.difficulty,
+        Difficulty.medium,
+        reason: 'une carte entre en moyen, et se corrige ensuite',
       );
     });
 
@@ -130,25 +145,21 @@ void main() {
       expect(find.text('La plage'), findsOneWidget);
     });
 
-    testWidgets('la difficulté choisie reste pour la carte suivante', (
+    testWidgets('deux cartes de suite gardent chacune le niveau par défaut', (
       tester,
     ) async {
-      // On saisit souvent une série de cartes de même niveau : remettre le
-      // curseur à « moyen » à chaque fois serait un geste de trop.
+      // Saisir en rafale ne doit rien demander d'autre que le texte : c'est
+      // tout l'intérêt d'avoir sorti le niveau du formulaire.
       await pumpScreen(tester);
 
-      await tester.tap(find.text(l10n.difficultyHard));
-      await tester.pumpAndSettle();
       await typeCard(tester, 'Le vertige');
       await typeCard(tester, 'Un huissier');
 
       final cards = await container
           .read(deckRepositoryProvider)
           .cardsOfDeck(deckId);
-      expect(
-        cards.map((c) => c.difficulty),
-        everyElement(Difficulty.hard),
-      );
+      expect(cards, hasLength(2));
+      expect(cards.map((c) => c.difficulty), everyElement(Difficulty.medium));
     });
 
     testWidgets('un texte vide n’ajoute rien', (tester) async {
@@ -212,6 +223,26 @@ void main() {
         await container.read(deckRepositoryProvider).cardsOfDeck(deckId),
         hasLength(1),
       );
+    });
+
+    testWidgets('le niveau se règle en touchant la carte', (tester) async {
+      // C'est le seul endroit où la difficulté se choisit désormais. Sans ce
+      // test, la retirer du formulaire d'ajout aurait pu la rendre
+      // inatteignable sans que rien ne rougisse.
+      await pumpScreen(tester);
+      await typeCard(tester, 'Le vertige');
+
+      await tester.tap(find.text('Le vertige'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(l10n.difficultyHard));
+      await tester.tap(find.text(l10n.actionSave));
+      await tester.pumpAndSettle();
+
+      final cards = await container
+          .read(deckRepositoryProvider)
+          .cardsOfDeck(deckId);
+      expect(cards.single.difficulty, Difficulty.hard);
+      expect(find.text(l10n.difficultyHard), findsOneWidget);
     });
 
     testWidgets('supprimer demande confirmation', (tester) async {

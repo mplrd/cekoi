@@ -76,18 +76,15 @@ class DeckCards extends _$DeckCards {
   /// Un refus n'est pas une situation exceptionnelle : saisir deux fois la
   /// même carte est une maladresse quotidienne, et faire remonter une
   /// exception jusqu'à l'écran pour ça serait disproportionné.
-  Future<bool> add(
-    String text, {
-    Difficulty difficulty = Difficulty.medium,
-  }) async {
+  ///
+  /// Aucun niveau ne se choisit ici : une carte entre au niveau par défaut du
+  /// dépôt et se règle ensuite avec [edit]. Garder un paramètre ouvrirait un
+  /// chemin par lequel un appelant contournerait la règle sans le vouloir.
+  Future<bool> add(String text) async {
     final repository = ref.read(deckRepositoryProvider);
     if (await repository.customDeckContains(deckId, text)) return false;
 
-    await repository.addCustomCard(
-      deckId: deckId,
-      text: text,
-      difficulty: difficulty,
-    );
+    await repository.addCustomCard(deckId: deckId, text: text);
     ref.invalidateSelf();
     return true;
   }

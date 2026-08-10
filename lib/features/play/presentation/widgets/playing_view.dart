@@ -45,19 +45,27 @@ class PlayingView extends ConsumerWidget {
       },
     );
 
+    // `SPEC.md` veut deux zones d'action occupant la moitié basse, et non deux
+    // boutons : on tape sans regarder, téléphone tenu à bout de bras au milieu
+    // d'une table qui crie.
+    //
+    // En manche 1 il n'en reste qu'une (R3.9), et lui laisser la moitié de
+    // l'écran la rendait démesurée — retour d'usage. Elle descend à un tiers :
+    // assez pour rester une zone qu'on tape sans viser, et la carte récupère
+    // la place, ce qui est tout bénéfice puisque c'est elle qu'on lit.
+    final actionsAreSplit = game.round.allowsPass;
+
     return Column(
       children: [
         _Header(game: game),
         Expanded(
+          flex: actionsAreSplit ? 1 : 2,
           child: switch ((countdown, game.isPaused)) {
             (final int seconds, _) => _Countdown(seconds: seconds),
             (_, true) => const _PausePanel(),
             _ => _CardZone(game: game),
           },
         ),
-        // `SPEC.md` veut deux zones d'action occupant la moitié basse, et non
-        // deux boutons : on tape sans regarder, téléphone tenu à bout de bras
-        // au milieu d'une table qui crie.
         Expanded(child: _Actions(game: game)),
       ],
     );
@@ -213,12 +221,16 @@ class _PausePanel extends StatelessWidget {
   }
 }
 
-/// Les zones d'action, moitié basse : Passer à gauche, Trouvé à droite.
+/// Les zones d'action, bas de l'écran : Passer à gauche, Trouvé à droite.
 ///
 /// En manche 1, *Passer* n'existe pas (R3.9) : la zone est **retirée**, pas
 /// grisée, et *Trouvé* prend toute la largeur. Un bouton mort pendant une
 /// manche entière se lit comme une panne, et l'écran de jeu est celui où on ne
 /// doit jamais se demander si l'application a compris.
+///
+/// Seule reste alors une zone pleine largeur, dont `PlayingView` réduit la
+/// hauteur : à deux, elles se partagent la moitié basse ; seule, elle en garde
+/// un tiers.
 class _Actions extends ConsumerWidget {
   const _Actions({required this.game});
 

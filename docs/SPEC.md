@@ -92,17 +92,27 @@ L'écran le plus important de l'app. Il ne contient rien d'autre que :
 - **La carte**, texte centré, taille de police adaptative selon la longueur. Rien d'autre :
   pas de mots interdits listés, pas d'indice. Le narrateur doit lire la carte d'un coup d'œil,
   à bout de bras, au milieu d'une table qui crie.
-- **Les zones d'action** occupant la moitié basse : *Trouvé* (verte, à droite) et *Passer*
-  (neutre, à gauche). Un glissement horizontal sur la carte fait la même chose, pour ceux qui
-  prennent le coup de main.
+- **Les zones d'action** se partageant la moitié de la hauteur sous l'entête : *Trouvé !*
+  (verte, à droite) et *Je passe…* (neutre, à gauche). Un glissement horizontal sur la carte
+  fait la même chose, pour ceux qui prennent le coup de main.
 - Le nom de l'équipe active et son score courant, discrets, en haut.
 
-**En manche 1, *Passer* n'est pas à l'écran** (R3.9) : *Trouvé* prend toute la largeur, et le
+Les deux libellés sont à la **première personne, au présent** : c'est le narrateur qui parle,
+et c'est ce qu'il dirait à voix haute. *Passer* / *Trouvé* mélangeait un infinitif et un
+participe — retour d'usage, le changement de temps se remarquait.
+
+**En manche 1, *Passer* n'est pas à l'écran** (R3.9) : *Trouvé !* prend toute la largeur, et le
 glissement vers la gauche ne fait rien. L'action est retirée et non grisée — un bouton mort
 pendant une manche entière se lit comme une panne, et l'écran de jeu est celui où on ne doit
 jamais se demander si l'application a compris.
 
-Aux manches 2 et 3, le bouton *Passer* se grise quand il ne reste qu'une carte (R3.4). Une
+Seule, cette zone ne garde pas la moitié : elle descend à **un tiers de la hauteur disponible
+sous l'entête** — l'entête, avec son anneau de chrono, occupe une hauteur fixe qui ne se
+partage pas — et la carte récupère la place. Retour d'usage : pleine largeur **et**
+demi-hauteur, elle était démesurée. Elle reste assez grande pour être tapée sans viser, ce qui
+est tout l'intérêt d'une zone plutôt que d'un bouton.
+
+Aux manches 2 et 3, l'action de passage se grise quand il ne reste qu'une carte (R3.4). Une
 pause est accessible via un bouton discret en haut, qui masque immédiatement la carte.
 
 ## Récapitulatif de tour
@@ -132,12 +142,17 @@ Accessible depuis l'accueil. Liste des catégories de l'utilisateur, création, 
 suppression avec confirmation.
 
 Dans une catégorie : liste des cartes, ajout rapide (un champ, une validation, on enchaîne),
-édition, suppression. Chaque carte peut recevoir une difficulté ; elle est optionnelle, avec
-un défaut raisonnable, pour ne pas transformer la saisie en corvée.
+édition, suppression.
 
-Le formulaire d'ajout se lit de haut en bas et **finit par son action** : difficulté, puis
-texte, puis le bouton *Ajouter*. Retour d'usage — un « + » collé au champ avec le sélecteur de
-difficulté en dessous laissait douter que la carte parte avec le niveau affiché.
+**La difficulté appartient à la carte, jamais à la catégorie.** Elle ne se choisit donc pas au
+moment de la saisie : une carte entre avec un niveau moyen, et se règle d'un tap sur elle dans
+la liste. Retour d'usage — un sélecteur en tête d'écran se lisait comme le niveau de la
+catégorie entière, alors qu'une catégorie « Vacances » contient des faciles comme des
+difficiles. Sortir le niveau du formulaire allège aussi la saisie en rafale, qui ne demande
+plus que du texte.
+
+Le formulaire d'ajout se lit de haut en bas et **finit par son action** : le texte, puis le
+bouton *Ajouter*, et plus rien après lui.
 
 Une catégorie custom est marquée `family` ou `adult` à la création, ce qui détermine dans
 quel mode elle apparaîtra.
