@@ -333,9 +333,12 @@ void main() {
         lessThan(partagee),
         reason: 'la zone seule ne garde pas la moitié basse',
       );
+      // Une proportion, et non un nombre de pixels : la vue de test fait 2000
+      // de haut, si bien qu'un seuil absolu de 120 resterait vert même en
+      // réduisant la zone à 6 % de l'écran — il ne garderait rien.
       expect(
         seule,
-        greaterThan(120),
+        greaterThan(partagee * 0.5),
         reason: 'elle doit rester une cible qu on tape sans regarder',
       );
     });
