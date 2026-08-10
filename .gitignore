@@ -99,3 +99,6 @@ app.*.map.json
 
 # Rapport de couverture, produit par flutter test --coverage.
 coverage/
+
+# Cache de compilation Python, produit par l'outil d'import.
+__pycache__/

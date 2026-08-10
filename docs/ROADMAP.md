@@ -84,12 +84,19 @@ des tableaux à quatre colonnes — voir `docs/CONTENU.md`, qui contient le guid
 le prompt de génération. La chaîne est donc :
 
 1. Rédaction et livraison d'un tableau par catégorie.
-2. `tool/import_decks.dart` — script d'import à écrire, tolérant au format : accepte CSV et
-   TSV, tolère les guillemets typographiques, les espaces parasites et les en-têtes
-   approximatifs, normalise les textes, détecte les doublons intra et inter-catégories, et
-   génère les JSON de `assets/decks/`. Il doit **échouer bruyamment** sur une ligne
-   inexploitable plutôt que de l'ignorer silencieusement : une carte perdue sans message est
-   invisible jusqu'à ce qu'un joueur la cherche.
+2. `tool/import_decks.py` — script d'import, tolérant au format : accepte CSV, TSV et
+   point-virgule, absorbe le BOM des exports de feuille de calcul, les en-têtes accentués et
+   les espaces insécables, et génère les JSON de `assets/decks/`. Il **échoue bruyamment** sur
+   une ligne inexploitable plutôt que de l'ignorer, et liste toutes les fautes d'un coup :
+   une carte perdue sans message est invisible jusqu'à ce qu'un joueur la cherche, et
+   corriger six cents lignes une faute à la fois est intenable.
+
+   En Python et non en Dart : il tourne sur nos machines, jamais sur le téléphone, et il ne
+   fait que du texte vers du JSON — pas de base, pas d'interface. Le seul argument pour Dart
+   était le dédoublonnage de R6.4, qui se fait sur un texte normalisé par du code du moteur.
+   D'où la répartition : **le script ne normalise rien**, et `test/decks_content_test.dart`
+   relit tous les JSON en CI avec la vraie fonction du moteur. Une seule implémentation de la
+   règle, et le test attrape en prime les doublons ajoutés à la main.
 3. Audit par l'agent `deck-curator` : doublons, calibrage de difficulté, noms propres, ligne
    éditoriale du mode adultes.
 4. Arbitrage humain sur ce que l'audit signale, puis intégration.

@@ -65,6 +65,13 @@ jobs:
       - name: Tests
         run: flutter test --coverage
 
+      # L'import de contenu est en Python et ne sert qu'en atelier — mais un
+      # outil dont les tests ne tournent jamais pourrit en silence, et celui-ci
+      # décide de ce qui entre dans le jeu. Bibliothèque standard uniquement,
+      # donc rien à installer.
+      - name: Tests de l'import de contenu
+        run: python3 -m unittest discover -s tool -t tool
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:
