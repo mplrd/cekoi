@@ -51,6 +51,20 @@ class DeckRepository {
     };
   }
 
+  /// Toutes les cartes tirables dans le mode donné (R7.1).
+  ///
+  /// Chargées d'un bloc parce que l'écran de sélection en a besoin pour
+  /// évaluer la disponibilité de chaque profil (R7.8), et que cette évaluation
+  /// doit passer par le même filtrage que le tirage — un décompte fait en SQL
+  /// ne saurait pas dédoublonner les textes de R6.4.
+  Future<List<domain.Card>> cardsForMode(Audience mode) async {
+    final allowed = mode.drawableAudiences.toList();
+    final rows = await (_db.select(
+      _db.cards,
+    )..where((c) => c.audience.isInValues(allowed))).get();
+    return rows.map(_toCard).toList();
+  }
+
   Future<List<domain.Card>> cardsOfDeck(String deckId) async {
     final rows = await (_db.select(
       _db.cards,

@@ -1,7 +1,9 @@
+import 'package:cekoi/app/router.dart';
 import 'package:cekoi/data/providers.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 /// Accueil : trois entrées, et la reprise de partie quand il y en a une.
 ///
@@ -54,7 +56,10 @@ class _Menu extends StatelessWidget {
           ),
         ),
         const Spacer(),
-        FilledButton(onPressed: null, child: Text(l10n.homePlay)),
+        FilledButton(
+          onPressed: () => context.push(AppRoutes.setupMode),
+          child: Text(l10n.homePlay),
+        ),
         const SizedBox(height: 16),
         OutlinedButton(onPressed: null, child: Text(l10n.homeMyDecks)),
         const SizedBox(height: 16),

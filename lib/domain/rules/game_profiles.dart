@@ -146,10 +146,14 @@ List<ProfileAvailability> evaluateProfiles({
     evaluateProfile(profile: profile, decks: decks, cards: cards),
 ];
 
-/// La sélection en cours de construction à l'écran de configuration.
+/// Ce qu'un profil pose sur la configuration : catégories, filtres et
+/// réglages, d'un bloc.
 ///
-/// [profileId] vaut `null` dès que le joueur touche à la sélection : le profil
-/// passe en état « personnalisé » (R7.6).
+/// Valeur de transport uniquement. La sélection vivante, celle que le joueur
+/// modifie, est `GameSetup` — qui porte aussi les joueurs et les équipes.
+/// Cette classe a un temps dupliqué son `toggleDeck` ; deux implémentations
+/// d'une même règle finissent toujours par diverger, et c'est la copie morte
+/// qui restait testée.
 @freezed
 abstract class ProfileSelection with _$ProfileSelection {
   const factory ProfileSelection({
@@ -161,27 +165,6 @@ abstract class ProfileSelection with _$ProfileSelection {
     String? profileId,
     int? cardCount,
   }) = _ProfileSelection;
-
-  const ProfileSelection._();
-
-  bool get isCustom => profileId == null;
-
-  /// Coche ou décoche une catégorie.
-  ///
-  /// Le profil cesse alors d'imposer ses filtres — la restriction de
-  /// difficulté saute — mais les catégories déjà retenues restent en place
-  /// (R7.6). Les réglages, eux, ne sont pas des filtres : le chrono et le
-  /// nombre de cartes du profil restent ce que le joueur a sous les yeux.
-  ProfileSelection toggleDeck(String deckId) => copyWith(
-    deckIds: deckIds.contains(deckId)
-        ? [
-            for (final id in deckIds)
-              if (id != deckId) id,
-          ]
-        : [...deckIds, deckId],
-    profileId: null,
-    difficulties: Difficulty.values.toSet(),
-  );
 }
 
 /// La sélection de départ d'un profil (R7.6).

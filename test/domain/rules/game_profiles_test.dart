@@ -218,57 +218,14 @@ void main() {
       final selection = selectionFor(profile('ados'), _decks);
 
       expect(selection.profileId, 'ados');
-      expect(selection.isCustom, isFalse);
       expect(selection.deckIds, ['bebe', 'ado']);
       expect(selection.difficulties, {Difficulty.easy, Difficulty.medium});
       expect(selection.turnDuration, const Duration(seconds: 60));
     });
 
-    test('cas limite 12 : décocher une catégorie passe en personnalisé', () {
-      final selection = selectionFor(profile('ados'), _decks);
-
-      final custom = selection.toggleDeck('bebe');
-
-      expect(custom.profileId, isNull);
-      expect(custom.isCustom, isTrue);
-      expect(
-        custom.deckIds,
-        ['ado'],
-        reason: 'La sélection restante est conservée',
-      );
-      expect(
-        custom.difficulties,
-        Difficulty.values.toSet(),
-        reason: "Le profil cesse d'imposer ses filtres de difficulté",
-      );
-    });
-
-    test('cocher une catégorie hors du profil passe aussi en personnalisé', () {
-      final custom = selectionFor(profile('minis'), _decks).toggleDeck('ado');
-
-      expect(custom.profileId, isNull);
-      expect(custom.deckIds, ['bebe', 'ado']);
-      expect(custom.difficulties, Difficulty.values.toSet());
-    });
-
-    test('les réglages du profil survivent au passage en personnalisé', () {
-      // Seuls les *filtres* cessent de s'appliquer. Le chrono de 90 s des
-      // minis reste ce que le joueur a sous les yeux ; à lui de le changer.
-      final custom = selectionFor(profile('minis'), _decks).toggleDeck('ado');
-
-      expect(custom.turnDuration, const Duration(seconds: 90));
-      expect(custom.mode, Audience.family);
-    });
-
-    test('une sélection déjà personnalisée le reste', () {
-      final custom = selectionFor(
-        profile('mix'),
-        _decks,
-      ).toggleDeck('bebe').toggleDeck('bebe');
-
-      expect(custom.profileId, isNull);
-      expect(custom.deckIds, ['ado', 'collegien', 'bebe']);
-    });
+    // Ce que devient cette sélection quand le joueur y touche appartient à
+    // `GameSetup`, seul porteur de la règle depuis la suppression du
+    // `toggleDeck` jumeau — voir `test/domain/setup/game_setup_test.dart`.
   });
 
   group('les profils sont de la donnée, pas des branchements', () {

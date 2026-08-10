@@ -16,6 +16,10 @@ enum Round {
 
   final int number;
 
+  /// Les nombres de manches proposés (R2.2). Deux valeurs, pas une échelle :
+  /// retirer plus d'une manche viderait le jeu de son ressort.
+  static const List<int> allowedCounts = [2, 3];
+
   /// Les manches réellement jouées pour un nombre de manches donné (R2.2).
   ///
   /// En deux manches on joue la 1 et la 3 : « un seul mot » est celle qui
@@ -26,7 +30,7 @@ enum Round {
     _ => throw ArgumentError.value(
       roundCount,
       'roundCount',
-      'Le nombre de manches vaut 2 ou 3',
+      'Le nombre de manches vaut ${allowedCounts.join(' ou ')}',
     ),
   };
 }
