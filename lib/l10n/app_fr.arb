@@ -342,6 +342,15 @@
     "description": "Ligne du récapitulatif : composition."
   },
 
+  "summaryTeamValue": "{name} ({count})",
+  "@summaryTeamValue": {
+    "description": "Une équipe du récapitulatif : son nom et son effectif. Le gabarit est ici et non dans le widget — une langue peut vouloir d'autres séparateurs.",
+    "placeholders": {
+      "name": { "type": "String" },
+      "count": { "type": "int" }
+    }
+  },
+
   "summarySettingsValue": "{seconds} s · {cards} cartes · {rounds} manches",
   "@summarySettingsValue": {
     "description": "Résumé des trois réglages sur une ligne.",

@@ -1,5 +1,5 @@
+import 'package:cekoi/app/current_game.dart';
 import 'package:cekoi/app/router.dart';
-import 'package:cekoi/features/play/presentation/current_game.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

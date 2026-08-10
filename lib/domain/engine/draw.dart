@@ -5,6 +5,35 @@ import 'package:cekoi/domain/entities/card.dart';
 import 'package:cekoi/domain/entities/difficulty.dart';
 import 'package:cekoi/domain/entities/game_config.dart';
 
+/// Ce qu'un vivier permet, à demande donnée (R6.2).
+///
+/// Une seule arithmétique pour deux appelants qui ne font pas le même travail :
+/// l'écran de sélection, qui ne fait que compter des cartes éligibles, et le
+/// tirage, qui a réellement tiré. Recalculer le comparatif dans les widgets
+/// donnait trois implémentations d'une même règle, dont une seule était
+/// testée — elles peuvent diverger sans que rien ne rougisse.
+class PoolVerdict {
+  const PoolVerdict({required this.available, required this.requested});
+
+  /// Cartes réellement éligibles, doublons de R6.4 déduits.
+  final int available;
+
+  /// Ce que la configuration demandait.
+  final int requested;
+
+  /// Une partie ne démarre pas en dessous de 12 cartes (R6.2).
+  bool get isPlayable => available >= GameConfig.minimumCardCount;
+
+  /// Le vivier n'a pas permis d'honorer la demande.
+  bool get isTruncated => available < requested;
+
+  /// R6.2 : on joue avec ce qui existe, **et on le signale avant de démarrer**.
+  ///
+  /// Rien à annoncer quand la partie ne peut pas démarrer du tout : c'est le
+  /// refus qu'il faut expliquer, pas la troncature.
+  bool get mustWarnShortage => isPlayable && isTruncated;
+}
+
 /// Le paquet tiré pour une partie, et de quoi expliquer au joueur ce qui s'est
 /// passé si le vivier n'a pas suffi (R6.2).
 class DrawResult {
@@ -32,11 +61,17 @@ class DrawResult {
   /// puis dédoublonnage. C'est le chiffre à montrer dans l'avertissement.
   final int available;
 
+  /// Le verdict porte sur le paquet **réellement obtenu**, pas sur le nombre
+  /// de cartes éligibles : c'est la même chose ici, puisque le tirage prend
+  /// tout ce qu'il peut, et c'est la propriété qui compte.
+  PoolVerdict get verdict =>
+      PoolVerdict(available: cards.length, requested: requested);
+
   /// Vrai quand le vivier n'a pas permis d'honorer la demande (R6.2).
-  bool get isTruncated => cards.length < requested;
+  bool get isTruncated => verdict.isTruncated;
 
   /// Une partie ne démarre pas en dessous de 12 cartes (R6.2).
-  bool get isPlayable => cards.length >= GameConfig.minimumCardCount;
+  bool get isPlayable => verdict.isPlayable;
 }
 
 /// Les cartes qu'un mode et un jeu de difficultés autorisent réellement à

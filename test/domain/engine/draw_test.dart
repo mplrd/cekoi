@@ -135,6 +135,43 @@ void main() {
     test('12 cartes pile suffisent', () {
       expect(draw(testCards(12), requested: 32).isPlayable, isTrue);
     });
+
+    group('PoolVerdict — le même verdict pour le tirage et pour l’écran', () {
+      // Les écrans de sélection et de récapitulatif ne tirent rien : ils
+      // comptent. Ils passent par cette arithmétique plutôt que de refaire la
+      // comparaison, sans quoi ils peuvent annoncer jouable ce que le tirage
+      // refusera.
+      PoolVerdict verdict(int available, {int requested = 32}) =>
+          PoolVerdict(available: available, requested: requested);
+
+      test('le plancher de 12 se joue à la carte près', () {
+        expect(verdict(11).isPlayable, isFalse);
+        expect(verdict(12).isPlayable, isTrue);
+      });
+
+      test('la troncature se juge par rapport à la demande', () {
+        expect(verdict(31).isTruncated, isTrue);
+        expect(verdict(32).isTruncated, isFalse);
+        expect(verdict(33).isTruncated, isFalse);
+      });
+
+      test('rien à annoncer quand la partie ne peut pas démarrer', () {
+        // Le joueur doit lire le refus, pas un avertissement de troncature
+        // qui laisserait croire que la partie va se lancer quand même.
+        expect(verdict(8).isTruncated, isTrue);
+        expect(verdict(8).mustWarnShortage, isFalse);
+        expect(verdict(20).mustWarnShortage, isTrue);
+        expect(verdict(32).mustWarnShortage, isFalse);
+      });
+
+      test('le verdict du tirage porte sur le paquet obtenu', () {
+        final result = draw(testCards(30), requested: 48);
+
+        expect(result.verdict.available, 30);
+        expect(result.verdict.requested, 48);
+        expect(result.verdict.mustWarnShortage, isTrue);
+      });
+    });
   });
 
   group('R6.3 — équilibrage en difficulté', () {

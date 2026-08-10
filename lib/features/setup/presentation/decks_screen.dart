@@ -1,4 +1,5 @@
 import 'package:cekoi/app/router.dart';
+import 'package:cekoi/domain/engine/draw.dart';
 import 'package:cekoi/domain/entities/deck.dart';
 import 'package:cekoi/domain/entities/deck_origin.dart';
 import 'package:cekoi/domain/entities/game_config.dart';
@@ -267,7 +268,12 @@ class _SelectionFooter extends StatelessWidget {
       deckIds: setup.deckIds.toSet(),
       difficulties: setup.difficulties,
     );
-    final enough = available >= GameConfig.minimumCardCount;
+    // La demande n'est pas encore connue à cette étape — les joueurs viennent
+    // plus loin. Seul le plancher de R6.2 se juge ici.
+    final enough = PoolVerdict(
+      available: available,
+      requested: GameConfig.minimumCardCount,
+    ).isPlayable;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

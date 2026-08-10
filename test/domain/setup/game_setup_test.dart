@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:cekoi/domain/engine/team_builder.dart';
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/deck.dart';
 import 'package:cekoi/domain/entities/difficulty.dart';
@@ -19,6 +20,26 @@ final List<Deck> _decks = [
 
 GameProfile _profile(String id) =>
     builtInProfiles.firstWhere((p) => p.id == id);
+
+/// Six joueurs en deux équipes dont le curseur de narrateur **n'est pas** à
+/// zéro, seule façon d'observer qu'une opération le remet bien à zéro.
+///
+/// Passe par `withTeams`, qui est public : rien dans le parcours ne produit
+/// aujourd'hui un curseur décalé, mais la garde existe pour le jour où — et
+/// une garde qu'aucun test ne peut voir tomber ne protège rien.
+GameSetup _decalees() {
+  final players = [for (var i = 0; i < 6; i++) 'joueur-$i'];
+  return _withPlayers(setupForMode(Audience.family), 6).withTeams([
+    testTeam('A', 3).copyWith(
+      playerIds: players.take(3).toList(),
+      narratorIndex: 2,
+    ),
+    testTeam('B', 3).copyWith(
+      playerIds: players.skip(3).toList(),
+      narratorIndex: 1,
+    ),
+  ]);
+}
 
 /// Une configuration prête à composer les équipes.
 GameSetup _withPlayers(GameSetup setup, int count, {int children = 0}) {
@@ -139,7 +160,31 @@ void main() {
       expect(setup.players, hasLength(4));
     });
 
-    test('R7.6 — toucher une catégorie fait passer en personnalisé', () {
+    test('les réglages du profil sont appliqués, pas que ses filtres', () {
+      // Profil de test et non profil livré : les trois profils intégrés ont
+      // `cardCount: null` et `roundCount: 3`, soit exactement les défauts du
+      // mode Famille. Sur eux, ne pas appliquer ces deux champs serait
+      // inobservable — et R7.5 promet qu'un profil s'ajoute en donnée seule.
+      const dense = GameProfile(
+        id: 'dense',
+        mode: Audience.family,
+        maxDeckAge: MinAge.ten,
+        difficulties: {Difficulty.hard},
+        turnDuration: Duration(seconds: 30),
+        cardCount: 24,
+        roundCount: 2,
+      );
+
+      final setup = setupForMode(Audience.family).withProfile(dense, _decks);
+
+      expect(setup.cardCount, 24);
+      expect(setup.roundCount, 2);
+      expect(setup.turnDuration, const Duration(seconds: 30));
+      expect(setup.difficulties, {Difficulty.hard});
+      expect(setup.deckIds, ['animaux', 'metiers']);
+    });
+
+    test('R7.6 — cocher une catégorie fait passer en personnalisé', () {
       final setup = setupForMode(
         Audience.family,
       ).withProfile(_profile('minis'), _decks).toggleDeck('metiers');
@@ -153,6 +198,40 @@ void main() {
         const Duration(seconds: 90),
         reason: 'Le chrono du profil est un réglage, pas un filtre',
       );
+    });
+
+    test('cas limite 12 — décocher une catégorie la retire vraiment', () {
+      // L'autre branche de `toggleDeck`. Sans ce test, la rendre purement
+      // additive laisse la suite verte : le compteur de cartes de l'écran
+      // dédoublonne les identifiants et masque le défaut.
+      final setup = setupForMode(
+        Audience.family,
+      ).withProfile(_profile('ados'), _decks);
+      expect(setup.deckIds, ['animaux', 'metiers'], reason: 'point de départ');
+
+      final custom = setup.toggleDeck('animaux');
+
+      expect(custom.deckIds, ['metiers']);
+      expect(custom.profileId, isNull);
+      expect(
+        custom.difficulties,
+        Difficulty.values.toSet(),
+        reason: "Le profil cesse d'imposer sa restriction de difficulté",
+      );
+    });
+
+    test('décocher puis recocher remet la catégorie en fin de liste', () {
+      // Aller-retour volontairement asymétrique : si les deux appels se
+      // compensaient, le test passerait quelle que soit l'implémentation.
+      final setup = setupForMode(
+        Audience.family,
+      ).withProfile(_profile('mix'), _decks);
+      expect(setup.deckIds, ['animaux', 'metiers']);
+
+      final custom = setup.toggleDeck('animaux').toggleDeck('animaux');
+
+      expect(custom.deckIds, ['metiers', 'animaux']);
+      expect(custom.profileId, isNull);
     });
   });
 
@@ -328,15 +407,27 @@ void main() {
 
     test('le curseur de narrateur repart de zéro après un déplacement', () {
       // Sinon un curseur pointerait au-delà d'une équipe qui a rétréci.
-      final setup = _withPlayers(
-        setupForMode(Audience.family),
-        6,
-      ).withProposedTeams(names: ['A', 'B'], random: Random(1));
-      final moved = setup.teams.first.playerIds.first;
+      //
+      // Fixture volontairement décalée : `withProposedTeams` laisse toujours
+      // le curseur à zéro, donc partir d'une composition proposée rendrait
+      // l'assertion vraie avant même l'appel, pour une raison mécanique.
+      final setup = _decalees();
+      expect(
+        setup.teams.map((t) => t.narratorIndex),
+        [2, 1],
+        reason: 'point de départ observable',
+      );
 
-      final after = setup.movePlayer(moved, toTeamId: setup.teams.last.id);
+      final after = setup.movePlayer('joueur-0', toTeamId: 'B');
 
-      expect(after.teams.every((t) => t.narratorIndex == 0), isTrue);
+      expect(after.teams.map((t) => t.narratorIndex), [0, 0]);
+    });
+
+    test('le curseur repart aussi de zéro après un retrait de joueur', () {
+      // Même raison : c'est le retrait qui fait rétrécir l'équipe.
+      final after = _decalees().withoutPlayer('joueur-0');
+
+      expect(after.teams.map((t) => t.narratorIndex), [0, 0]);
     });
 
     test('une équipe se renomme', () {
@@ -368,6 +459,26 @@ void main() {
       ).withProposedTeams(names: ['A', 'B'], random: Random(1));
 
       expect(setup.deckIds, isEmpty);
+      expect(setup.canStart, isFalse);
+    });
+
+    test('une équipe citant un joueur inconnu bloque le lancement', () {
+      // Effectifs volontairement valides : sans ça, c'est la garde de R8.5 qui
+      // répond et celle-ci n'est jamais atteinte. Une référence fantôme ferait
+      // échouer `startGame` bien plus loin, sur un message qui ne désignerait
+      // plus l'écran fautif.
+      final setup = _withPlayers(setupForMode(Audience.family), 4)
+          .toggleDeck('animaux')
+          .withTeams([
+            testTeam('A', 2).copyWith(playerIds: ['joueur-0', 'joueur-1']),
+            testTeam('B', 2).copyWith(playerIds: ['joueur-2', 'fantome']),
+          ]);
+
+      expect(
+        setup.teams.every((t) => t.playerIds.length >= minimumTeamSize),
+        isTrue,
+        reason: "Ce n'est pas R8.5 qui doit répondre ici",
+      );
       expect(setup.canStart, isFalse);
     });
 

@@ -7,6 +7,12 @@ part 'current_game.g.dart';
 ///
 /// `null` tant qu'aucune partie n'est lancée. L'écran de jeu du lot suivant
 /// s'y branchera ; la persistance de R9.1 aussi.
+///
+/// Vit dans `app/` et non dans une feature : c'est le point de rendez-vous
+/// entre celle qui produit la partie (`setup`) et celle qui la consomme
+/// (`play`). Le loger chez l'une obligerait l'autre à l'importer, ce
+/// qu'`ARCHITECTURE.md` interdit. Il ne peut pas descendre dans `domain/`,
+/// qui ne connaît pas Riverpod.
 @Riverpod(keepAlive: true)
 class CurrentGame extends _$CurrentGame {
   @override

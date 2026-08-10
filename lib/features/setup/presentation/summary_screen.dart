@@ -1,10 +1,11 @@
+import 'package:cekoi/app/current_game.dart';
 import 'package:cekoi/app/router.dart';
+import 'package:cekoi/domain/engine/draw.dart';
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/card.dart' as domain;
 import 'package:cekoi/domain/entities/deck.dart';
 import 'package:cekoi/domain/entities/game_config.dart';
 import 'package:cekoi/domain/setup/game_launch.dart';
-import 'package:cekoi/features/play/presentation/current_game.dart';
 import 'package:cekoi/features/setup/presentation/deck_catalog.dart';
 import 'package:cekoi/features/setup/presentation/setup_controller.dart';
 import 'package:cekoi/features/setup/presentation/widgets/setup_scaffold.dart';
@@ -65,7 +66,7 @@ class SummaryScreen extends ConsumerWidget {
             label: l10n.summaryTeams,
             value: [
               for (final team in setup.teams)
-                '${team.name} (${team.playerIds.length})',
+                l10n.summaryTeamValue(team.name, team.playerIds.length),
             ].join(' · '),
           ),
         ],
@@ -118,19 +119,21 @@ class _LaunchButton extends ConsumerWidget {
       return const Center(child: CircularProgressIndicator());
     }
 
-    // Le tirage tourne à chaque construction, mais avec une graine propre au
-    // clic : ce qui s'affiche ici est un compte, pas le paquet définitif.
+    // Aucun tirage ici : seulement un décompte des cartes éligibles. Le paquet
+    // définitif est tiré au clic, avec une graine prise à cet instant.
     final available = catalog!.availableCards(
       deckIds: setup.deckIds.toSet(),
       difficulties: setup.difficulties,
     );
-    final enough = available >= GameConfig.minimumCardCount;
-    final truncated = enough && available < setup.resolvedCardCount;
+    final verdict = PoolVerdict(
+      available: available,
+      requested: setup.resolvedCardCount,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (!enough)
+        if (!verdict.isPlayable)
           _Notice(
             text: l10n.launchImpossible(
               available,
@@ -138,11 +141,11 @@ class _LaunchButton extends ConsumerWidget {
             ),
             isError: true,
           ),
-        // R6.2 : on joue avec ce qui existe, mais on le dit avant de démarrer.
-        if (truncated) _Notice(text: l10n.launchTruncated(available)),
+        if (verdict.mustWarnShortage)
+          _Notice(text: l10n.launchTruncated(available)),
         const SizedBox(height: 8),
         FilledButton(
-          onPressed: enough && setup.canStart
+          onPressed: verdict.isPlayable && setup.canStart
               ? () => _launch(context, ref, pool)
               : null,
           child: Text(l10n.actionStartGame),
@@ -159,7 +162,22 @@ class _LaunchButton extends ConsumerWidget {
     );
 
     final game = outcome.game;
-    if (game == null) return;
+    if (game == null) {
+      // Inatteignable tant que le bouton est grisé au bon moment. Mais un
+      // bouton qui ne fait rien sans un mot est le pire des états si cet
+      // invariant bouge : mieux vaut dire pourquoi.
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context).launchImpossible(
+              outcome.draw.available,
+              GameConfig.minimumCardCount,
+            ),
+          ),
+        ),
+      );
+      return;
+    }
 
     ref.read(currentGameProvider.notifier).game = game;
     context.go(AppRoutes.game);

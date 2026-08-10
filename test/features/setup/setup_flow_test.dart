@@ -194,6 +194,64 @@ void main() {
     expect(button.onPressed, isNull);
   });
 
+  /// Traverse les étapes 1 à 4 jusqu'au récapitulatif, avec [deck] coché à la
+  /// main et quatre joueurs — soit 20 cartes demandées (R6.1).
+  Future<void> goToSummary(WidgetTester tester, String deck) async {
+    await tapText(tester, l10n.homePlay);
+    await tapText(tester, l10n.modeFamily);
+    await tapText(tester, l10n.setupCustomize);
+    await tapText(tester, deck);
+    await tapText(tester, l10n.actionContinue);
+    await tapText(tester, l10n.actionContinue);
+
+    for (final name in ['Léa', 'Tom', 'Ana', 'Hugo']) {
+      await addPlayer(tester, name);
+    }
+    await tapText(tester, l10n.actionProposeTeams);
+    await tapText(tester, l10n.actionContinue);
+    expect(find.text(l10n.setupSummaryTitle), findsOneWidget);
+  }
+
+  group('R6.2 — un vivier trop petit est annoncé avant de démarrer', () {
+    testWidgets('le récapitulatif dit avec combien de cartes on jouera', (
+      tester,
+    ) async {
+      // 16 cartes pour 20 demandées : au-dessus du plancher de 12, donc la
+      // partie se lance — mais pas avec ce qui était demandé, et R6.2 exige
+      // que ce soit dit et non découvert en jouant.
+      await installDeck('animaux', easy: 6, medium: 6, hard: 4);
+      await pumpApp(tester);
+      await goToSummary(tester, 'animaux');
+
+      expect(find.text(l10n.launchTruncated(16)), findsOneWidget);
+
+      final button = tester.widget<FilledButton>(
+        find.widgetWithText(FilledButton, l10n.actionStartGame),
+      );
+      expect(
+        button.onPressed,
+        isNotNull,
+        reason: 'On joue avec ce qui existe, on ne bloque pas',
+      );
+
+      await tapText(tester, l10n.actionStartGame);
+      expect(find.text(l10n.gameReadyDeck(16)), findsOneWidget);
+    });
+
+    testWidgets("rien n'est annoncé quand le vivier suffit", (tester) async {
+      // Cas de contrôle : sans lui, un avertissement affiché en permanence
+      // passerait le test précédent.
+      await installDeck('animaux');
+      await pumpApp(tester);
+      await goToSummary(tester, 'animaux');
+
+      expect(find.textContaining(l10n.launchTruncated(30)), findsNothing);
+      expect(find.text(l10n.launchTruncated(20)), findsNothing);
+      await tapText(tester, l10n.actionStartGame);
+      expect(find.text(l10n.gameReadyDeck(20)), findsOneWidget);
+    });
+  });
+
   testWidgets("le mode adultes demande une confirmation d'âge (R7.3)", (
     tester,
   ) async {
