@@ -213,6 +213,35 @@ void main() {
     });
   });
 
+  group('un profil ne présélectionne pas une catégorie verrouillée', () {
+    final avecPremium = [
+      testDeck('libre'),
+      testDeck('payante', isPremium: true),
+    ];
+
+    test('la catégorie premium est écartée de la sélection', () {
+      // L'écran de sélection grise les catégories premium : un profil qui en
+      // cochait une donnait au joueur des cartes qu'il ne peut ni retirer —
+      // la case est verrouillée — ni avoir payées.
+      final retenues = decksForProfile(profile('mix'), avecPremium);
+
+      expect(retenues.map((d) => d.id), ['libre']);
+    });
+
+    test('elle ne compte pas non plus dans le volume annoncé (R7.8)', () {
+      // Sinon un profil s'annonce jouable grâce à des cartes que le tirage ne
+      // prendra pas, et la partie démarre plus courte que promis.
+      final disponibilite = evaluateProfile(
+        profile: profile('mix'),
+        decks: avecPremium,
+        cards: cardsFor(['libre', 'payante']),
+      );
+
+      expect(disponibilite.deckIds, ['libre']);
+      expect(disponibilite.availableCards, 30);
+    });
+  });
+
   group('R7.6 — un profil est un point de départ, pas une contrainte', () {
     test('choisir un profil présélectionne ses catégories et ses filtres', () {
       final selection = selectionFor(profile('ados'), _decks);

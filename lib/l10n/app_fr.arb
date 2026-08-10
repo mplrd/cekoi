@@ -634,5 +634,25 @@
   "actionTieBreakRestart": "Personne n'a trouvé",
   "@actionTieBreakRestart": {
     "description": "Relance le départage avec une autre carte (R5.3)."
+  },
+
+  "quitGameTitle": "Quitter la partie ?",
+  "@quitGameTitle": {
+    "description": "Confirmation avant d'abandonner une partie en cours."
+  },
+
+  "quitGameBody": "La partie en cours sera perdue. Vous pouvez aussi la laisser de côté et la reprendre depuis l'accueil.",
+  "@quitGameBody": {
+    "description": "Corps de la confirmation d'abandon : rappelle que la reprise existe (R9.1)."
+  },
+
+  "actionQuitGame": "Quitter",
+  "@actionQuitGame": {
+    "description": "Confirme l'abandon de la partie."
+  },
+
+  "actionKeepPlaying": "Continuer à jouer",
+  "@actionKeepPlaying": {
+    "description": "Annule l'abandon et revient à la partie."
   }
 }
