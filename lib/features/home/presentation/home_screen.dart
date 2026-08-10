@@ -1,3 +1,7 @@
+import 'dart:async';
+
+import 'package:cekoi/app/current_game.dart';
+import 'package:cekoi/app/game_persistence.dart';
 import 'package:cekoi/app/router.dart';
 import 'package:cekoi/data/providers.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
@@ -28,7 +32,7 @@ class HomeScreen extends ConsumerWidget {
               retryLabel: l10n.actionRetry,
               onRetry: () => ref.invalidate(deckSeedingProvider),
             ),
-            _ => _Menu(l10n: l10n),
+            _ => const _Menu(),
           },
         ),
       ),
@@ -36,13 +40,17 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-class _Menu extends StatelessWidget {
-  const _Menu({required this.l10n});
-
-  final AppLocalizations l10n;
+class _Menu extends ConsumerWidget {
+  const _Menu();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    // Une partie de moins de 24 h (R9.2). L'attente n'est pas bloquante : le
+    // menu s'affiche tout de suite, la bannière apparaît quand la base a
+    // répondu — c'est une reprise, pas une raison de retenir l'écran.
+    final resumable = ref.watch(resumableGameProvider).value;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -56,6 +64,16 @@ class _Menu extends StatelessWidget {
           ),
         ),
         const Spacer(),
+        if (resumable != null) ...[
+          FilledButton.tonal(
+            onPressed: () {
+              ref.read(currentGameProvider.notifier).game = resumable;
+              unawaited(context.push(AppRoutes.game));
+            },
+            child: Text(l10n.homeResumeGame),
+          ),
+          const SizedBox(height: 16),
+        ],
         FilledButton(
           onPressed: () => context.push(AppRoutes.setupMode),
           child: Text(l10n.homePlay),
