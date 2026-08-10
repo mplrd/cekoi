@@ -89,8 +89,9 @@ L'écran le plus important de l'app. Il ne contient rien d'autre que :
 
 - **Le temps restant**, en très grand, avec un anneau de progression. Les 10 dernières
   secondes passent en rouge, avec un son discret et un retour haptique à chaque seconde.
-- **La carte**, texte centré, taille de police adaptative selon la longueur.
-- **En manche 1**, les mots tabous de la carte, listés en dessous en plus petit et barrés.
+- **La carte**, texte centré, taille de police adaptative selon la longueur. Rien d'autre :
+  pas de mots interdits listés, pas d'indice. Le narrateur doit lire la carte d'un coup d'œil,
+  à bout de bras, au milieu d'une table qui crie.
 - **Deux zones d'action** occupant la moitié basse : *Trouvé* (verte, à droite) et *Passer*
   (neutre, à gauche). Un glissement horizontal sur la carte fait la même chose, pour ceux qui
   prennent le coup de main.
@@ -121,8 +122,8 @@ Accessible depuis l'accueil. Liste des catégories de l'utilisateur, création, 
 suppression avec confirmation.
 
 Dans une catégorie : liste des cartes, ajout rapide (un champ, une validation, on enchaîne),
-édition, suppression. Chaque carte peut recevoir des mots tabous et une difficulté ; les deux
-sont optionnels, avec des défauts raisonnables, pour ne pas transformer la saisie en corvée.
+édition, suppression. Chaque carte peut recevoir une difficulté ; elle est optionnelle, avec
+un défaut raisonnable, pour ne pas transformer la saisie en corvée.
 
 Une catégorie custom est marquée `family` ou `adult` à la création, ce qui détermine dans
 quel mode elle apparaîtra.

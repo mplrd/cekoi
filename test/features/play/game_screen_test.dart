@@ -5,6 +5,7 @@ import 'package:cekoi/domain/engine/game_state.dart';
 import 'package:cekoi/domain/entities/card.dart' as domain;
 import 'package:cekoi/domain/entities/difficulty.dart';
 import 'package:cekoi/features/play/presentation/game_screen.dart';
+import 'package:cekoi/features/play/presentation/widgets/game_card_face.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,8 +15,8 @@ import '../../support/fixtures.dart';
 import '../../support/providers.dart';
 import 'play_controller_test.dart' show FakeClock;
 
-/// Une partie dont la carte du dessus porte des mots interdits.
-GameState _withTaboo({int roundIndex = 0}) {
+/// Une partie dont la carte du dessus porte un texte reconnaissable.
+GameState _withNamedCard({int roundIndex = 0}) {
   final autres = testCards(5);
   final carte = domain.Card(
     id: 'deck:tarte',
@@ -24,7 +25,6 @@ GameState _withTaboo({int roundIndex = 0}) {
     audience: autres.first.audience,
     difficulty: Difficulty.medium,
     origin: autres.first.origin,
-    taboo: const ['pomme', 'dessert'],
   );
 
   return testGame(cardCount: 6).copyWith(
@@ -203,28 +203,37 @@ void main() {
       await stopGame(tester);
     });
 
-    testWidgets('les mots tabous sortent en manche 1', (tester) async {
-      await pumpScreen(tester, game: _withTaboo());
+    testWidgets('la carte ne montre que son texte', (tester) async {
+      // L'écran de jeu ne porte rien d'autre que la carte, quelle que soit la
+      // manche : le narrateur doit le lire d'un coup d'œil, à bout de bras.
+      await pumpScreen(tester, game: _withNamedCard());
       await startTurn(tester);
 
-      expect(find.text('pomme'), findsOneWidget);
-      expect(find.text('dessert'), findsOneWidget);
-      expect(find.text(l10n.gameTabooTitle), findsOneWidget);
+      expect(find.text('Tarte aux pommes'), findsOneWidget);
+      expect(find.byType(GameCardFace), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(GameCardFace),
+          matching: find.byType(Text),
+        ),
+        findsOneWidget,
+        reason: 'Un seul texte sur la carte, et c’est le sien',
+      );
       await stopGame(tester);
     });
 
-    testWidgets('ils disparaissent dès la manche 2', (tester) async {
-      // L'autre moitié de la règle, sans laquelle afficher les tabous
-      // partout passerait le test précédent. En manche 2 le narrateur ne dit
-      // qu'un mot et en manche 3 il se tait : la liste n'a plus de sens et
-      // encombre un écran qui doit se lire d'un coup d'œil.
-      await pumpScreen(tester, game: _withTaboo(roundIndex: 1));
+    testWidgets('en manche 2, la carte est la même', (tester) async {
+      await pumpScreen(tester, game: _withNamedCard(roundIndex: 1));
       await startTurn(tester);
 
-      expect(find.text(l10n.roundNameOneWord), findsNothing);
       expect(find.text('Tarte aux pommes'), findsOneWidget);
-      expect(find.text('pomme'), findsNothing);
-      expect(find.text(l10n.gameTabooTitle), findsNothing);
+      expect(
+        find.descendant(
+          of: find.byType(GameCardFace),
+          matching: find.byType(Text),
+        ),
+        findsOneWidget,
+      );
       await stopGame(tester);
     });
   });

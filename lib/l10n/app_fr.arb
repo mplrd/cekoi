@@ -488,11 +488,6 @@
     "description": "Raison du grisage de Passer sur la dernière carte (R3.4)."
   },
 
-  "gameTabooTitle": "Interdits",
-  "@gameTabooTitle": {
-    "description": "En-tête de la liste des mots tabous, en manche 1."
-  },
-
   "gameRemainingCards": "{count, plural, =1{1 carte restante} other{{count} cartes restantes}}",
   "@gameRemainingCards": {
     "description": "Cartes encore dans le paquet de la manche.",

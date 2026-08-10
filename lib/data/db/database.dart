@@ -22,7 +22,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.memory() : super(NativeDatabase.memory());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -36,6 +36,14 @@ class AppDatabase extends _$AppDatabase {
       // et qu'aucune migration n'a le droit de perdre.
       if (from < 2) {
         await m.createTable(savedGames);
+      }
+
+      // v3 — les mots interdits sortent du jeu. SQLite ne sait pas retirer une
+      // colonne en place : Drift recrée la table et recopie les lignes, index
+      // et clés étrangères compris. Les cartes écrites par le joueur sont donc
+      // déplacées, pas régénérées — le seeding ne recrée que l'officiel.
+      if (from < 3) {
+        await m.alterTable(TableMigration(cards));
       }
     },
     beforeOpen: (details) async {

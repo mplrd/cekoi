@@ -27,12 +27,12 @@ plus jeune connaît casse le rythme et frustre tout le monde.
 
 ## Ce qu'on te demande de produire
 
-Pour chaque catégorie, un tableau à quatre colonnes :
+Pour chaque catégorie, un tableau à trois colonnes :
 
-| texte | difficulte | tabous | note |
-|---|---|---|---|
-| Zinédine Zidane | 1 | football; coup de boule; Real Madrid; 1998 | |
-| Le trac | 2 | peur; scène; théâtre | |
+| texte | difficulte | note |
+|---|---|---|
+| Zinédine Zidane | 1 | |
+| Le trac | 2 | |
 
 **texte** — ce qui s'affichera sur la carte.
 
@@ -47,11 +47,6 @@ Pour chaque catégorie, un tableau à quatre colonnes :
 Calibre toujours **en pensant à la manche 3** : c'est le mime qui révèle la vraie difficulté
 d'une carte. Et en cas d'hésitation entre 1 et 2, choisis 2 — la difficulté 1 alimente le mode
 réservé aux 6-9 ans, et une carte trop dure y gâche une partie entière.
-
-**tabous** — 2 à 4 mots que le joueur n'aura pas le droit de prononcer en manche 1, parce
-qu'ils rendraient la carte trop facile. Séparés par des points-virgules. Les mots de la carte
-elle-même sont déjà interdits, inutile de les répéter. Jamais plus de quatre : au-delà,
-personne ne les retient.
 
 **note** — vide la plupart du temps. C'est là que tu signales un doute : notoriété discutable,
 orthographe incertaine, carte à la limite du ton demandé.
@@ -114,10 +109,6 @@ DIFFICULTÉ
 Calibre en pensant à la manche 3, c'est le mime qui révèle la vraie difficulté.
 En hésitation entre 1 et 2, choisis 2.
 
-MOTS TABOUS
-2 à 4 mots interdits en manche 1 parce qu'ils rendraient la carte triviale. Les mots de la
-carte sont déjà interdits, ne les répète pas. Jamais plus de 4. Séparés par des points-virgules.
-
 ÉCRITURE
 - Pas d'article en tête : « Brosse à dents », pas « Une brosse à dents »
 - Majuscules et accents corrects sur les noms propres : « Zinédine Zidane », « Élysée »
@@ -127,8 +118,8 @@ carte sont déjà interdits, ne les répète pas. Jamais plus de 4. Séparés pa
 - Aucun doublon dans la liste
 
 FORMAT DE SORTIE
-Un tableau à 4 colonnes, rien avant ni après :
-texte | difficulte | tabous | note
+Un tableau à 3 colonnes, rien avant ni après :
+texte | difficulte | note
 
 La colonne « note » reste vide, sauf si tu as un doute : notoriété discutable, orthographe
 d'un nom propre incertaine, carte à la limite du ton demandé. Écris alors ton doute en

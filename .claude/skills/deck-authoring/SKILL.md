@@ -1,6 +1,6 @@
 ---
 name: deck-authoring
-description: Écrire, relire ou corriger le contenu des cartes de Cékoi — catégories officielles, calibrage de difficulté, mots tabous, ligne éditoriale famille/adultes, format JSON des decks. À charger avant toute création ou modification de contenu dans assets/decks/.
+description: Écrire, relire ou corriger le contenu des cartes de Cékoi — catégories officielles, calibrage de difficulté, ligne éditoriale famille/adultes, format JSON des decks. À charger avant toute création ou modification de contenu dans assets/decks/.
 ---
 
 # Écrire des cartes pour Cékoi
@@ -18,8 +18,8 @@ mauvaises propositions :
 3. **Mimable** — au moins un geste, une posture ou une situation permet de l'évoquer.
 
 Un concept abstrait comme « la nostalgie » échoue au test du mime. Un objet trop générique
-comme « une chaise » échoue au test du mot unique, parce que tous les mots évidents sont
-tabous. Vérifie mentalement les trois manches avant de retenir une carte.
+comme « une chaise » échoue au test du mot unique : il n'existe aucun mot qui le désigne sans
+le nommer. Vérifie mentalement les trois manches avant de retenir une carte.
 
 Deuxième critère, tout aussi éliminatoire : **la reconnaissance par le groupe**. La carte doit
 être connue d'au moins trois personnes sur quatre autour d'une table francophone. Un
@@ -93,17 +93,14 @@ difficiles comprises — sinon le profil *Les minis* servira des cartes injouabl
 doute, monte le `minAge` plutôt que de le baisser : une catégorie absente d'un profil est un
 manque discret, une catégorie inadaptée est une partie gâchée.
 
-## Mots tabous
+## Pas de mots interdits
 
-Utilisés en manche 1 uniquement. Liste les mots que le narrateur ne peut pas prononcer : les
-mots de la carte elle-même sont implicitement tabous, inutile de les répéter.
+Une carte porte son texte, sa difficulté, rien d'autre. Il n'existe pas de liste de mots
+interdits, ni dans le format de livraison, ni dans la base, ni à l'écran.
 
-Ajoute 2 à 4 mots qui rendraient la description triviale. Pour `Zinédine Zidane` :
-`["football", "coup de boule", "Real Madrid", "1998"]`. Sans eux, la carte se devine en deux
-secondes et perd tout intérêt.
-
-N'en mets pas dix : au-delà de quatre, le narrateur ne peut plus les mémoriser en un coup
-d'œil et la carte devient injouable.
+La seule interdiction de la manche 1 est celle de `RULES.md` : le narrateur ne prononce pas
+les mots figurant sur la carte. Elle ne demande aucune donnée — le texte de la carte suffit à
+la définir.
 
 ## Format JSON
 
@@ -123,15 +120,13 @@ Un fichier par catégorie dans `assets/decks/`, nommé d'après son `id`.
   "cards": [
     {
       "text": "Zinédine Zidane",
-      "difficulty": 1,
-      "taboo": ["football", "coup de boule", "Real Madrid", "1998"]
+      "difficulty": 1
     }
   ]
 }
 ```
 
-- `text` est le seul champ obligatoire d'une carte. `difficulty` vaut 2 par défaut, `taboo`
-  une liste vide.
+- `text` est le seul champ obligatoire d'une carte. `difficulty` vaut 2 par défaut.
 - L'identifiant de carte est dérivé de `<id du deck>:<slug du texte>` — il ne figure pas dans
   le JSON, mais **modifier un `text` existant change son identité** et casse le lien avec
   l'historique des parties. Pour corriger une faute de frappe, c'est acceptable ; pour

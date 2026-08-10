@@ -38,9 +38,6 @@ class Cards extends Table {
   /// 1 à 3. Utilisée par l'équilibrage du tirage (R6.3).
   IntColumn get difficulty => integer()();
 
-  /// Tableau JSON des mots interdits en manche 1.
-  TextColumn get taboo => text().withDefault(const Constant('[]'))();
-
   TextColumn get origin => textEnum<DeckOrigin>()();
 
   @override
