@@ -5,6 +5,7 @@ import 'package:cekoi/app/theme/app_colors.dart';
 import 'package:cekoi/data/providers.dart';
 import 'package:cekoi/domain/engine/game_state.dart';
 import 'package:cekoi/domain/setup/game_launch.dart';
+import 'package:cekoi/features/play/presentation/widgets/action_zone.dart';
 import 'package:cekoi/features/play/presentation/widgets/score_table.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -50,7 +51,9 @@ class _PodiumViewState extends ConsumerState<PodiumView> {
                 l10n.podiumTitle,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.titleMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+                  color: AppColors.ink.withValues(alpha: 0.7),
+                  letterSpacing: 1.5,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
               const SizedBox(height: 8),
@@ -58,9 +61,9 @@ class _PodiumViewState extends ConsumerState<PodiumView> {
                 Text(
                   l10n.podiumWinner(team.name),
                   textAlign: TextAlign.center,
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.team(team.colorId),
+                  style: theme.textTheme.displaySmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.ink,
                   ),
                 ),
               const SizedBox(height: 32),
@@ -73,17 +76,21 @@ class _PodiumViewState extends ConsumerState<PodiumView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              FilledButton(
+              ActionZone(
+                label: l10n.actionReplaySameSettings,
+                background: AppColors.accent,
+                foreground: Colors.white,
                 onPressed: _replaying ? null : _replay,
-                child: Text(l10n.actionReplaySameSettings),
               ),
-              const SizedBox(height: 8),
-              OutlinedButton(
+              const SizedBox(height: 12),
+              ActionZone(
+                label: l10n.actionNewGame,
+                outlined: true,
+                foreground: AppColors.ink,
                 onPressed: () {
                   ref.read(currentGameProvider.notifier).game = null;
                   context.go(AppRoutes.setupMode);
                 },
-                child: Text(l10n.actionNewGame),
               ),
             ],
           ),

@@ -48,8 +48,12 @@ class ActionZone extends StatelessWidget {
         foreground ??
         (outlined ? theme.colorScheme.onSurface : theme.colorScheme.onPrimary);
 
-    final couleur = actif ? fond : theme.disabledColor.withValues(alpha: 0.12);
-    final texte = actif ? encre : theme.disabledColor;
+    // Sur le fond coloré d'une manche, un contour tiré du thème disparaît :
+    // la bordure et le texte prennent la même encre que le reste de l'écran.
+    final couleur = actif
+        ? fond
+        : (outlined ? Colors.transparent : encre.withValues(alpha: 0.15));
+    final texte = actif ? encre : encre.withValues(alpha: 0.4);
 
     return Semantics(
       button: true,
@@ -73,7 +77,7 @@ class ActionZone extends StatelessWidget {
             color: couleur,
             borderRadius: const BorderRadius.all(Radius.circular(16)),
             border: outlined
-                ? Border.all(color: theme.colorScheme.outline, width: 1.5)
+                ? Border.all(color: texte.withValues(alpha: 0.55), width: 2)
                 : null,
           ),
           child: Center(

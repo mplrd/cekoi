@@ -36,7 +36,8 @@ class TieBreakView extends ConsumerWidget {
           Text(
             l10n.tieBreakTitle,
             textAlign: TextAlign.center,
-            style: theme.textTheme.headlineMedium?.copyWith(
+            style: theme.textTheme.displaySmall?.copyWith(
+              color: AppColors.ink,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -45,7 +46,7 @@ class TieBreakView extends ConsumerWidget {
             l10n.tieBreakBody,
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+              color: AppColors.ink.withValues(alpha: 0.75),
             ),
           ),
           Expanded(

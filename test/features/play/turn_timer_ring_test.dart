@@ -4,6 +4,10 @@ import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+/// Une manche sombre : encre claire sur fond foncé.
+const Color _encre = Colors.white;
+const Color _fond = AppColors.accent;
+
 void main() {
   late AppLocalizations l10n;
 
@@ -22,15 +26,25 @@ void main() {
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         home: Scaffold(
-          body: TurnTimerRing(remaining: remaining, total: total),
+          body: TurnTimerRing(
+            remaining: remaining,
+            total: total,
+            ink: _encre,
+            ground: _fond,
+          ),
         ),
       ),
     );
     return tester.widget<Text>(find.byType(Text));
   }
 
-  group('les dix dernières secondes passent en rouge', () {
-    testWidgets('au-dessus du seuil, la couleur reste celle du thème', (
+  group('les dix dernières secondes se renversent', () {
+    // Depuis que chaque manche a sa couleur de fond, une teinte d'urgence
+    // fixe se noyait dedans — le rouge était invisible sur le rouge de la
+    // manche 3, au moment exact où il compte. L'anneau se remplit donc de
+    // l'encre et le nombre passe en négatif : le contraste ne dépend plus du
+    // fond.
+    testWidgets('au-dessus du seuil, le nombre est dans l encre', (
       tester,
     ) async {
       final texte = await pumpRing(
@@ -38,10 +52,12 @@ void main() {
         remaining: const Duration(seconds: 11),
       );
 
-      expect(texte.style?.color, isNot(AppColors.urgent));
+      expect(texte.style?.color, _encre);
     });
 
-    testWidgets('à dix secondes pile, le rouge est déjà là', (tester) async {
+    testWidgets('à dix secondes pile, le renversement est déjà là', (
+      tester,
+    ) async {
       // Le seuil est inclusif : `SPEC.md` parle des dix dernières secondes,
       // pas des neuf dernières.
       final texte = await pumpRing(
@@ -49,7 +65,7 @@ void main() {
         remaining: const Duration(seconds: 10),
       );
 
-      expect(texte.style?.color, AppColors.urgent);
+      expect(texte.style?.color, _fond);
     });
   });
 

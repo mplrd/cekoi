@@ -30,52 +30,93 @@ class ScoreTable extends StatelessWidget {
     final classees = [...game.teams]
       ..sort((a, b) => game.scoreOf(b.id).compareTo(game.scoreOf(a.id)));
 
-    return Table(
-      columnWidths: const {0: FlexColumnWidth(3)},
-      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-      children: [
-        TableRow(
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: const BorderRadius.all(Radius.circular(20)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.ink.withValues(alpha: 0.15),
+            blurRadius: 20,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        child: Table(
+          columnWidths: const {0: FlexColumnWidth(3)},
+          defaultVerticalAlignment: TableCellVerticalAlignment.middle,
           children: [
-            const SizedBox.shrink(),
-            for (final round in played)
-              _Cell(
-                text: l10n.scoreRoundShort(round.number),
-                style: theme.textTheme.labelSmall,
-                tooltip: round.label(l10n),
+            TableRow(
+              children: [
+                const SizedBox.shrink(),
+                for (final round in played)
+                  _Cell(
+                    text: l10n.scoreRoundShort(round.number),
+                    style: theme.textTheme.labelSmall,
+                    tooltip: round.label(l10n),
+                  ),
+                _Cell(text: l10n.scoreTotal, style: theme.textTheme.labelSmall),
+              ],
+            ),
+            for (final team in classees)
+              TableRow(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    child: Row(
+                      children: [
+                        // La couleur d'équipe tient dans une pastille : en
+                        // texte, elle devait rester lisible sur tous les
+                        // fonds, ce qu'aucune des huit ne garantit.
+                        Container(
+                          width: 12,
+                          height: 12,
+                          margin: const EdgeInsets.only(right: 10),
+                          decoration: BoxDecoration(
+                            color: AppColors.team(team.colorId),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            team.name,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              color: AppColors.ink,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  for (final round in played)
+                    _Cell(
+                      text: '${byRound[round]?[team.id] ?? 0}',
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: AppColors.ink.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  _Cell(
+                    text: '${game.scoreOf(team.id)}',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.ink,
+                    ),
+                  ),
+                ],
               ),
-            _Cell(text: l10n.scoreTotal, style: theme.textTheme.labelSmall),
           ],
         ),
-        for (final team in classees)
-          TableRow(
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                child: Text(
-                  team.name,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: AppColors.team(team.colorId),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              for (final round in played)
-                _Cell(
-                  text: '${byRound[round]?[team.id] ?? 0}',
-                  style: theme.textTheme.bodyMedium,
-                ),
-              _Cell(
-                text: '${game.scoreOf(team.id)}',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-      ],
+      ),
     );
   }
 }
+
+/// L'encre des chiffres secondaires du tableau.
+final Color _defaut = AppColors.ink.withValues(alpha: 0.6);
 
 class _Cell extends StatelessWidget {
   const _Cell({required this.text, this.style, this.tooltip});
@@ -88,7 +129,13 @@ class _Cell extends StatelessWidget {
   Widget build(BuildContext context) {
     final cell = Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Text(text, textAlign: TextAlign.center, style: style),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: (style ?? const TextStyle()).copyWith(
+          color: style?.color ?? _defaut,
+        ),
+      ),
     );
 
     final message = tooltip;

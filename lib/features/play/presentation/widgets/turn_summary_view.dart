@@ -2,6 +2,7 @@ import 'package:cekoi/app/theme/app_colors.dart';
 import 'package:cekoi/domain/engine/game_state.dart';
 import 'package:cekoi/domain/engine/turn.dart';
 import 'package:cekoi/features/play/presentation/play_controller.dart';
+import 'package:cekoi/features/play/presentation/widgets/action_zone.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,6 +24,9 @@ class TurnSummaryView extends ConsumerWidget {
     final theme = Theme.of(context);
     final turn = game.turn;
     final results = turn?.results ?? const <CardResult>[];
+    // L'écran garde le fond de la manche (voir `GameScreen`) : son encre en
+    // découle, et les lignes deviennent des cartes posées dessus.
+    final encre = AppColors.onRound(game.round);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -35,7 +39,8 @@ class TurnSummaryView extends ConsumerWidget {
               Text(
                 l10n.turnSummaryTitle,
                 style: theme.textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w800,
+                  color: encre,
                 ),
               ),
               const SizedBox(height: 4),
@@ -44,21 +49,25 @@ class TurnSummaryView extends ConsumerWidget {
                   game.activeTeam.name,
                   game.scoreOf(game.activeTeam.id),
                 ),
-                style: theme.textTheme.labelLarge?.copyWith(
-                  color: AppColors.team(game.activeTeam.colorId),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: encre.withValues(alpha: 0.85),
+                  fontWeight: FontWeight.w600,
                 ),
               ),
               const SizedBox(height: 12),
               Text(
                 l10n.turnSummaryScore(turn?.score ?? 0),
-                style: theme.textTheme.titleLarge,
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  color: encre,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               if (results.isNotEmpty) ...[
                 const SizedBox(height: 4),
                 Text(
                   l10n.turnSummaryHint,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: encre.withValues(alpha: 0.75),
                   ),
                 ),
               ],
@@ -67,7 +76,14 @@ class TurnSummaryView extends ConsumerWidget {
         ),
         Expanded(
           child: results.isEmpty
-              ? Center(child: Text(l10n.turnSummaryEmpty))
+              ? Center(
+                  child: Text(
+                    l10n.turnSummaryEmpty,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: encre.withValues(alpha: 0.85),
+                    ),
+                  ),
+                )
               : ListView(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   children: [
@@ -89,9 +105,11 @@ class TurnSummaryView extends ConsumerWidget {
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-          child: FilledButton(
+          child: ActionZone(
+            label: l10n.actionConfirmTurn,
+            background: Colors.white,
+            foreground: AppColors.ink,
             onPressed: ref.read(playControllerProvider.notifier).confirmTurn,
-            child: Text(l10n.actionConfirmTurn),
           ),
         ),
       ],
@@ -128,19 +146,40 @@ class _ResultTile extends StatelessWidget {
     final theme = Theme.of(context);
     final found = outcome == TurnOutcome.found;
 
-    return ListTile(
-      onTap: onToggle,
-      leading: Icon(
-        found ? Icons.check_circle : Icons.redo,
-        color: found ? AppColors.found : theme.colorScheme.onSurfaceVariant,
-      ),
-      title: Text(text, style: theme.textTheme.titleMedium),
-      trailing: Text(
-        found
-            ? l10n.outcomeFound
-            : (allowsPass ? l10n.outcomePassed : l10n.outcomeMissed),
-        style: theme.textTheme.labelMedium?.copyWith(
-          color: found ? AppColors.found : theme.colorScheme.onSurfaceVariant,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Material(
+        color: Colors.white,
+        borderRadius: const BorderRadius.all(Radius.circular(14)),
+        child: ListTile(
+          onTap: onToggle,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(14)),
+          ),
+          leading: Icon(
+            found ? Icons.check_circle : Icons.redo,
+            color: found
+                ? AppColors.found
+                : AppColors.ink.withValues(alpha: 0.45),
+          ),
+          title: Text(
+            text,
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: AppColors.ink,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          trailing: Text(
+            found
+                ? l10n.outcomeFound
+                : (allowsPass ? l10n.outcomePassed : l10n.outcomeMissed),
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: found
+                  ? AppColors.found
+                  : AppColors.ink.withValues(alpha: 0.55),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ),
       ),
     );
