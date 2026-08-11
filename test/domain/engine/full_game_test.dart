@@ -180,7 +180,7 @@ Session playFullGame(int seed) {
       for (final card in _cards)
         if (retained.contains(card.deckId)) card,
     ],
-    requested: GameConfig.autoCardCount(teams.length),
+    requested: GameConfig.defaultCardCount,
     mode: profile.mode,
     random: random,
     allowedDifficulties: profile.difficulties,
@@ -243,18 +243,19 @@ void main() {
     // ── Tirage ──────────────────────────────────────────────────────────
     expect(
       session.drawn.cards,
-      hasLength(24),
-      reason: '12 × 2 équipes (R6.1)',
+      hasLength(GameConfig.defaultCardCount),
+      reason: 'le paquet par défaut de R6.1',
     );
     expect(session.drawn.isTruncated, isFalse);
     expect(
       session.drawn.cards.map((c) => c.normalizedText).toSet(),
-      hasLength(24),
+      hasLength(GameConfig.defaultCardCount),
       reason: 'R6.4 — aucun doublon de texte dans le paquet',
     );
-    expect(countOf(session.drawn.cards, Difficulty.easy), 7);
-    expect(countOf(session.drawn.cards, Difficulty.medium), 12);
-    expect(countOf(session.drawn.cards, Difficulty.hard), 5);
+    // R6.3 : 30 % / 50 % / 20 % sur trente cartes.
+    expect(countOf(session.drawn.cards, Difficulty.easy), 9);
+    expect(countOf(session.drawn.cards, Difficulty.medium), 15);
+    expect(countOf(session.drawn.cards, Difficulty.hard), 6);
 
     // ── Déroulé ─────────────────────────────────────────────────────────
     expect(state.phase, GamePhase.finished);
@@ -262,10 +263,10 @@ void main() {
 
     expect(
       state.scores.values.reduce((a, b) => a + b),
-      3 * 24,
+      3 * GameConfig.defaultCardCount,
       reason:
           "Une manche ne s'achève que le paquet vide, et chaque carte trouvée "
-          'vaut un point : les trois manches valent 72 points '
+          'vaut un point : les trois manches valent trois fois le paquet '
           '(R4.1, R4.2, R5.1)',
     );
 
@@ -273,7 +274,7 @@ void main() {
     for (final round in state.rounds) {
       expect(
         state.scoresByRound[round]!.values.reduce((a, b) => a + b),
-        24,
+        GameConfig.defaultCardCount,
         reason: 'La manche ${round.number} a fait deviner tout le paquet',
       );
     }
@@ -337,8 +338,16 @@ void main() {
             for (final line in turn.results)
               if (line.outcome == TurnOutcome.found) line.cardId,
       ];
-      expect(found.toSet(), hasLength(24), reason: 'Manche ${round.number}');
-      expect(found, hasLength(24), reason: 'Aucune carte trouvée deux fois');
+      expect(
+        found.toSet(),
+        hasLength(GameConfig.defaultCardCount),
+        reason: 'Manche ${round.number}',
+      );
+      expect(
+        found,
+        hasLength(GameConfig.defaultCardCount),
+        reason: 'Aucune carte trouvée deux fois',
+      );
     }
 
     // ── Podium ──────────────────────────────────────────────────────────

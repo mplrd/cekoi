@@ -10,7 +10,7 @@ enum SetupStep { mode, decks, settings, teams, summary }
 
 /// Les étapes réellement traversées dans [mode].
 ///
-/// Le mode Sans filtres saute le choix des catégories : il les prend toutes
+/// Le mode Sans filtre saute le choix des catégories : il les prend toutes
 /// (R7.1) et n'a aucun profil, l'écran n'y proposait donc rien à décider
 /// (R7.10).
 List<SetupStep> setupStepsFor(Audience mode) => switch (mode) {

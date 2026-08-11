@@ -1,6 +1,7 @@
 import 'package:cekoi/app/current_game.dart';
 import 'package:cekoi/app/router.dart';
 import 'package:cekoi/domain/engine/game_phase.dart';
+import 'package:cekoi/features/play/presentation/play_controller.dart';
 import 'package:cekoi/features/play/presentation/widgets/playing_view.dart';
 import 'package:cekoi/features/play/presentation/widgets/podium_view.dart';
 import 'package:cekoi/features/play/presentation/widgets/round_summary_view.dart';
@@ -24,6 +25,9 @@ class GameScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final game = ref.watch(currentGameProvider);
+    // Le compte à rebours de « C'est parti » : tant qu'il tourne, le tour est
+    // lancé même si la phase ne l'est pas encore.
+    final countdown = ref.watch(playControllerProvider);
 
     if (game == null) {
       return Scaffold(
@@ -36,11 +40,31 @@ class GameScreen extends ConsumerWidget {
       );
     }
 
+    // Le retour reste libre **jusqu'au clic sur « C'est parti »** de la manche
+    // 1 : à ce stade il n'y a qu'un paquet tiré, qu'un nouveau tirage
+    // remplacera. On revient donc à la configuration comme d'un écran
+    // ordinaire, sans confirmation — demander « voulez-vous abandonner ? »
+    // pour une partie que personne n'a commencée est une fausse alerte.
+    //
+    // Une partie terminée se quitte librement pour la raison inverse : il n'y
+    // a plus rien à perdre.
+    final librementQuittable =
+        game.phase == GamePhase.finished ||
+        (game.isUntouched && countdown == null);
+
     return PopScope(
-      // Une partie terminée se quitte librement : il n'y a plus rien à perdre.
-      canPop: game.phase == GamePhase.finished,
+      canPop: librementQuittable,
       onPopInvokedWithResult: (didPop, _) async {
-        if (didPop || !context.mounted) return;
+        if (didPop) {
+          // La partie tirée est jetée en repartant : la laisser en place la
+          // ferait proposer en reprise depuis l'accueil (R9.1), alors qu'elle
+          // n'a jamais commencé.
+          if (game.isUntouched) {
+            ref.read(currentGameProvider.notifier).game = null;
+          }
+          return;
+        }
+        if (!context.mounted) return;
         if (await _confirmQuit(context) && context.mounted) {
           ref.read(currentGameProvider.notifier).game = null;
           context.go(AppRoutes.home);

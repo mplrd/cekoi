@@ -12,7 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// cinq implémentations finiraient par diverger.
 ///
 /// Le rang et le total se calculent depuis le mode en cours : le parcours
-/// compte cinq étapes en Famille, quatre en Sans filtres (R7.10). Aucun écran
+/// compte cinq étapes en Famille, quatre en Sans filtre (R7.10). Aucun écran
 /// ne connaît son numéro — il déclare quelle étape il est.
 class SetupScaffold extends ConsumerWidget {
   const SetupScaffold({
@@ -37,7 +37,7 @@ class SetupScaffold extends ConsumerWidget {
     final theme = Theme.of(context);
 
     final parcours = setupStepsFor(ref.watch(setupControllerProvider).mode);
-    // Un écran hors du parcours du mode — les catégories en Sans filtres, où
+    // Un écran hors du parcours du mode — les catégories en Sans filtre, où
     // l'on ne revient que par le retour (R7.10) — se compte dans le parcours
     // **complet**. Sans ça, `indexOf` rendait -1 et l'en-tête affichait
     // « Étape 0 sur 4 », avec les quatre points éteints.

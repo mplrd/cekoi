@@ -33,7 +33,7 @@ const Map<String, IconData> _icones = {
   'movie': Icons.movie,
   'history_edu': Icons.history_edu,
   'star': Icons.star,
-  // Mode Sans filtres
+  // Mode Sans filtre
   'mood_bad': Icons.mood_bad,
   'sentiment_dissatisfied': Icons.sentiment_dissatisfied,
   'local_bar': Icons.local_bar,

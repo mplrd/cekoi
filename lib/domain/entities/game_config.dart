@@ -17,8 +17,14 @@ abstract class GameConfig with _$GameConfig {
     required List<String> deckIds,
     required Duration turnDuration,
 
-    /// Nombre de cartes demandé. `null` signifie *auto* — voir [autoCardCount].
-    int? cardCount,
+    /// Nombre de cartes du paquet (R6.1).
+    ///
+    /// Toujours une valeur : le mode *auto* qui se déduisait du nombre
+    /// d'équipes a disparu au retour de terrain d'août 2026.
+    @Default(GameConfig.defaultCardCount) int cardCount,
+
+    /// Sans filtre, mais **rien que** les cartes réservées aux grands (R7.1).
+    @Default(false) bool adultOnly,
 
     /// Profil de départ, `null` dès que le joueur personnalise sa sélection
     /// (R7.6).
@@ -66,32 +72,14 @@ abstract class GameConfig with _$GameConfig {
     Audience.adult: Duration(seconds: 45),
   };
 
-  /// `null` signifie *auto*.
-  static const Map<Audience, int?> defaultCardCount = {
-    Audience.family: null,
-    Audience.adult: 32,
-  };
-
-  /// Cartes par équipe du mode *auto* (R6.1).
+  /// Le paquet par défaut, dans les deux modes (R6.1).
   ///
-  /// Le facteur vaut `5 × 2,4 joueurs par équipe` : la durée d'une partie suit
-  /// le nombre de tours à jouer, donc le nombre d'équipes, bien plus que
-  /// l'effectif exact autour de la table — que l'application ne connaît plus
-  /// (R8.2).
-  static const int cardsPerTeam = 12;
+  /// Un nombre rond, qui ne dépend pas du nombre d'équipes : personne ne sait
+  /// dire ce qu'un mode *auto* va donner avant de le voir, et sa valeur
+  /// bougeait sous les yeux du joueur quand il revenait changer le nombre
+  /// d'équipes à l'étape suivante.
+  static const int defaultCardCount = 30;
 
-  /// Calcul du mode *auto* : `12 × équipes`, arrondi au multiple de 4
-  /// supérieur, borné à [16, 80] (R6.1).
-  ///
-  /// C'est le réglage qui donne des parties de 30 à 40 minutes. Le plancher
-  /// n'est plus atteignable depuis que le calcul part des équipes — deux, au
-  /// minimum, en donnent déjà 24. Il reste comme garde si le facteur bouge.
-  static int autoCardCount(int teamCount) {
-    final raw = cardsPerTeam * teamCount;
-    final rounded = ((raw + 3) ~/ 4) * 4;
-    return rounded.clamp(16, 80);
-  }
-
-  /// Nombre de cartes effectif pour un nombre d'équipes donné.
-  int resolvedCardCount(int teamCount) => cardCount ?? autoCardCount(teamCount);
+  /// Le paquet le plus long qu'une tablée finit en trois manches (R6.1).
+  static const int maximumCardCount = 80;
 }

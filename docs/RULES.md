@@ -144,21 +144,20 @@ paquet joué — un départage au réflexe reste préférable à pas de départa
 | Paramètre | Valeurs | Défaut famille | Défaut adultes |
 |---|---|---|---|
 | Durée du tour | 30 / 45 / 60 / 90 s, ou libre (15–180) | 60 s | 45 s |
-| Nombre de cartes | 24 / 32 / 40 / 48, ou auto, ou libre | auto | 32 |
+| Nombre de cartes | 12 à 80, au curseur | 30 | 30 |
 | Nombre d'équipes | 2 à illimité | 2 | 2 |
 
-**R6.1** — Le mode *auto* pour le nombre de cartes calcule `12 × nombre d'équipes`, arrondi au
-multiple de 4 supérieur, borné à [16, 80]. C'est le réglage qui donne des parties d'environ
-30 à 40 minutes.
+**R6.1** — Le paquet compte **30 cartes par défaut**, dans les deux modes, réglable de 12
+(R6.2) à 80. C'est le volume qui donne des parties d'environ 30 à 40 minutes.
 
-Le calcul portait sur le nombre de joueurs jusqu'au retour d'usage d'août 2026, qui a retiré
-leur saisie (R8.2). Le facteur 12 vaut `5 × 2,4 joueurs par équipe` : à deux équipes il
-donne 24 cartes, là où six joueurs en donnaient 32. La durée d'une partie suit le nombre de
-tours à jouer, donc le nombre d'équipes, bien plus que l'effectif exact autour de la table.
+Il ne dépend **pas** du nombre d'équipes. Un mode *auto* l'a calculé — `12 × équipes`, puis
+`5 × 2,4 joueurs` avant que la saisie des joueurs disparaisse (R8.2) — et le retour de terrain
+d'août 2026 l'a fait tomber : personne ne sait dire ce que « auto » va donner avant de le
+voir, ça obligeait à un interrupteur en plus du réglage lui-même, et la valeur bougeait sous
+les yeux du joueur quand il revenait changer le nombre d'équipes à l'étape suivante.
 
-Depuis ce changement, le plancher de 16 n'est plus atteignable : le minimum de deux équipes
-(R8.5) donne déjà 24. Il reste écrit ici comme garde, et non comme un cas que le joueur peut
-rencontrer — seule une baisse du facteur le réveillerait.
+Trente est volontairement un nombre rond : il se retient, il s'annonce à la table, et il se
+règle d'un curseur quand on veut une partie plus courte ou plus longue.
 
 **R6.2** — Si les catégories sélectionnées contiennent moins de cartes que le nombre demandé,
 la partie utilise tout ce qui est disponible et le signale explicitement avant de démarrer.
@@ -177,9 +176,18 @@ sélectionnées contiennent la même entrée.
 adultes** tire dans `family` **et** `adult` — un apéro entre adultes ne veut pas dire qu'on
 s'interdit les cartes tout public.
 
+Ce mode se décline en deux : **Sans filtre** prend tout, **Sans filtre et rien d'autre** retire
+les cartes tout public et ne laisse que celles réservées aux grands. C'est le même mode au sens
+de R7.2 et de la confirmation d'âge de R7.3 — seul le vivier change. La variante n'existe pas
+en Famille, qui n'a de toute façon pas accès aux cartes adultes : le drapeau y est forcé à
+faux plutôt qu'ignoré, pour qu'il ne ressorte pas en repassant en Sans filtre.
+
+Attention au vivier : à 30 cartes par défaut (R6.1), *rien d'autre* demande 30 cartes adultes,
+là où le mode complet puise dans tout le contenu. R6.2 s'applique et le dira avant de lancer.
+
 **R7.2** — Le mode est choisi en début de partie et ne change pas en cours de route.
 
-**R7.3** — Le mode Sans filtres est accessible derrière une confirmation d'âge simple, non
+**R7.3** — Le mode Sans filtre est accessible derrière une confirmation d'âge simple, non
 bloquante et non stockée en tant que donnée personnelle.
 
 ### Profils de partie
@@ -194,11 +202,11 @@ ne retient que les catégories dont le `minAge` est inférieur ou égal au sien.
 
 | Profil | Âge | Catégories | Difficultés | Chrono | Cartes |
 |---|---|---|---|---|---|
-| **Les minis** | 6–9 ans | `minAge ≤ 6` | 1 uniquement | 90 s | auto |
-| **Ados & co** | 10–14 ans | `minAge ≤ 10` | 1 et 2 | 60 s | auto |
-| **Mix familial** | tous | `minAge ≤ 13` | 1, 2 et 3 | 60 s | auto |
+| **Les minis** | 6–9 ans | `minAge ≤ 6` | 1 uniquement | 90 s | 24 |
+| **Ados & co** | 10–14 ans | `minAge ≤ 10` | 1 et 2 | 60 s | 30 |
+| **Mix familial** | tous | `minAge ≤ 13` | 1, 2 et 3 | 60 s | 30 |
 
-Le mode Sans filtres utilise le même mécanisme ; ses profils sont de la donnée de
+Le mode Sans filtre utilise le même mécanisme ; ses profils sont de la donnée de
 configuration, pas du code, et peuvent être ajoutés sans modifier le moteur.
 
 **R7.6** — Un profil est un point de départ, jamais une contrainte. Après l'avoir choisi,
@@ -217,7 +225,7 @@ désactivé, avec la raison indiquée. Il ne disparaît pas silencieusement de l
 celles du mode sont sélectionnées. Un profil sert alors à *restreindre* — par âge ou par
 difficulté — et non à constituer une sélection depuis rien.
 
-Retour d'usage d'août 2026 : le mode Sans filtres n'a aucun profil, donc l'étape s'ouvrait sur
+Retour d'usage d'août 2026 : le mode Sans filtre n'a aucun profil, donc l'étape s'ouvrait sur
 une sélection vide et il fallait cocher les catégories une par une avant de pouvoir continuer.
 Personne ne veut composer un paquet avant de jouer ; ceux qui le veulent ont le bouton
 *Personnaliser*.
@@ -226,7 +234,7 @@ La présélection n'a lieu **qu'à la première arrivée** dans un mode donné :
 catégorie est une décision, et la voir revenir seule serait pire que le problème d'origine
 (R7.6).
 
-**R7.10** — **Le mode Sans filtres saute l'étape des catégories.** Il prend tout (R7.1) et
+**R7.10** — **Le mode Sans filtre saute l'étape des catégories.** Il prend tout (R7.1) et
 n'a aucun profil : l'étape s'ouvrait sur une liste entièrement cochée, sans profil à choisir
 ni rien à décider — un écran à traverser pour rien. Le parcours y compte donc quatre étapes
 au lieu de cinq, et le numéro affiché suit.

@@ -36,13 +36,32 @@ class ModeScreen extends ConsumerWidget {
             icon: Icons.local_bar,
             onTap: () => unawaited(_chooseAdult(context, ref)),
           ),
+          const SizedBox(height: 20),
+          // Sans filtre **uniquement** : le paquet perd ses cartes tout public
+          // (R7.1). Une carte à part plutôt qu'une case à cocher ailleurs —
+          // c'est un choix de contenu, il se fait au même endroit et au même
+          // moment que les deux autres.
+          _ModeCard(
+            title: l10n.modeAdultOnly,
+            description: l10n.modeAdultOnlyDescription,
+            icon: Icons.local_fire_department,
+            onTap: () => unawaited(
+              _chooseAdult(context, ref, adultOnly: true),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  void _choose(BuildContext context, WidgetRef ref, Audience mode) {
+  void _choose(
+    BuildContext context,
+    WidgetRef ref,
+    Audience mode, {
+    bool adultOnly = false,
+  }) {
     ref.read(setupControllerProvider.notifier).chooseMode(mode);
+    ref.read(setupControllerProvider.notifier).setAdultOnly(actif: adultOnly);
 
     // Toujours vers les catégories, quel que soit le mode.
     //
@@ -56,7 +75,11 @@ class ModeScreen extends ConsumerWidget {
 
   /// Le mode adultes passe par une confirmation d'âge simple, non bloquante
   /// et non stockée : R7.3 interdit d'en faire une donnée personnelle.
-  Future<void> _chooseAdult(BuildContext context, WidgetRef ref) async {
+  Future<void> _chooseAdult(
+    BuildContext context,
+    WidgetRef ref, {
+    bool adultOnly = false,
+  }) async {
     final l10n = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
@@ -78,7 +101,7 @@ class ModeScreen extends ConsumerWidget {
 
     if (confirmed ?? false) {
       if (!context.mounted) return;
-      _choose(context, ref, Audience.adult);
+      _choose(context, ref, Audience.adult, adultOnly: adultOnly);
     }
   }
 }

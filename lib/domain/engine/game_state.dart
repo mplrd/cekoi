@@ -129,6 +129,18 @@ abstract class GameState with _$GameState {
   /// (R3.4) — elle reviendrait aussitôt et le tour ne pourrait plus avancer.
   bool get canPass => canAct && round.allowsPass && pile.length > 1;
 
+  /// Vrai tant que **rien n'a été joué** : on est sur l'annonce du tout
+  /// premier tour, et personne n'a encore touché une carte.
+  ///
+  /// Sert à savoir si quitter coûte quelque chose. Tant que c'est vrai, le
+  /// retour ramène simplement à la configuration — il n'y a pas de partie à
+  /// perdre, seulement un paquet tiré qu'un nouveau tirage remplacera.
+  bool get isUntouched =>
+      phase == GamePhase.turnIntro &&
+      roundIndex == 0 &&
+      history.isEmpty &&
+      (turn?.isEmpty ?? true);
+
   /// Les tours joués, le tour courant compris tant qu'il n'est pas validé.
   List<PlayedTurn> get allTurns => [...history, ?turn];
 

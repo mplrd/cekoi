@@ -57,7 +57,7 @@ orthographe incertaine, carte à la limite du ton demandé.
 les mêmes cartes. Personnalités très connues, objets du quotidien, animaux, métiers, lieux,
 films et dessins animés grand public.
 
-**Sans filtres** — le registre est celui de **l'apéro entre amis** : grivois, gras, taquin,
+**Sans filtre** — le registre est celui de **l'apéro entre amis** : grivois, gras, taquin,
 mais **jamais explicite**.
 
 Cette limite n'est pas de la pudibonderie, elle a une conséquence très concrète : l'application

@@ -25,22 +25,26 @@ List<String> _fallbacks(int count) => [
 
 void main() {
   group('R6 — les défauts dépendent du mode choisi', () {
-    test('le mode Famille ouvre sur 60 secondes et un nombre auto', () {
+    test('le mode Famille ouvre sur 60 secondes et 30 cartes', () {
       final setup = setupForMode(Audience.family);
 
       expect(setup.mode, Audience.family);
       expect(setup.turnDuration, const Duration(seconds: 60));
-      expect(setup.cardCount, isNull, reason: 'auto');
+      expect(setup.cardCount, GameConfig.defaultCardCount);
       expect(setup.teamCount, 2);
       expect(setup.difficulties, Difficulty.values.toSet());
       expect(setup.deckIds, isEmpty);
     });
 
-    test('le mode Entre adultes ouvre sur 45 secondes et 32 cartes', () {
+    test('le mode Sans filtre ouvre sur 45 secondes et 30 cartes', () {
       final setup = setupForMode(Audience.adult);
 
       expect(setup.turnDuration, const Duration(seconds: 45));
-      expect(setup.cardCount, 32);
+      expect(
+        setup.cardCount,
+        GameConfig.defaultCardCount,
+        reason: 'le volume est le même dans les deux modes (R6.1)',
+      );
     });
 
     test('changer de mode repart des défauts du nouveau mode', () {
@@ -57,7 +61,11 @@ void main() {
       expect(switched.mode, Audience.family);
       expect(switched.deckIds, isEmpty, reason: 'catégorie hors du vivier');
       expect(switched.turnDuration, const Duration(seconds: 60));
-      expect(switched.cardCount, isNull, reason: 'auto, défaut famille');
+      expect(
+        switched.cardCount,
+        GameConfig.defaultCardCount,
+        reason: 'le volume repart du défaut, comme le reste',
+      );
       expect(custom.deckIds, ['apero'], reason: "l'ancienne reste intacte");
     });
 
@@ -224,23 +232,28 @@ void main() {
       expect(setup.withCardCount(12).cardCount, 12);
     });
 
-    test('le mode auto se rétablit en repassant à null', () {
-      final setup = setupForMode(Audience.adult).withCardCount(null);
-
-      expect(setup.cardCount, isNull);
-      expect(setup.resolvedCardCount, GameConfig.autoCardCount(2));
-    });
-
-    test("R6.1 — le nombre de cartes résolu suit le nombre d'équipes", () {
+    test("R6.1 — le paquet ne bouge pas avec le nombre d'équipes", () {
+      // Il le suivait, en mode *auto*. La valeur changeait donc sous les yeux
+      // du joueur quand il revenait à l'étape suivante ajouter une équipe —
+      // c'est ce couplage que le retour de terrain a fait tomber.
       final setup = setupForMode(Audience.family).withTeamCount(4);
 
-      expect(setup.resolvedCardCount, GameConfig.autoCardCount(4));
+      expect(setup.resolvedCardCount, GameConfig.defaultCardCount);
       expect(
         setup.resolvedCardCount,
-        isNot(setupForMode(Audience.family).resolvedCardCount),
-        reason: 'Quatre équipes ne jouent pas le même paquet que deux',
+        setupForMode(Audience.family).resolvedCardCount,
       );
       expect(setup.withCardCount(24).resolvedCardCount, 24);
+    });
+
+    test('un profil sans consigne de volume laisse le paquet en place', () {
+      // R7.5 : seul *Les minis* impose un paquet plus court. Les autres n'en
+      // disent rien, et ne doivent pas réinstaller un « auto » disparu.
+      final choisi = setupForMode(
+        Audience.family,
+      ).withCardCount(48).withProfile(builtInProfiles[2], const []);
+
+      expect(choisi.cardCount, 48);
     });
   });
 

@@ -41,6 +41,7 @@ class DeckCatalog {
   int availableCards({
     required Set<String> deckIds,
     required Set<Difficulty> difficulties,
+    bool adultOnly = false,
   }) => eligibleCards(
     pool: [
       for (final card in cards)
@@ -48,6 +49,7 @@ class DeckCatalog {
     ],
     mode: mode,
     allowedDifficulties: difficulties,
+    adultOnly: adultOnly,
   ).length;
 }
 

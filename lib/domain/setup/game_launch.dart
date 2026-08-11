@@ -48,6 +48,7 @@ LaunchOutcome relaunchGame({
       turnDuration: config.turnDuration,
       cardCount: config.cardCount,
       profileId: config.profileId,
+      adultOnly: config.adultOnly,
       teamNames: [for (final team in previous.teams) team.name],
     ),
     // Les équipes sont reprises telles quelles : leurs noms sont déjà résolus,
@@ -90,6 +91,7 @@ LaunchOutcome launchGame({
     mode: setup.mode,
     random: Random(seed),
     allowedDifficulties: setup.difficulties,
+    adultOnly: setup.adultOnly,
   );
 
   if (!draw.isPlayable || !setup.canStart) return LaunchOutcome(draw: draw);
