@@ -1,5 +1,7 @@
+import 'package:cekoi/app/theme/app_colors.dart';
 import 'package:cekoi/domain/engine/game_state.dart';
 import 'package:cekoi/features/play/presentation/play_controller.dart';
+import 'package:cekoi/features/play/presentation/widgets/action_zone.dart';
 import 'package:cekoi/features/play/presentation/widgets/round_labels.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -24,6 +26,10 @@ class TurnIntroView extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final countdown = ref.watch(playControllerProvider);
+    // L'écran porte la couleur de la manche (voir `GameScreen`) : l'encre s'y
+    // adapte, et les nuances de gris du thème n'y sont plus lisibles.
+    final encre = AppColors.onRound(game.round);
+    final voile = encre.withValues(alpha: 0.72);
 
     return Padding(
       padding: const EdgeInsets.all(32),
@@ -35,22 +41,26 @@ class TurnIntroView extends ConsumerWidget {
             l10n.roundStep(game.roundIndex + 1, game.rounds.length),
             textAlign: TextAlign.center,
             style: theme.textTheme.labelLarge?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+              color: voile,
+              letterSpacing: 1.5,
+              fontWeight: FontWeight.w600,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             game.round.label(l10n),
             textAlign: TextAlign.center,
-            style: theme.textTheme.headlineSmall,
+            style: theme.textTheme.displaySmall?.copyWith(
+              color: encre,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.5,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             game.round.rule(l10n),
             textAlign: TextAlign.center,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+            style: theme.textTheme.titleMedium?.copyWith(color: voile),
           ),
           const SizedBox(height: 40),
           Text(
@@ -58,22 +68,22 @@ class TurnIntroView extends ConsumerWidget {
             textAlign: TextAlign.center,
             style: theme.textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.bold,
+              color: encre,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             l10n.turnIntroPassPhone,
             textAlign: TextAlign.center,
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+            style: theme.textTheme.titleMedium?.copyWith(color: voile),
           ),
           const SizedBox(height: 48),
           if (countdown == null)
-            FilledButton(
-              onPressed: () =>
-                  ref.read(playControllerProvider.notifier).startTurn(),
-              child: Text(l10n.actionStartTurn),
+            ActionZone(
+              label: l10n.actionStartTurn,
+              background: Colors.white,
+              foreground: AppColors.ink,
+              onPressed: ref.read(playControllerProvider.notifier).startTurn,
             )
           else
             Text(
@@ -81,7 +91,7 @@ class TurnIntroView extends ConsumerWidget {
               textAlign: TextAlign.center,
               style: theme.textTheme.displayLarge?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: theme.colorScheme.primary,
+                color: encre,
               ),
             ),
         ],

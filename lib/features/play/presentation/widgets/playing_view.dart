@@ -62,8 +62,11 @@ class PlayingView extends ConsumerWidget {
         Expanded(
           flex: actionsAreSplit ? 1 : 2,
           child: switch ((countdown, game.isPaused)) {
-            (final int seconds, _) => _Countdown(seconds: seconds),
-            (_, true) => const _PausePanel(),
+            (final int seconds, _) => _Countdown(
+              seconds: seconds,
+              color: AppColors.onRound(game.round),
+            ),
+            (_, true) => _PausePanel(encre: AppColors.onRound(game.round)),
             _ => _CardZone(game: game),
           },
         ),
@@ -83,6 +86,7 @@ class _Header extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
+    final encre = AppColors.onRound(game.round);
     final remaining = ref.watch(
       currentGameProvider.select((g) => g?.remaining ?? Duration.zero),
     );
@@ -99,8 +103,12 @@ class _Header extends ConsumerWidget {
                     game.activeTeam.name,
                     game.scoreOf(game.activeTeam.id),
                   ),
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: AppColors.team(game.activeTeam.colorId),
+                  // Le nom de l'équipe prenait sa couleur d'équipe, illisible
+                  // sur un fond coloré. La pastille la porte désormais, et le
+                  // texte reste dans l'encre de la manche.
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: encre,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
@@ -109,6 +117,7 @@ class _Header extends ConsumerWidget {
                     ? ref.read(playControllerProvider.notifier).requestResume
                     : ref.read(playControllerProvider.notifier).pause,
                 icon: Icon(game.isPaused ? Icons.play_arrow : Icons.pause),
+                color: encre,
                 tooltip: game.isPaused ? l10n.actionResume : l10n.actionPause,
               ),
             ],
@@ -116,12 +125,14 @@ class _Header extends ConsumerWidget {
           TurnTimerRing(
             remaining: remaining,
             total: game.config.turnDuration,
+            ink: encre,
+            ground: AppColors.round(game.round),
           ),
           const SizedBox(height: 4),
           Text(
             l10n.gameRemainingCards(game.pile.length),
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: encre.withValues(alpha: 0.75),
             ),
           ),
         ],
@@ -229,9 +240,10 @@ class _SwipeZoneState extends State<_SwipeZone> {
 }
 
 class _Countdown extends StatelessWidget {
-  const _Countdown({required this.seconds});
+  const _Countdown({required this.seconds, required this.color});
 
   final int seconds;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -242,7 +254,7 @@ class _Countdown extends StatelessWidget {
         AppLocalizations.of(context).gameSecondsLeft(seconds),
         style: theme.textTheme.displayLarge?.copyWith(
           fontWeight: FontWeight.bold,
-          color: theme.colorScheme.primary,
+          color: color,
         ),
       ),
     );
@@ -251,7 +263,9 @@ class _Countdown extends StatelessWidget {
 
 /// R3.8 : la pause masque la carte immédiatement.
 class _PausePanel extends StatelessWidget {
-  const _PausePanel();
+  const _PausePanel({required this.encre});
+
+  final Color encre;
 
   @override
   Widget build(BuildContext context) {
@@ -264,19 +278,21 @@ class _PausePanel extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.pause_circle_outline,
-              size: 64,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+            Icon(Icons.pause_circle_outline, size: 72, color: encre),
             const SizedBox(height: 16),
-            Text(l10n.gamePausedTitle, style: theme.textTheme.headlineSmall),
+            Text(
+              l10n.gamePausedTitle,
+              style: theme.textTheme.headlineSmall?.copyWith(
+                color: encre,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             const SizedBox(height: 8),
             Text(
               l10n.gamePausedBody,
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: encre.withValues(alpha: 0.8),
               ),
             ),
           ],
@@ -320,7 +336,9 @@ class _Actions extends ConsumerWidget {
               child: Text(
                 l10n.gamePassLocked,
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.labelSmall,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: AppColors.onRound(game.round).withValues(alpha: 0.8),
+                ),
               ),
             ),
           Expanded(
@@ -335,6 +353,7 @@ class _Actions extends ConsumerWidget {
                     child: ActionZone(
                       label: l10n.actionPass,
                       outlined: true,
+                      foreground: AppColors.onRound(game.round),
                       onPressed: game.canPass ? controller.passed : null,
                     ),
                   ),

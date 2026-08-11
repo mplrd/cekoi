@@ -32,6 +32,21 @@ abstract final class AppTheme {
     return ThemeData(
       colorScheme: scheme,
       useMaterial3: true,
+      // Les écrans qui gardent une barre Material — les catégories du joueur —
+      // la portent dans le corail du jeu plutôt que dans le gris de la
+      // plateforme. Le titre et les icônes passent en encre : sur cette
+      // teinte, le blanc de Material tombe sous le seuil lisible.
+      appBarTheme: const AppBarTheme(
+        backgroundColor: AppColors.seed,
+        foregroundColor: AppColors.ink,
+        elevation: 0,
+        centerTitle: false,
+        titleTextStyle: TextStyle(
+          color: AppColors.ink,
+          fontSize: 22,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           minimumSize: const Size.fromHeight(minTouchTarget),

@@ -102,3 +102,6 @@ coverage/
 
 # Cache de compilation Python, produit par l'outil d'import.
 __pycache__/
+
+# Images de comparaison produites par un golden test qui echoue.
+test/failures/

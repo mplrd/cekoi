@@ -1,3 +1,4 @@
+import 'package:cekoi/domain/rules/round.dart';
 import 'package:flutter/material.dart';
 
 /// Palette de l'application.
@@ -49,4 +50,29 @@ abstract final class AppColors {
   /// (R8.1), la palette si.
   static Color team(int colorId) =>
       teamColors[colorId.abs() % teamColors.length];
+
+  /// L'encre sombre du jeu : le noir chaud des contours du logo.
+  static const Color ink = Color(0xFF1A0F0C);
+
+  /// La couleur de fond d'une manche.
+  ///
+  /// Les trois manches sont le cœur du jeu, et c'est l'information qu'on perd
+  /// le plus vite en cours de partie — « on est à la deux ou à la trois ? ».
+  /// Un fond par manche la donne sans qu'on ait à lire quoi que ce soit, et
+  /// les trois teintes sortent du logo : le corail de la bulle qui parle, le
+  /// teal des étincelles, le rouge de l'explosion.
+  ///
+  /// L'intensité monte avec la contrainte, comme le jeu lui-même.
+  static Color round(Round round) => switch (round) {
+    Round.freeDescription => seed,
+    Round.oneWord => accent,
+    Round.mime => urgent,
+  };
+
+  /// L'encre à poser sur [round] : le corail est clair, les deux autres non.
+  ///
+  /// Se calcule et ne se devine pas — du blanc sur le corail tombe à 2,6:1,
+  /// sous le seuil lisible, et c'est précisément l'erreur qu'on fait à l'œil.
+  static Color onRound(Round round) =>
+      round == Round.freeDescription ? ink : Colors.white;
 }
