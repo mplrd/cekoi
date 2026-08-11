@@ -1,6 +1,7 @@
 import 'package:cekoi/app/router.dart';
 import 'package:cekoi/domain/engine/team_builder.dart';
 import 'package:cekoi/features/setup/presentation/setup_controller.dart';
+import 'package:cekoi/features/setup/presentation/widgets/choice_tile.dart';
 import 'package:cekoi/features/setup/presentation/widgets/setup_scaffold.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -90,7 +91,6 @@ class _TeamsScreenState extends ConsumerState<TeamsScreen> {
                 textInputAction: TextInputAction.next,
                 onChanged: (name) => controller.renameTeam(index, name),
                 decoration: InputDecoration(
-                  border: const OutlineInputBorder(),
                   // Le nom par défaut est un libellé de champ et non une
                   // valeur : il s'affiche dans le champ vide sans qu'il faille
                   // l'effacer avant de taper le sien (R8.3).
@@ -129,31 +129,24 @@ class _TeamCountSelector extends StatelessWidget {
             context,
           ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
         Wrap(
           spacing: 10,
           runSpacing: 10,
           children: [
             for (var count = minimumTeamCount; count <= top; count++)
-              ChoiceChip(
-                label: Text('$count'),
+              ChoiceTile(
+                label: '$count',
                 selected: value == count,
-                onSelected: (_) => onChanged(count),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
+                onTap: () => onChanged(count),
               ),
-            ActionChip(
-              avatar: const Icon(Icons.add),
-              label: Text(l10n.teamCountMore),
+            ChoiceTile(
+              label: l10n.teamCountMore,
+              icon: Icons.add,
+              selected: false,
               // Une équipe de plus que celles qu'on joue, pas une de plus que
               // la rangée : à deux équipes, « Plus » en donne trois.
-              onPressed: () => onChanged(value + 1),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
-              ),
+              onTap: () => onChanged(value + 1),
             ),
           ],
         ),

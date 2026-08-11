@@ -1,6 +1,7 @@
 import 'package:cekoi/app/clock.dart';
 import 'package:cekoi/app/current_game.dart';
 import 'package:cekoi/app/router.dart';
+import 'package:cekoi/app/theme/app_colors.dart';
 import 'package:cekoi/domain/engine/draw.dart';
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/card.dart' as domain;
@@ -51,35 +52,49 @@ class SummaryScreen extends ConsumerWidget {
       step: 5,
       title: l10n.setupSummaryTitle,
       footer: _LaunchButton(catalog: catalog),
+      // Le récapitulatif tient dans une carte, comme les catégories et le
+      // tableau des scores. En liste nue sur le fond, c'était le seul écran de
+      // l'application sans surface : quatre paires libellé/valeur flottant
+      // dans le vide.
       child: ListView(
         padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
         children: [
-          _SummaryRow(
-            label: l10n.summaryMode,
-            value: switch (setup.mode) {
-              Audience.family => l10n.modeFamily,
-              Audience.adult => l10n.modeAdult,
-            },
-          ),
-          _SummaryRow(
-            label: l10n.summaryDecks,
-            value: deckNames.join(', '),
-          ),
-          _SummaryRow(
-            label: l10n.summarySettings,
-            value: l10n.summarySettingsValue(
-              setup.turnDuration.inSeconds,
-              setup.resolvedCardCount,
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _SummaryRow(
+                    label: l10n.summaryMode,
+                    value: switch (setup.mode) {
+                      Audience.family => l10n.modeFamily,
+                      Audience.adult => l10n.modeAdult,
+                    },
+                  ),
+                  _SummaryRow(
+                    label: l10n.summaryDecks,
+                    value: deckNames.join(', '),
+                  ),
+                  _SummaryRow(
+                    label: l10n.summarySettings,
+                    value: l10n.summarySettingsValue(
+                      setup.turnDuration.inSeconds,
+                      setup.resolvedCardCount,
+                    ),
+                  ),
+                  _SummaryRow(
+                    label: l10n.summaryTeams,
+                    value: [
+                      for (final team in setup.teamsNamed(
+                        fallbackTeamNames(setup, l10n),
+                      ))
+                        team.name,
+                    ].join(' · '),
+                  ),
+                ],
+              ),
             ),
-          ),
-          _SummaryRow(
-            label: l10n.summaryTeams,
-            value: [
-              for (final team in setup.teamsNamed(
-                fallbackTeamNames(setup, l10n),
-              ))
-                team.name,
-            ].join(' · '),
           ),
         ],
       ),
@@ -105,11 +120,18 @@ class _SummaryRow extends StatelessWidget {
           Text(
             label,
             style: theme.textTheme.labelLarge?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+              color: AppColors.inkSoft,
+              letterSpacing: 0.6,
             ),
           ),
-          const SizedBox(height: 4),
-          Text(value, style: theme.textTheme.titleMedium),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: AppColors.ink,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );
