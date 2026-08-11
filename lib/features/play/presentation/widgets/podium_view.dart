@@ -86,7 +86,6 @@ class _PodiumViewState extends ConsumerState<PodiumView> {
               ActionZone(
                 label: l10n.actionNewGame,
                 secondaire: true,
-                foreground: AppColors.ink,
                 onPressed: () {
                   ref.read(currentGameProvider.notifier).game = null;
                   context.go(AppRoutes.setupMode);

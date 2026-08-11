@@ -1,3 +1,4 @@
+import 'package:cekoi/app/theme/app_colors.dart';
 import 'package:cekoi/app/theme/app_theme.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -36,9 +37,8 @@ class ActionZone extends StatelessWidget {
   final Color? background;
   final Color? foreground;
 
-  /// Traitement secondaire : le vert du personnage plutôt que le teal des
-  /// actions. Le nom dit ce que ça fait, pas à quoi ça ressemblait — cette
-  /// option dessinait un contour vide, elle remplit désormais un aplat.
+  /// Traitement secondaire : blanc cerné de corail, plutôt que le teal plein
+  /// des actions principales.
   final bool secondaire;
 
   @override
@@ -46,20 +46,25 @@ class ActionZone extends StatelessWidget {
     final theme = Theme.of(context);
     final actif = onPressed != null;
 
-    // Les deux zones sont pleines. *Je passe…* était un contour vide, qui
-    // disparaissait sur le fond pastel et se lisait comme une action
-    // indisponible — alors qu'elle est la moitié du jeu en manches 2 et 3.
+    // L'action secondaire est blanche, cernée du corail de la marque.
+    //
+    // Elle était dans le vert du personnage : deux pastels voisins, elle ne se
+    // détachait pas du fond. Le blanc tranche franchement, et le liseret coloré
+    // dit que c'est une action — ce qu'un aplat blanc seul ne dirait pas.
     final fond =
-        background ??
-        (secondaire ? theme.colorScheme.secondary : theme.colorScheme.primary);
+        background ?? (secondaire ? AppColors.card : theme.colorScheme.primary);
     final encre =
         foreground ??
-        (secondaire
-            ? theme.colorScheme.onSecondary
-            : theme.colorScheme.onPrimary);
+        (secondaire ? AppColors.ink : theme.colorScheme.onPrimary);
 
-    final couleur = actif ? fond : fond.withValues(alpha: 0.3);
+    final couleur = actif ? fond : fond.withValues(alpha: 0.35);
     final texte = actif ? encre : encre.withValues(alpha: 0.4);
+    final liseret = secondaire && background == null
+        ? Border.all(
+            color: AppColors.main.withValues(alpha: actif ? 1 : 0.35),
+            width: 3,
+          )
+        : null;
 
     return Semantics(
       button: true,
@@ -78,22 +83,38 @@ class ActionZone extends StatelessWidget {
                 (recognizer) => recognizer.onTap = onPressed,
               ),
         },
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: couleur,
-            borderRadius: const BorderRadius.all(
-              Radius.circular(AppTheme.radius),
-            ),
+        // Une hauteur plancher, et non seulement l'espace qu'on lui laisse.
+        //
+        // En plein jeu la zone est dans un `Expanded` et remplit la moitié de
+        // l'écran ; ailleurs — « C'est parti », « Valider le tour », « Manche
+        // suivante », « Rejouer » — elle se posait dans un `Padding` et
+        // retombait sur la hauteur de son texte. Elle ressemblait alors à un
+        // lien, pas à l'action qui fait avancer la partie.
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            minHeight: AppTheme.minTouchTarget,
           ),
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Text(
-                label,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  color: texte,
-                  fontWeight: FontWeight.w800,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: couleur,
+              border: liseret,
+              borderRadius: const BorderRadius.all(
+                Radius.circular(AppTheme.radius),
+              ),
+            ),
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                child: Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: texte,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
             ),
