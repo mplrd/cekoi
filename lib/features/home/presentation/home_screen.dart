@@ -48,9 +48,10 @@ class HomeScreen extends ConsumerWidget {
 /// Une entrée de l'accueil.
 ///
 /// Trois traitements pour une seule forme : le teal des étincelles pour
-/// l'action principale, le vert du personnage pour les autres, et le corail
-/// plein pour la reprise de partie. Aucune n'est blanche — sur ce fond pastel,
-/// un bouton blanc fait un trou dans la page.
+/// l'action principale, le corail plein pour la reprise de partie, et pour les
+/// autres un blanc cerné de corail — le même traitement secondaire que partout
+/// ailleurs. Elles ont été en vert du personnage : deux pastels voisins, elles
+/// ne se détachaient pas du fond.
 class _HomeAction extends StatelessWidget {
   const _HomeAction({
     required this.label,
@@ -67,18 +68,26 @@ class _HomeAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final actif = onPressed != null;
+    final secondaire = !principal && !reprise;
     final (fond, texte) = switch ((principal, reprise)) {
       (true, _) => (AppColors.deep, Colors.white),
       (_, true) => (AppColors.main, AppColors.ink),
-      _ => (AppColors.secondary, AppColors.ink),
+      _ => (AppColors.card, AppColors.ink),
     };
 
     return Opacity(
       opacity: actif ? 1 : 0.4,
       child: Material(
         color: fond,
-        borderRadius: const BorderRadius.all(
-          Radius.circular(AppTheme.radius),
+        // Le liseré corail est ce qui fait d'un aplat blanc une action, et non
+        // un trou dans la page.
+        shape: RoundedRectangleBorder(
+          borderRadius: const BorderRadius.all(
+            Radius.circular(AppTheme.radius),
+          ),
+          side: secondaire
+              ? const BorderSide(color: AppColors.main, width: 3)
+              : BorderSide.none,
         ),
         child: InkWell(
           onTap: onPressed,

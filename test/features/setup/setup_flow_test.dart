@@ -119,6 +119,30 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  /// Amène le compteur d'équipes à [cible], dans un sens ou dans l'autre.
+  ///
+  /// Le nombre se règle au compteur depuis les retours d'août 2026 : il n'y a
+  /// plus de pastille par valeur sur laquelle taper directement.
+  Future<void> setTeamCount(WidgetTester tester, int cible) async {
+    var garde = 0;
+    while (find.text('$cible').evaluate().isEmpty) {
+      final actuel = int.parse(
+        tester
+            .widgetList<Text>(find.byType(Text))
+            .map((t) => t.data)
+            .whereType<String>()
+            .firstWhere((d) => int.tryParse(d) != null),
+      );
+      await tester.tap(
+        find.bySemanticsLabel(
+          cible > actuel ? l10n.teamCountMore : l10n.teamCountFewer,
+        ),
+      );
+      await tester.pumpAndSettle();
+      if (++garde > 20) fail('le compteur n atteint pas $cible');
+    }
+  }
+
   testWidgets('les cinq étapes mènent à un paquet tiré', (tester) async {
     await installDeck('animaux');
     await installDeck('metiers', minAge: MinAge.ten);
@@ -174,7 +198,7 @@ void main() {
 
     // Trois équipes, dont une seule nommée : R8.4 garde la saisie, R8.3
     // comble le reste.
-    await tapText(tester, '3');
+    await setTeamCount(tester, 3);
     await tester.enterText(find.byType(TextField).at(1), 'Les Zèbres');
     await tester.pumpAndSettle();
     await tapText(tester, l10n.actionContinue);
@@ -191,10 +215,12 @@ void main() {
     );
   });
 
-  testWidgets('R8.1 — « Plus » ajoute une équipe, pas cinq', (tester) async {
-    // La rangée de pastilles s'arrête à six. Le bouton doit compter depuis les
-    // équipes qu'on joue et non depuis le bout de la rangée, sinon deux
-    // équipes en deviennent sept d'un tap — et le paquet auto passe à 80.
+  testWidgets('R8.1 — le compteur monte d une équipe, et redescend', (
+    tester,
+  ) async {
+    // R8.1 ne pose aucune limite haute, et R8.3 en pose une basse à deux. Le
+    // compteur doit donc monter sans butée et s'arrêter en bas — un « moins »
+    // qui passe à une équipe donnerait une partie sans adversaire.
     await installDeck('animaux', easy: 15, medium: 15, hard: 15);
     await pumpApp(tester);
 
@@ -205,9 +231,22 @@ void main() {
 
     expect(find.byType(TextField), findsNWidgets(2));
 
-    await tapText(tester, l10n.teamCountMore);
-
+    await tester.tap(find.bySemanticsLabel(l10n.teamCountMore));
+    await tester.pumpAndSettle();
     expect(find.byType(TextField), findsNWidgets(3));
+
+    await tester.tap(find.bySemanticsLabel(l10n.teamCountFewer));
+    await tester.pumpAndSettle();
+    expect(find.byType(TextField), findsNWidgets(2));
+
+    // En butée basse, le bouton est désactivé : un tap de plus ne fait rien.
+    await tester.tap(find.bySemanticsLabel(l10n.teamCountFewer));
+    await tester.pumpAndSettle();
+    expect(
+      find.byType(TextField),
+      findsNWidgets(2),
+      reason: 'deux équipes est le minimum d une partie (R8.3)',
+    );
   });
 
   testWidgets('R8.4 — un nom coupé ne revient pas si on remonte', (
@@ -225,13 +264,13 @@ void main() {
     await tapText(tester, l10n.actionContinue);
     await tapText(tester, l10n.actionContinue);
 
-    await tapText(tester, '3');
+    await setTeamCount(tester, 3);
     await tester.enterText(find.byType(TextField).at(0), 'Les Verts');
     await tester.enterText(find.byType(TextField).at(2), 'Les Bleus');
     await tester.pumpAndSettle();
 
-    await tapText(tester, '2');
-    await tapText(tester, '3');
+    await setTeamCount(tester, 2);
+    await setTeamCount(tester, 3);
 
     expect(
       tester.widget<TextField>(find.byType(TextField).at(2)).controller?.text,

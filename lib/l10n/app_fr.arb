@@ -234,11 +234,15 @@
     "description": "Précise qu'on peut lancer une partie sans nommer les équipes (R8.3)."
   },
 
-  "teamCountMore": "Plus",
+  "teamCountMore": "Une équipe de plus",
   "@teamCountMore": {
     "description": "Ajoute une équipe au-delà des valeurs proposées (R8.1)."
   },
 
+  "teamCountFewer": "Une équipe de moins",
+  "@teamCountFewer": {
+    "description": "Bouton moins du compteur d'équipes, pour les lecteurs d'écran"
+  },
   "teamCountLabel": "Nombre d'équipes",
   "@teamCountLabel": {
     "description": "Libellé du sélecteur de nombre d'équipes (R8.1)."

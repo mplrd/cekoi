@@ -210,6 +210,56 @@ abstract final class AppTheme {
           borderSide: BorderSide(color: AppColors.deep, width: 2),
         ),
       ),
+      // Tout ce qui se pose **par-dessus** la page est blanc : menu
+      // contextuel, menu déroulant, infobulle. Sans surface posée, Material
+      // les remplit du fond du thème — le corail pastel — et le menu se
+      // confond avec la page qu'il recouvre, sans autre limite que son ombre.
+      popupMenuTheme: PopupMenuThemeData(
+        color: AppColors.card,
+        surfaceTintColor: Colors.transparent,
+        // Une ombre discrète : à 8 d'élévation sur ce fond mi-teinte, elle
+        // cernait le menu d'un halo brun qu'on prenait pour une bordure.
+        elevation: 3,
+        shadowColor: AppColors.ink.withValues(alpha: 0.18),
+        textStyle: texte.titleMedium?.copyWith(
+          fontSize: 16,
+          color: AppColors.ink,
+          fontWeight: FontWeight.w600,
+        ),
+        shape: const RoundedRectangleBorder(borderRadius: _rounded),
+      ),
+      menuTheme: MenuThemeData(
+        style: MenuStyle(
+          backgroundColor: const WidgetStatePropertyAll(AppColors.card),
+          surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+          shape: const WidgetStatePropertyAll(
+            RoundedRectangleBorder(borderRadius: _rounded),
+          ),
+          elevation: const WidgetStatePropertyAll(3),
+          shadowColor: WidgetStatePropertyAll(
+            AppColors.ink.withValues(alpha: 0.18),
+          ),
+        ),
+      ),
+      dropdownMenuTheme: const DropdownMenuThemeData(
+        menuStyle: MenuStyle(
+          backgroundColor: WidgetStatePropertyAll(AppColors.card),
+          surfaceTintColor: WidgetStatePropertyAll(Colors.transparent),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(borderRadius: _rounded),
+          ),
+        ),
+      ),
+      tooltipTheme: TooltipThemeData(
+        decoration: const BoxDecoration(
+          color: AppColors.ink,
+          borderRadius: BorderRadius.all(Radius.circular(10)),
+        ),
+        textStyle: texte.bodySmall?.copyWith(
+          fontSize: 13,
+          color: Colors.white,
+        ),
+      ),
       dialogTheme: const DialogThemeData(
         backgroundColor: AppColors.groundSoft,
         surfaceTintColor: Colors.transparent,
