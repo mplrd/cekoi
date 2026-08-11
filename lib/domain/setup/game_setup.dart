@@ -26,7 +26,12 @@ abstract class GameSetup with _$GameSetup {
     required Duration turnDuration,
 
     /// `null` signifie *auto* (R6.1).
-    int? cardCount,
+    @Default(GameConfig.defaultCardCount) int cardCount,
+
+    /// Sans filtre, mais **rien que** les cartes réservées aux grands (R7.1).
+    ///
+    /// Sans effet en mode Famille, qui n'y a pas accès de toute façon.
+    @Default(false) bool adultOnly,
 
     /// Profil retenu, `null` dès que la sélection est personnalisée (R7.6).
     String? profileId,
@@ -48,8 +53,12 @@ abstract class GameSetup with _$GameSetup {
 
   int get teamCount => teamNames.length;
 
-  /// Nombre de cartes effectif pour le nombre d'équipes retenu (R6.1).
-  int get resolvedCardCount => cardCount ?? GameConfig.autoCardCount(teamCount);
+  /// Nombre de cartes du paquet (R6.1).
+  ///
+  /// Conservé comme accesseur alors qu'il ne calcule plus rien : c'est le nom
+  /// qu'emploient le récapitulatif et le tirage, et il redeviendrait un calcul
+  /// si le volume devait un jour dépendre d'autre chose.
+  int get resolvedCardCount => cardCount;
 
   /// Tout ce que R8.5 et R6.2 exigent avant de lancer.
   ///
@@ -108,14 +117,17 @@ abstract class GameSetup with _$GameSetup {
       deckIds: selection.deckIds,
       difficulties: selection.difficulties,
       turnDuration: selection.turnDuration,
-      cardCount: selection.cardCount,
+      // Un profil qui ne dit rien sur le volume laisse celui en place : le
+      // paquet a une valeur par défaut depuis R6.1, il n'y a plus de « auto »
+      // à réinstaller.
+      cardCount: selection.cardCount ?? cardCount,
     );
   }
 
   /// Sélectionne toutes les catégories du mode (R7.9).
   ///
   /// L'état de départ de l'étape des catégories : on joue avec tout, et un
-  /// profil sert ensuite à restreindre. Sans ça, le mode Sans filtres — qui
+  /// profil sert ensuite à restreindre. Sans ça, le mode Sans filtre — qui
   /// n'a aucun profil — s'ouvrait sur une sélection vide qu'il fallait cocher
   /// à la main avant de pouvoir continuer.
   ///
@@ -156,9 +168,15 @@ abstract class GameSetup with _$GameSetup {
     return copyWith(turnDuration: duration);
   }
 
-  /// [count] à `null` rétablit le mode auto (R6.1).
-  GameSetup withCardCount(int? count) {
-    if (count != null && count < GameConfig.minimumCardCount) {
+  /// Restreint le vivier aux seules cartes adultes (R7.1).
+  ///
+  /// Sans effet en mode Famille : le drapeau y est forcé à faux plutôt
+  /// qu'ignoré, pour qu'il ne ressorte pas en repassant en Sans filtre.
+  GameSetup withAdultOnly({required bool actif}) =>
+      copyWith(adultOnly: mode == Audience.adult && actif);
+
+  GameSetup withCardCount(int count) {
+    if (count < GameConfig.minimumCardCount) {
       throw ArgumentError.value(
         count,
         'count',
@@ -215,6 +233,7 @@ abstract class GameSetup with _$GameSetup {
     cardCount: cardCount,
     profileId: profileId,
     difficulties: difficulties,
+    adultOnly: adultOnly,
   );
 }
 
@@ -227,5 +246,4 @@ GameSetup setupForMode(Audience mode) => GameSetup(
   deckIds: const [],
   difficulties: Difficulty.values.toSet(),
   turnDuration: GameConfig.defaultTurnDuration[mode]!,
-  cardCount: GameConfig.defaultCardCount[mode],
 );

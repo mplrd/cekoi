@@ -55,23 +55,13 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 8),
           _Setting(
             label: l10n.settingCardCount,
-            // Pas de pastille en automatique : l'interrupteur juste dessous
-            // porte déjà le mot, et « Auto » écrit deux fois de suite sur la
-            // même ligne ressemble à un bug d'affichage.
-            value: setup.cardCount == null
-                ? null
-                : l10n.cardCount(setup.cardCount!),
-            // Le nombre d'équipes se règle à l'étape suivante : annoncer un
-            // total ici reviendrait à le calculer sur deux équipes, et à
-            // mentir à qui en prendra trois. L'indice dit le taux de R6.1,
-            // vrai quel que soit le nombre d'équipes ; le récapitulatif, lui,
-            // donne le total une fois les équipes connues.
-            hint: setup.cardCount == null
-                ? l10n.valueAutoExplained(GameConfig.cardsPerTeam)
-                : null,
-            child: _CardCount(
-              value: setup.cardCount,
-              onChanged: controller.setCardCount,
+            value: l10n.cardCount(setup.cardCount),
+            child: _Slider(
+              value: setup.cardCount.toDouble(),
+              min: GameConfig.minimumCardCount.toDouble(),
+              max: GameConfig.maximumCardCount.toDouble(),
+              pas: 2,
+              onChanged: (count) => controller.setCardCount(count.round()),
             ),
           ),
         ],
@@ -85,7 +75,6 @@ class _Setting extends StatelessWidget {
     required this.label,
     required this.value,
     required this.child,
-    this.hint,
   });
 
   final String label;
@@ -95,7 +84,6 @@ class _Setting extends StatelessWidget {
   /// l'annonce déjà.
   final String? value;
   final Widget child;
-  final String? hint;
 
   @override
   Widget build(BuildContext context) {
@@ -145,13 +133,6 @@ class _Setting extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           child,
-          if (hint != null)
-            Text(
-              hint!,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: AppColors.inkSoft,
-              ),
-            ),
         ],
       ),
     );
@@ -192,60 +173,6 @@ class _Slider extends StatelessWidget {
         divisions: ((max - min) / pas).round(),
         onChanged: onChanged,
       ),
-    );
-  }
-}
-
-/// Le nombre de cartes : un interrupteur *Auto*, et le curseur s'il est coupé.
-///
-/// R6.1 fixe le volume à douze cartes par équipe, ce qui reste le bon choix
-/// dans la quasi-totalité des parties — d'où l'automatique en tête, et un
-/// curseur qui n'apparaît que si on le refuse.
-class _CardCount extends StatelessWidget {
-  const _CardCount({required this.value, required this.onChanged});
-
-  /// `null` vaut automatique.
-  final int? value;
-  final ValueChanged<int?> onChanged;
-
-  /// Au-delà, le paquet dépasse ce qu'une tablée finit en trois manches.
-  static const int _max = 80;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
-    final auto = value == null;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                l10n.valueAuto,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: AppColors.ink,
-                ),
-              ),
-            ),
-            Switch(
-              value: auto,
-              onChanged: (actif) =>
-                  onChanged(actif ? null : GameConfig.manualCardCountStart),
-            ),
-          ],
-        ),
-        if (!auto)
-          _Slider(
-            value: value!.toDouble(),
-            min: GameConfig.minimumCardCount.toDouble(),
-            max: _max.toDouble(),
-            pas: 4,
-            onChanged: (count) => onChanged(count.round()),
-          ),
-      ],
     );
   }
 }

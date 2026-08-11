@@ -1,55 +1,46 @@
-import 'package:cekoi/domain/engine/team_builder.dart';
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/game_config.dart';
 import 'package:cekoi/domain/rules/round.dart';
+import 'package:cekoi/domain/setup/game_setup.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('R6.1 — nombre de cartes en mode auto', () {
-    test('vaut 12 × équipes, arrondi au multiple de 4 supérieur', () {
-      expect(GameConfig.autoCardCount(2), 24);
-      expect(GameConfig.autoCardCount(3), 36);
-      expect(GameConfig.autoCardCount(4), 48);
+  group('R6.1 — le paquet compte 30 cartes par défaut', () {
+    test('sans rien préciser, une partie part sur 30 cartes', () {
+      const config = GameConfig(
+        mode: Audience.family,
+        deckIds: ['animaux'],
+        turnDuration: Duration(seconds: 60),
+      );
+
+      expect(config.cardCount, 30);
     });
 
-    test('est borné à 80 par le haut', () {
-      // 12 × 7 = 84, au-dessus de la borne haute
-      expect(GameConfig.autoCardCount(7), 80);
-      expect(GameConfig.autoCardCount(40), 80);
+    test('le volume ne dépend pas du nombre d équipes', () {
+      // Le mode *auto* calculait `12 × équipes` : la valeur bougeait sous les
+      // yeux du joueur quand il revenait changer le nombre d'équipes à l'étape
+      // suivante. Ce test dit que ce couplage a disparu.
+      final deux = setupForMode(Audience.family).withTeamCount(2);
+      final cinq = setupForMode(Audience.family).withTeamCount(5);
+
+      expect(deux.resolvedCardCount, cinq.resolvedCardCount);
+      expect(deux.resolvedCardCount, GameConfig.defaultCardCount);
     });
 
-    test('le plancher de 16 ne peut plus être atteint', () {
-      // Depuis que le calcul part des équipes (R8.2), le minimum de deux en
-      // donne déjà 24 : la borne basse de R6.1 ne mord plus. Ce test dit
-      // qu'elle est inatteignable plutôt que de faire croire qu'elle est
-      // exercée — c'est le facteur, s'il baissait un jour, qui la réveillerait.
-      expect(GameConfig.autoCardCount(minimumTeamCount), 24);
+    test('les deux modes partent sur le même volume', () {
       expect(
-        GameConfig.autoCardCount(minimumTeamCount),
-        greaterThan(16),
-        reason: 'aucun nombre d’équipes valide ne descend jusqu’au plancher',
+        setupForMode(Audience.adult).cardCount,
+        setupForMode(Audience.family).cardCount,
       );
     });
 
-    test('un nombre explicite prend le pas sur le calcul auto', () {
-      const config = GameConfig(
-        mode: Audience.family,
-        deckIds: ['animaux'],
-        turnDuration: Duration(seconds: 60),
-        cardCount: 48,
+    test('un nombre sous le minimum de R6.2 est refusé', () {
+      expect(
+        () => setupForMode(
+          Audience.family,
+        ).withCardCount(GameConfig.minimumCardCount - 1),
+        throwsArgumentError,
       );
-
-      expect(config.resolvedCardCount(2), 48);
-    });
-
-    test('cardCount nul déclenche le calcul auto', () {
-      const config = GameConfig(
-        mode: Audience.family,
-        deckIds: ['animaux'],
-        turnDuration: Duration(seconds: 60),
-      );
-
-      expect(config.resolvedCardCount(3), GameConfig.autoCardCount(3));
     });
   });
 

@@ -15,7 +15,7 @@ part 'game_profiles.g.dart';
 /// cocher (R7.5).
 ///
 /// Un profil est **de la donnée**, pas du code. En ajouter un — notamment pour
-/// le mode Sans filtres — n'implique aucune modification du moteur.
+/// le mode Sans filtre — n'implique aucune modification du moteur.
 ///
 /// Le libellé affiché n'est pas ici : il vient de l'ARB, indexé par [id].
 @freezed
@@ -30,8 +30,7 @@ abstract class GameProfile with _$GameProfile {
     required Set<Difficulty> difficulties,
     required Duration turnDuration,
 
-    /// `null` signifie *auto* : `12 × équipes`, voir
-    /// [GameConfig.autoCardCount].
+    /// Le paquet que le profil impose (R7.5). `null` laisse celui en place.
     int? cardCount,
   }) = _GameProfile;
 
@@ -49,6 +48,9 @@ const List<GameProfile> builtInProfiles = [
     maxDeckAge: MinAge.six,
     difficulties: {Difficulty.easy},
     turnDuration: Duration(seconds: 90),
+    // Un paquet plus court : les tours durent 90 s chez les petits, une partie
+    // de trente cartes y tiendrait bien plus que quarante minutes.
+    cardCount: 24,
   ),
   GameProfile(
     id: 'ados',

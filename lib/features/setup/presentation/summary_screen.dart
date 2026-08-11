@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cekoi/app/clock.dart';
 import 'package:cekoi/app/current_game.dart';
 import 'package:cekoi/app/router.dart';
@@ -159,6 +161,7 @@ class _LaunchButton extends ConsumerWidget {
     final available = catalog!.availableCards(
       deckIds: setup.deckIds.toSet(),
       difficulties: setup.difficulties,
+      adultOnly: setup.adultOnly,
     );
     final verdict = PoolVerdict(
       available: available,
@@ -219,7 +222,9 @@ class _LaunchButton extends ConsumerWidget {
     }
 
     ref.read(currentGameProvider.notifier).game = game;
-    context.go(AppRoutes.game);
+    // `push` et non `go` : la configuration reste sous la partie, pour que le
+    // retour y ramène tant que le premier tour n'a pas commencé.
+    unawaited(context.push(AppRoutes.game));
   }
 }
 

@@ -327,6 +327,7 @@ class _SelectionFooter extends StatelessWidget {
     final available = catalog.availableCards(
       deckIds: setup.deckIds.toSet(),
       difficulties: setup.difficulties,
+      adultOnly: setup.adultOnly,
     );
     // La demande n'est pas encore connue à cette étape — les joueurs viennent
     // plus loin. Seul le plancher de R6.2 se juge ici.

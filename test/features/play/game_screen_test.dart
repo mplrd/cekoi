@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cekoi/app/clock.dart';
 import 'package:cekoi/app/current_game.dart';
 import 'package:cekoi/app/router.dart';
@@ -54,6 +56,7 @@ void main() {
   /// effet observable dans l'arbre de widgets : sans les compter, leur
   /// suppression ne ferait rougir aucun test.
   late List<String> platformCalls;
+  late GoRouter routeur;
 
   setUpAll(() async {
     l10n = await AppLocalizations.delegate.load(const Locale('fr'));
@@ -74,7 +77,16 @@ void main() {
   });
 
   /// Monte l'écran de jeu sur une partie donnée.
-  Future<void> pumpScreen(WidgetTester tester, {GameState? game}) async {
+  /// Monte l'écran de jeu sur une partie donnée.
+  ///
+  /// [surUnePile] empile la partie au-dessus de l'accueil, comme le
+  /// récapitulatif le fait en vrai : sans route en dessous, un retour n'a rien
+  /// à dépiler et le comportement testé n'existe pas.
+  Future<void> pumpScreen(
+    WidgetTester tester, {
+    GameState? game,
+    bool surUnePile = false,
+  }) async {
     clock = FakeClock();
     tester.view.physicalSize = const Size(1000, 2000);
     tester.view.devicePixelRatio = 1;
@@ -93,8 +105,8 @@ void main() {
           locale: const Locale('fr'),
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          routerConfig: GoRouter(
-            initialLocation: AppRoutes.game,
+          routerConfig: routeur = GoRouter(
+            initialLocation: surUnePile ? AppRoutes.home : AppRoutes.game,
             routes: [
               GoRoute(
                 path: AppRoutes.home,
@@ -109,6 +121,11 @@ void main() {
         ),
       ),
     );
+
+    if (surUnePile) {
+      unawaited(routeur.push(AppRoutes.game));
+      await tester.pumpAndSettle();
+    }
 
     container = ProviderScope.containerOf(
       tester.element(find.byType(GameScreen)),
@@ -563,6 +580,49 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(container.read(currentGameProvider), isNull);
+    });
+
+    testWidgets(
+      'avant « C est parti » de la manche 1, le retour ne demande rien',
+      (tester) async {
+        // Retour de terrain : on descend dans la configuration pour changer
+        // une catégorie ou une équipe, et l'application demandait « voulez-vous
+        // abandonner ? » pour une partie que personne n'avait commencée. Il n'y
+        // a qu'un paquet tiré, qu'un nouveau tirage remplacera.
+        await pumpScreen(
+          tester,
+          game: testGame(roundIndex: 0).copyWith(phase: GamePhase.turnIntro),
+          surUnePile: true,
+        );
+
+        await simulateSystemBack();
+        await tester.pumpAndSettle();
+
+        expect(find.text(l10n.quitGameTitle), findsNothing);
+        expect(
+          container.read(currentGameProvider),
+          isNull,
+          reason: 'le paquet tiré est jeté, pas proposé en reprise (R9.1)',
+        );
+      },
+    );
+
+    testWidgets('une fois le tour lancé, le retour redemande', (tester) async {
+      // La contrepartie : dès que le premier tour commence, il y a de nouveau
+      // quelque chose à perdre.
+      await pumpScreen(
+        tester,
+        game: testGame(roundIndex: 0).copyWith(phase: GamePhase.turnIntro),
+      );
+      await startTurn(tester);
+
+      await simulateSystemBack();
+      await tester.pumpAndSettle();
+
+      expect(find.text(l10n.quitGameTitle), findsOneWidget);
+      await tester.tap(find.text(l10n.actionKeepPlaying));
+      await tester.pumpAndSettle();
+      await stopGame(tester);
     });
 
     testWidgets('une partie terminée se quitte sans rien demander', (

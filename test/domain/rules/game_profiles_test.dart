@@ -82,12 +82,16 @@ void main() {
   });
 
   group('R7.5 — les réglages des trois profils du mode Famille', () {
-    test('« Les minis » : difficulté 1 seule, 90 secondes, cartes auto', () {
+    test('« Les minis » : difficulté 1 seule, 90 secondes, 24 cartes', () {
       final minis = profile('minis');
 
       expect(minis.difficulties, {Difficulty.easy});
       expect(minis.turnDuration, const Duration(seconds: 90));
-      expect(minis.cardCount, isNull, reason: 'auto');
+      expect(
+        minis.cardCount,
+        24,
+        reason: 'à 90 s par tour, trente cartes dépasseraient les 40 minutes',
+      );
       expect(minis.maxDeckAge, MinAge.six);
     });
 

@@ -29,7 +29,12 @@ class SetupController extends _$SetupController {
   void setTurnDuration(Duration duration) =>
       state = state.withTurnDuration(duration);
 
-  void setCardCount(int? count) => state = state.withCardCount(count);
+  void setCardCount(int count) => state = state.withCardCount(count);
+
+  /// Restreint le vivier aux seules cartes adultes, ou l'ouvre à nouveau
+  /// (R7.1).
+  void setAdultOnly({required bool actif}) =>
+      state = state.withAdultOnly(actif: actif);
 
   void setTeamCount(int count) => state = state.withTeamCount(count);
 

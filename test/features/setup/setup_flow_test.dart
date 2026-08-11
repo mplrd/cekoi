@@ -10,6 +10,7 @@ import 'package:cekoi/domain/engine/game_state.dart';
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/deck_origin.dart';
 import 'package:cekoi/domain/entities/difficulty.dart';
+import 'package:cekoi/domain/entities/game_config.dart';
 import 'package:cekoi/domain/entities/min_age.dart';
 import 'package:cekoi/features/setup/presentation/setup_controller.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
@@ -173,8 +174,8 @@ void main() {
     expect(find.text(l10n.summaryMode), findsOneWidget);
     await tapText(tester, l10n.actionStartGame);
 
-    // Le paquet est tiré : 12 × 2 équipes (R6.1).
-    expect(launchedGame(tester).deck, hasLength(24));
+    // Le paquet est tiré, au volume par défaut de R6.1.
+    expect(launchedGame(tester).deck, hasLength(GameConfig.defaultCardCount));
 
     // Et la partie s'ouvre sur l'annonce du premier tour, pas sur une carte :
     // le téléphone doit avoir le temps de changer de mains.
@@ -210,8 +211,8 @@ void main() {
     );
     expect(
       launchedGame(tester).deck,
-      hasLength(36),
-      reason: 'Trois équipes, donc 12 × 3 cartes (R6.1)',
+      hasLength(GameConfig.defaultCardCount),
+      reason: 'le paquet ne suit plus le nombre d équipes (R6.1)',
     );
   });
 
@@ -315,7 +316,7 @@ void main() {
   );
 
   group('R7.9 — on arrive avec tout coché', () {
-    testWidgets('le mode Sans filtres est jouable sans rien toucher', (
+    testWidgets('le mode Sans filtre est jouable sans rien toucher', (
       tester,
     ) async {
       // Le cas qui a fait remonter la règle : ce mode n'a aucun profil, donc
@@ -380,6 +381,44 @@ void main() {
       // Et l'écran s'y compte dans le parcours complet, plutôt que d'annoncer
       // une étape zéro sur un parcours qui ne le contient pas.
       expect(find.text(l10n.setupStep(2, 5)), findsOneWidget);
+    });
+
+    testWidgets('R7.1 — « rien d autre » retire les cartes tout public', (
+      tester,
+    ) async {
+      // La variante ne change pas de mode : même confirmation d'âge (R7.3),
+      // même parcours (R7.10). Seul le vivier maigrit.
+      await installDeck('animaux', easy: 10, medium: 10, hard: 10);
+      await installDeck(
+        'apero',
+        audience: Audience.adult,
+        minAge: MinAge.eighteen,
+        easy: 10,
+        medium: 10,
+        hard: 10,
+      );
+      await pumpApp(tester);
+
+      await tapText(tester, l10n.homePlay);
+      await tapText(tester, l10n.modeAdultOnly);
+      await tapText(tester, l10n.adultConfirmAccept);
+
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(CekoiApp)),
+      );
+      expect(container.read(setupControllerProvider).adultOnly, isTrue);
+
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionStartGame);
+
+      final tirees = launchedGame(tester).deck;
+      expect(tirees, isNotEmpty);
+      expect(
+        tirees.map((c) => c.audience).toSet(),
+        {Audience.adult},
+        reason: 'aucune carte tout public dans le paquet',
+      );
     });
 
     testWidgets('le mode Famille garde ses cinq étapes', (tester) async {
@@ -494,9 +533,11 @@ void main() {
       await goToSummary(tester, 'animaux');
 
       expect(find.textContaining(l10n.launchTruncated(30)), findsNothing);
-      expect(find.text(l10n.launchTruncated(24)), findsNothing);
       await tapText(tester, l10n.actionStartGame);
-      expect(launchedGame(tester).deck, hasLength(24));
+      expect(
+        launchedGame(tester).deck,
+        hasLength(GameConfig.defaultCardCount),
+      );
     });
   });
 

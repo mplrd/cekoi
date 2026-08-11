@@ -18,13 +18,15 @@ table**, un téléphone qu'on se passe, avec du bruit et de l'agitation. Concrè
 
 ## Parcours de configuration
 
-Cinq étapes en mode Famille, **quatre en Sans filtres** — qui saute le choix des catégories
+Cinq étapes en mode Famille, **quatre en Sans filtre** — qui saute le choix des catégories
 (R7.10) —, avec une barre de progression et un retour possible à chaque niveau. L'objectif
 est de pouvoir enchaîner en moins d'une minute quand on relance une partie identique.
 
 ### 1. Choix du mode
 
-Deux grandes cartes : **En famille** / **Sans filtres**.
+Trois grandes cartes : **En famille**, **Sans filtre**, et **Sans filtre et rien d'autre** —
+cette dernière retire les cartes tout public du vivier (R7.1). C'est le même mode au sens de
+R7.2, et les deux passent par la même confirmation d'âge.
 
 Le mode adultes affiche une confirmation d'âge simple (« Vous avez plus de 18 ans ? ») avant
 d'ouvrir la sélection. Le choix n'est pas stocké comme donnée personnelle (R7.3). Le mode
@@ -55,13 +57,12 @@ marquage discret, en fin de liste.
 ### 3. Réglages de partie
 
 Durée du tour et nombre de cartes — voir le tableau de R6. Chaque réglage est **un curseur**,
-avec sa valeur courante affichée à côté de son libellé. Le nombre de cartes garde un
-interrupteur *Auto*, qui applique R6.1 et masque le curseur tant qu'il est actif.
+avec sa valeur courante affichée à côté de son libellé. Le paquet part de 30 cartes (R6.1) ;
+il n'y a plus de mode *auto*, qui obligeait à un interrupteur en plus du réglage et dont
+personne ne savait dire la valeur avant de la voir.
 
-Les défauts dépendent du mode choisi à l'étape 1, ce qui doit permettre de traverser cet écran
-sans y toucher dans la majorité des cas. Chaque réglage a porté un temps une rangée de valeurs
-prédéfinies **en plus** du curseur : deux commandes pour un même nombre, dont l'une débordait
-sur deux lignes.
+Seule la durée du tour dépend encore du mode choisi à l'étape 1. L'écran se traverse sans y
+toucher dans la majorité des cas.
 
 Le nombre de manches n'y figure pas : une partie, c'est les trois (R2.2).
 
@@ -87,6 +88,12 @@ Mode, catégories, réglages, équipes. Un bouton **Lancer la partie**.
 C'est ici que se déclenche l'interstitiel publicitaire (voir `MONETISATION.md`) : pendant que
 la pub tourne, l'écran affiche « Installez-vous, la partie commence » avec le rappel des
 règles de la manche 1. Le temps mort est réel, on ne le fabrique pas.
+
+**Le retour reste libre jusqu'au clic sur « C'est parti » de la manche 1.** Tant que le premier
+tour n'a pas commencé, il n'y a qu'un paquet tiré, qu'un nouveau tirage remplacera : on
+redescend dans la configuration comme d'un écran ordinaire, sans confirmation. Demander
+« voulez-vous abandonner ? » pour une partie que personne n'a commencée est une fausse alerte.
+Le paquet est jeté en repartant, pour ne pas être proposé en reprise (R9.1).
 
 ## Écran de jeu
 

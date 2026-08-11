@@ -85,6 +85,7 @@ List<Card> eligibleCards({
   required List<Card> pool,
   required Audience mode,
   Set<Difficulty>? allowedDifficulties,
+  bool adultOnly = false,
 }) {
   final allowed = allowedDifficulties ?? Difficulty.values.toSet();
   if (allowed.isEmpty) {
@@ -95,7 +96,7 @@ List<Card> eligibleCards({
     );
   }
 
-  final drawable = mode.drawableAudiences;
+  final drawable = mode.drawablePool(adultOnly: adultOnly);
   final filtered =
       pool
           .where((c) => drawable.contains(c.audience))
@@ -129,6 +130,7 @@ DrawResult drawCards({
   required Audience mode,
   required Random random,
   Set<Difficulty>? allowedDifficulties,
+  bool adultOnly = false,
 }) {
   if (requested <= 0) {
     throw ArgumentError.value(
@@ -143,6 +145,7 @@ DrawResult drawCards({
     pool: pool,
     mode: mode,
     allowedDifficulties: allowed,
+    adultOnly: adultOnly,
   );
 
   final target = min(requested, unique.length);
