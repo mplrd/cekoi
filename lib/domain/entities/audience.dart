@@ -1,7 +1,7 @@
 /// Public visé par une carte ou une catégorie.
 ///
 /// Le mode de jeu choisi en début de partie détermine le vivier tiré (R7.1) :
-/// le mode Famille ne tire que du [Audience.family], le mode Entre adultes tire
+/// le mode Famille ne tire que du [Audience.family], le mode Sans filtres tire
 /// dans les deux — un apéro entre adultes ne s'interdit pas les cartes tout
 /// public.
 enum Audience {

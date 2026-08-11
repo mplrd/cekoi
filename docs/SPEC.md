@@ -23,7 +23,7 @@ est de pouvoir enchaîner en moins d'une minute quand on relance une partie iden
 
 ### 1. Choix du mode
 
-Deux grandes cartes : **En famille** / **Entre adultes**.
+Deux grandes cartes : **En famille** / **Sans filtres**.
 
 Le mode adultes affiche une confirmation d'âge simple (« Vous avez plus de 18 ans ? ») avant
 d'ouvrir la sélection. Le choix n'est pas stocké comme donnée personnelle (R7.3). Le mode

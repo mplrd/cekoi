@@ -75,14 +75,14 @@
     "description": "Sous-titre de la carte du mode Famille."
   },
 
-  "modeAdult": "Entre adultes",
+  "modeAdult": "Sans filtres",
   "@modeAdult": {
-    "description": "Mode de contenu adulte, qui tire aussi dans le tout public (R7.1)."
+    "description": "Mode de contenu adulte, qui tire aussi dans le tout public (R7.1). Nommé « Sans filtres » par l'auteure du contenu, qui y tient — c'est le nom sous lequel les catégories ont été écrites."
   },
 
   "modeAdultDescription": "Ajoute les cartes réservées aux grands, sans retirer les autres.",
   "@modeAdultDescription": {
-    "description": "Sous-titre de la carte du mode Entre adultes."
+    "description": "Sous-titre de la carte du mode Sans filtres."
   },
 
   "adultConfirmTitle": "Vous avez plus de 18 ans ?",

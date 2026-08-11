@@ -169,7 +169,7 @@ s'interdit les cartes tout public.
 
 **R7.2** — Le mode est choisi en début de partie et ne change pas en cours de route.
 
-**R7.3** — Le mode Entre adultes est accessible derrière une confirmation d'âge simple, non
+**R7.3** — Le mode Sans filtres est accessible derrière une confirmation d'âge simple, non
 bloquante et non stockée en tant que donnée personnelle.
 
 ### Profils de partie
@@ -188,7 +188,7 @@ ne retient que les catégories dont le `minAge` est inférieur ou égal au sien.
 | **Ados & co** | 10–14 ans | `minAge ≤ 10` | 1 et 2 | 60 s | auto |
 | **Mix familial** | tous | `minAge ≤ 13` | 1, 2 et 3 | 60 s | auto |
 
-Le mode Entre adultes utilise le même mécanisme ; ses profils sont de la donnée de
+Le mode Sans filtres utilise le même mécanisme ; ses profils sont de la donnée de
 configuration, pas du code, et peuvent être ajoutés sans modifier le moteur.
 
 **R7.6** — Un profil est un point de départ, jamais une contrainte. Après l'avoir choisi,
