@@ -258,6 +258,22 @@ void main() {
     await shoot(tester, '12-mes-categories');
   });
 
+  testWidgets('le menu d une catégorie custom', (tester) async {
+    // Les surfaces posées par-dessus la page — menu contextuel, dialogue —
+    // n'apparaissaient sur aucune capture : elles prenaient le fond du thème
+    // et se confondaient avec l'écran qu'elles recouvrent.
+    await installCatalogue();
+    await pumpApp(tester);
+
+    await tapText(tester, l10n.homeMyDecks);
+    await tapText(tester, l10n.actionCreateDeck);
+    await tester.enterText(find.byType(TextField).first, 'Souvenirs de fac');
+    await tapText(tester, l10n.actionSave);
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await shoot(tester, '14-menu-categorie');
+  });
+
   testWidgets('créer une carte custom', (tester) async {
     // L'écran que le niveau par carte a fait bouger : le sélecteur doit se
     // lire comme celui de la carte en cours de saisie, pas de la catégorie.

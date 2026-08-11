@@ -1,8 +1,9 @@
 import 'package:cekoi/app/router.dart';
+import 'package:cekoi/app/theme/app_colors.dart';
+import 'package:cekoi/app/theme/app_theme.dart';
 import 'package:cekoi/domain/engine/team_builder.dart';
 import 'package:cekoi/features/setup/presentation/setup_controller.dart';
 import 'package:cekoi/features/setup/presentation/setup_steps.dart';
-import 'package:cekoi/features/setup/presentation/widgets/choice_tile.dart';
 import 'package:cekoi/features/setup/presentation/widgets/setup_scaffold.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -105,57 +106,116 @@ class _TeamsScreenState extends ConsumerState<TeamsScreen> {
   }
 }
 
+/// Le nombre d'équipes : moins, le nombre, plus.
+///
+/// Une rangée de pastilles pour un entier, c'était offrir un choix là où il n'y
+/// a qu'un compteur. Elle débordait sur deux lignes, s'arrêtait arbitrairement
+/// à une valeur, et demandait un bouton *Plus* pour aller au-delà — trois
+/// mécaniques pour un nombre qu'on monte et qu'on descend.
+///
+/// Le compteur n'a **pas de limite haute** : R8.1 n'en pose aucune, et une
+/// dixième équipe coûte huit taps comme la troisième en coûte un.
 class _TeamCountSelector extends StatelessWidget {
   const _TeamCountSelector({required this.value, required this.onChanged});
 
   final int value;
   final ValueChanged<int> onChanged;
 
-  /// R8.1 ne pose pas de limite haute, seulement une exigence d'ergonomie.
-  ///
-  /// Trois valeurs plus *Plus* : la rangée tient sur **une ligne** au format
-  /// d'un téléphone courant. Jusqu'à six, elle repliait « 6 » et « Plus » sur
-  /// une seconde ligne, ce qui donnait l'impression d'une liste alors que
-  /// c'est un choix. Au-delà de quatre équipes, la rangée s'étend d'elle-même
-  /// jusqu'à la valeur retenue — on ne perd donc pas l'accès au réglage.
-  static const int _presetTop = 4;
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final top = value > _presetTop ? value : _presetTop;
+    final theme = Theme.of(context);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
       children: [
-        Text(
-          l10n.teamCountLabel,
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: [
-            for (var count = minimumTeamCount; count <= top; count++)
-              ChoiceTile(
-                label: '$count',
-                selected: value == count,
-                onTap: () => onChanged(count),
-              ),
-            ChoiceTile(
-              label: l10n.teamCountMore,
-              icon: Icons.add,
-              selected: false,
-              // Une équipe de plus que celles qu'on joue, pas une de plus que
-              // la rangée : à deux équipes, « Plus » en donne trois.
-              onTap: () => onChanged(value + 1),
+        Expanded(
+          child: Text(
+            l10n.teamCountLabel,
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: AppColors.ink,
+              fontWeight: FontWeight.bold,
             ),
-          ],
+          ),
+        ),
+        _Step(
+          icon: Icons.remove,
+          // R8.3 : deux équipes est le minimum d'une partie.
+          onTap: value > minimumTeamCount ? () => onChanged(value - 1) : null,
+          semantics: l10n.teamCountFewer,
+        ),
+        SizedBox(
+          width: 64,
+          child: Text(
+            '$value',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.displaySmall?.copyWith(
+              color: AppColors.ink,
+              fontWeight: FontWeight.w800,
+              // Le nombre ne doit pas se décaler en passant à deux chiffres.
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+        ),
+        _Step(
+          icon: Icons.add,
+          onTap: () => onChanged(value + 1),
+          semantics: l10n.teamCountMore,
         ),
       ],
+    );
+  }
+}
+
+/// Un des deux boutons du compteur.
+class _Step extends StatelessWidget {
+  const _Step({
+    required this.icon,
+    required this.onTap,
+    required this.semantics,
+  });
+
+  final IconData icon;
+
+  /// `null` en butée basse : grisé plutôt que retiré, sinon la rangée se
+  /// décale d'un bouton entre deux et trois équipes.
+  final VoidCallback? onTap;
+  final String semantics;
+
+  @override
+  Widget build(BuildContext context) {
+    final actif = onTap != null;
+
+    return Semantics(
+      button: true,
+      enabled: actif,
+      label: semantics,
+      child: Material(
+        color: AppColors.card,
+        shape: RoundedRectangleBorder(
+          borderRadius: const BorderRadius.all(
+            Radius.circular(AppTheme.radius),
+          ),
+          side: BorderSide(
+            color: AppColors.main.withValues(alpha: actif ? 1 : 0.3),
+            width: 3,
+          ),
+        ),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: const BorderRadius.all(
+            Radius.circular(AppTheme.radius),
+          ),
+          child: SizedBox(
+            width: AppTheme.minTile,
+            height: AppTheme.minTile,
+            child: Icon(
+              icon,
+              size: 26,
+              color: AppColors.ink.withValues(alpha: actif ? 1 : 0.3),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
