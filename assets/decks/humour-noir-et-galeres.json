@@ -1,5 +1,5 @@
 {
-  "id": "humoir-noir-et-galeres",
+  "id": "humour-noir-et-galeres",
   "name": "Humour noir et galères",
   "audience": "adult",
   "minAge": 18,
@@ -25,11 +25,11 @@
       "difficulty": 2
     },
     {
-      "text": "Gifle au visage",
+      "text": "Gifle",
       "difficulty": 2
     },
     {
-      "text": "Pousser Mémé dans les orties",
+      "text": "Pousser mémé dans les orties",
       "difficulty": 2
     },
     {
