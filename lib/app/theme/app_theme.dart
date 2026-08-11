@@ -18,9 +18,15 @@ abstract final class AppTheme {
   static ThemeData dark() => _build(Brightness.dark);
 
   static ThemeData _build(Brightness brightness) {
+    // `fidelity` plutôt que le schéma par défaut : celui-ci désature fortement
+    // la graine pour construire sa palette, et le corail du logo en ressortait
+    // brun. Une identité qu'on ne reconnaît plus entre l'icône et le premier
+    // écran ne sert à rien. Cette variante garde la teinte source et se
+    // contente d'ajuster ce qu'il faut pour les contrastes.
     final scheme = ColorScheme.fromSeed(
       seedColor: AppColors.seed,
       brightness: brightness,
+      dynamicSchemeVariant: DynamicSchemeVariant.fidelity,
     );
 
     return ThemeData(

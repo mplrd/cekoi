@@ -62,6 +62,7 @@ dev_dependencies:
   # en bloc quand freezed 4 et drift_dev auront rejoint analyzer 13.
   drift_dev: ^2.34.0
 
+  flutter_launcher_icons: ^0.14.4
   flutter_test:
     sdk: flutter
 
@@ -78,3 +79,22 @@ flutter:
 
   assets:
     - assets/decks/
+    # Le seul fichier de marque que l'application lit. Le SVG source et le
+    # premier plan des icônes vivent à côté mais restent hors du bundle : ils
+    # servent à fabriquer, pas à exécuter, et pèsent 340 Ko à eux deux.
+    - assets/branding/logo.png
+
+# Icônes de lanceur, générées depuis le logo par `dart run flutter_launcher_icons`.
+#
+# Le premier plan Android est le logo **réduit à 70 %** sur du transparent :
+# une icône adaptative est rognée par le lanceur, parfois en cercle, et un logo
+# à fond perdu y perdrait ses coins — la bulle et le « 1 » sont justement dans
+# les coins. Le fond uni reprend exactement le corail du logo, si bien que la
+# jointure entre les deux ne se voit pas.
+flutter_launcher_icons:
+  image_path: assets/branding/logo.png
+  android: true
+  adaptive_icon_background: "#FA7567"
+  adaptive_icon_foreground: assets/branding/logo_foreground.png
+  ios: true
+  remove_alpha_ios: true
