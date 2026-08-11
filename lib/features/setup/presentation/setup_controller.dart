@@ -22,6 +22,10 @@ class SetupController extends _$SetupController {
 
   void toggleDeck(String deckId) => state = state.toggleDeck(deckId);
 
+  /// Sélectionne toutes les catégories du mode (R7.9).
+  void selectAllDecks(List<String> deckIds) =>
+      state = state.withAllDecks(deckIds);
+
   void setTurnDuration(Duration duration) =>
       state = state.withTurnDuration(duration);
 

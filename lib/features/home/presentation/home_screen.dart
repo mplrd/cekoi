@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:cekoi/app/current_game.dart';
 import 'package:cekoi/app/game_persistence.dart';
 import 'package:cekoi/app/router.dart';
+import 'package:cekoi/app/theme/app_colors.dart';
+import 'package:cekoi/app/theme/app_theme.dart';
 import 'package:cekoi/data/providers.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -21,7 +23,16 @@ class HomeScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final seeding = ref.watch(deckSeedingProvider);
 
+    // L'accueil prend le corail du logo comme fond, et non le fond neutre du
+    // thème. Deux raisons : c'est la couleur qu'on vient de toucher sur
+    // l'icône, et le logo porte lui-même ce corail — posé dessus, son cadre
+    // disparaît et le dessin flotte, au lieu d'être une image collée sur une
+    // page blanche.
+    //
+    // Le texte passe donc en encre sombre, comme les contours du dessin : du
+    // blanc sur ce corail tomberait à 2,6:1, sous le minimum lisible.
     return Scaffold(
+      backgroundColor: AppColors.seed,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -34,6 +45,65 @@ class HomeScreen extends ConsumerWidget {
             ),
             _ => const _Menu(),
           },
+        ),
+      ),
+    );
+  }
+}
+
+/// L'encre de l'accueil : le noir chaud des contours du logo.
+///
+/// Sur le corail, du blanc tomberait à 2,6:1 — sous le seuil lisible, même
+/// pour du gros texte.
+const Color _encre = Color(0xFF1A0F0C);
+
+/// Une entrée de l'accueil.
+///
+/// Trois traitements pour une seule forme : plein pour l'action principale,
+/// clair pour les autres, effacé pour ce qui n'est pas encore là. Les boutons
+/// Material par défaut tiraient leurs couleurs du thème et ressortaient
+/// délavés sur ce fond.
+class _HomeAction extends StatelessWidget {
+  const _HomeAction({
+    required this.label,
+    required this.onPressed,
+    this.principal = false,
+    this.discret = false,
+  });
+
+  final String label;
+  final VoidCallback? onPressed;
+  final bool principal;
+  final bool discret;
+
+  @override
+  Widget build(BuildContext context) {
+    final actif = onPressed != null;
+    final fond = principal
+        ? AppColors.accent
+        : (discret ? Colors.white24 : Colors.white);
+    final texte = principal ? Colors.white : _encre;
+
+    return Opacity(
+      opacity: actif ? 1 : 0.45,
+      child: Material(
+        color: fond,
+        borderRadius: const BorderRadius.all(Radius.circular(18)),
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: const BorderRadius.all(Radius.circular(18)),
+          child: SizedBox(
+            height: AppTheme.minTouchTarget,
+            child: Center(
+              child: Text(
+                label,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: texte,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -55,51 +125,56 @@ class _Menu extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const Spacer(),
-        // Le logo porte déjà le nom du jeu à l'écran d'icône ; ici il annonce
-        // les trois manches — la bulle, le « 1 », le personnage qui mime.
-        // `semanticsLabel` le rend au lecteur d'écran, pour qui une image sans
-        // texte n'existe pas.
+        // Le logo annonce les trois manches — la bulle qui parle, le « 1 » du
+        // mot unique, le personnage qui mime. Son fond est le corail de
+        // l'écran : il se confond, et seul le dessin reste.
         Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: 220, maxWidth: 220),
+            constraints: const BoxConstraints(maxHeight: 260, maxWidth: 260),
             child: Image.asset(
               'assets/branding/logo.png',
               semanticLabel: l10n.appTitle,
             ),
           ),
         ),
-        const SizedBox(height: 16),
         Text(
           l10n.appTitle,
           textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.displaySmall?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.primary,
+          style: Theme.of(context).textTheme.displayMedium?.copyWith(
+            fontWeight: FontWeight.w800,
+            color: _encre,
+            letterSpacing: -1,
           ),
         ),
         const Spacer(),
         if (resumable != null) ...[
-          FilledButton.tonal(
+          _HomeAction(
+            label: l10n.homeResumeGame,
+            // La reprise vient en second : c'est le cas rare, et elle ne doit
+            // pas prendre la place de « Jouer ».
+            discret: true,
             onPressed: () {
               ref.read(currentGameProvider.notifier).game = resumable;
               unawaited(context.push(AppRoutes.game));
             },
-            child: Text(l10n.homeResumeGame),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
         ],
-        FilledButton(
+        // L'unique action pleine de l'écran, dans le teal des étincelles du
+        // logo : sur ce corail, c'est le seul contraste qui ne vibre pas.
+        _HomeAction(
+          label: l10n.homePlay,
+          principal: true,
           onPressed: () => context.push(AppRoutes.setupMode),
-          child: Text(l10n.homePlay),
         ),
-        const SizedBox(height: 16),
-        OutlinedButton(
+        const SizedBox(height: 12),
+        _HomeAction(
+          label: l10n.homeMyDecks,
           onPressed: () => unawaited(context.push(AppRoutes.myDecks)),
-          child: Text(l10n.homeMyDecks),
         ),
-        const SizedBox(height: 16),
-        OutlinedButton(onPressed: null, child: Text(l10n.homeSettings)),
-        const SizedBox(height: 32),
+        const SizedBox(height: 12),
+        _HomeAction(label: l10n.homeSettings, onPressed: null),
+        const SizedBox(height: 24),
       ],
     );
   }

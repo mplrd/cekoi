@@ -168,8 +168,6 @@ void main() {
 
     await tapText(tester, l10n.homePlay);
     await tapText(tester, l10n.modeFamily);
-    await tapText(tester, l10n.setupCustomize);
-    await tapText(tester, 'animaux');
     await tapText(tester, l10n.actionContinue);
     await tapText(tester, l10n.actionContinue);
 
@@ -201,8 +199,6 @@ void main() {
 
     await tapText(tester, l10n.homePlay);
     await tapText(tester, l10n.modeFamily);
-    await tapText(tester, l10n.setupCustomize);
-    await tapText(tester, 'animaux');
     await tapText(tester, l10n.actionContinue);
     await tapText(tester, l10n.actionContinue);
 
@@ -225,8 +221,6 @@ void main() {
 
     await tapText(tester, l10n.homePlay);
     await tapText(tester, l10n.modeFamily);
-    await tapText(tester, l10n.setupCustomize);
-    await tapText(tester, 'animaux');
     await tapText(tester, l10n.actionContinue);
     await tapText(tester, l10n.actionContinue);
 
@@ -270,12 +264,77 @@ void main() {
       expect(find.text(l10n.profileMinis), findsOneWidget);
       expect(find.text(l10n.profileUnavailableNotEnough), findsOneWidget);
 
-      // Le tap ne fait rien : la sélection reste vide, donc pas de suite.
+      // Le tap ne fait rien : on reste sur l'étape, et la sélection n'a pas
+      // bougé. Elle n'est plus vide au départ depuis R7.9 — on arrive avec
+      // toutes les catégories cochées — donc c'est son immobilité qui prouve
+      // que le profil indisponible a bien été ignoré.
       await tapText(tester, l10n.profileMinis);
       expect(find.text(l10n.setupDecksTitle), findsOneWidget);
-      expect(find.text(l10n.setupSelectionSummary(0)), findsOneWidget);
+      expect(find.text(l10n.setupSelectionSummary(45)), findsOneWidget);
     },
   );
+
+  group('R7.9 — on arrive avec tout coché', () {
+    testWidgets('le mode Sans filtres est jouable sans rien toucher', (
+      tester,
+    ) async {
+      // Le cas qui a fait remonter la règle : ce mode n'a aucun profil, donc
+      // l'étape s'ouvrait sur une sélection vide et il fallait cocher les
+      // catégories une par une avant de pouvoir continuer.
+      await installDeck('animaux', easy: 10, medium: 10, hard: 10);
+      await installDeck(
+        'sans-filtres',
+        audience: Audience.adult,
+        minAge: MinAge.eighteen,
+        easy: 5,
+        medium: 5,
+        hard: 5,
+      );
+      await pumpApp(tester);
+
+      await tapText(tester, l10n.homePlay);
+      await tapText(tester, l10n.modeAdult);
+      await tapText(tester, l10n.adultConfirmAccept);
+
+      // R7.1 : ce mode tire aussi dans le tout public, donc les deux
+      // catégories sont là, et les 45 cartes avec.
+      expect(find.text(l10n.setupSelectionSummary(45)), findsOneWidget);
+
+      await tapText(tester, l10n.actionContinue);
+      expect(find.text(l10n.setupSettingsTitle), findsOneWidget);
+    });
+
+    testWidgets('une categorie decochee ne revient pas seule', (tester) async {
+      // La présélection n'a lieu qu'à la première arrivée : décocher est une
+      // décision, et la voir annulée au retour serait pire que le problème
+      // qu'on corrige (R7.6).
+      await installDeck('animaux', easy: 10, medium: 10, hard: 10);
+      await installDeck('metiers', easy: 10, medium: 10, hard: 10);
+      await pumpApp(tester);
+
+      await tapText(tester, l10n.homePlay);
+      await tapText(tester, l10n.modeFamily);
+      expect(find.text(l10n.setupSelectionSummary(60)), findsOneWidget);
+
+      await tapText(tester, l10n.setupCustomize);
+      await tapText(tester, 'metiers');
+      expect(find.text(l10n.setupSelectionSummary(30)), findsOneWidget);
+
+      // Aller-retour sur l'étape suivante, par le retour système — c'est le
+      // geste réel, et l'écran de configuration n'a pas de flèche.
+      await tapText(tester, l10n.actionContinue);
+      expect(find.text(l10n.setupSettingsTitle), findsOneWidget);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.text(l10n.setupDecksTitle), findsOneWidget);
+
+      expect(
+        find.text(l10n.setupSelectionSummary(30)),
+        findsOneWidget,
+        reason: 'la catégorie décochée doit le rester',
+      );
+    });
+  });
 
   testWidgets('sous 12 cartes, on ne peut pas continuer (R6.2)', (
     tester,
@@ -285,8 +344,6 @@ void main() {
 
     await tapText(tester, l10n.homePlay);
     await tapText(tester, l10n.modeFamily);
-    await tapText(tester, l10n.setupCustomize);
-    await tapText(tester, 'maigre');
 
     expect(find.text(l10n.setupSelectionSummary(9)), findsOneWidget);
     expect(
@@ -306,8 +363,6 @@ void main() {
   Future<void> goToSummary(WidgetTester tester, String deck) async {
     await tapText(tester, l10n.homePlay);
     await tapText(tester, l10n.modeFamily);
-    await tapText(tester, l10n.setupCustomize);
-    await tapText(tester, deck);
     await tapText(tester, l10n.actionContinue);
     await tapText(tester, l10n.actionContinue);
     await tapText(tester, l10n.actionContinue);
