@@ -1,6 +1,6 @@
 import 'package:cekoi/app/theme/app_colors.dart';
 import 'package:cekoi/features/setup/presentation/setup_controller.dart';
-import 'package:cekoi/features/setup/presentation/widgets/setup_steps.dart';
+import 'package:cekoi/features/setup/presentation/setup_steps.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -36,10 +36,12 @@ class SetupScaffold extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
 
-    final etapes = setupStepsFor(ref.watch(setupControllerProvider).mode);
-    // Une étape absente du parcours — les catégories en Sans filtres, quand on
-    // y revient par le retour — se compte comme la première : mieux vaut un
-    // rang approximatif qu'un `-1` affiché.
+    final parcours = setupStepsFor(ref.watch(setupControllerProvider).mode);
+    // Un écran hors du parcours du mode — les catégories en Sans filtres, où
+    // l'on ne revient que par le retour (R7.10) — se compte dans le parcours
+    // **complet**. Sans ça, `indexOf` rendait -1 et l'en-tête affichait
+    // « Étape 0 sur 4 », avec les quatre points éteints.
+    final etapes = parcours.contains(step) ? parcours : SetupStep.values;
     final rang = etapes.indexOf(step) + 1;
     final stepCount = etapes.length;
 

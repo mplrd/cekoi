@@ -316,6 +316,46 @@ void main() {
       expect(find.text(l10n.setupStep(2, 4)), findsOneWidget);
     });
 
+    testWidgets('R7.10 — le retour depuis les réglages ramène aux catégories', (
+      tester,
+    ) async {
+      // La promesse de R7.10 : l'étape est sautée à l'aller, pas supprimée.
+      // Sans ce test, une navigation qui n'empile jamais l'écran passait —
+      // et la sélection faite à sa place n'était plus corrigeable nulle part,
+      // notamment pour une catégorie créée après un premier passage.
+      await installDeck('animaux');
+      await installDeck('sans-filtres', audience: Audience.adult);
+      await pumpApp(tester);
+
+      await tapText(tester, l10n.homePlay);
+      await tapText(tester, l10n.modeAdult);
+      await tapText(tester, l10n.adultConfirmAccept);
+      expect(find.text(l10n.setupSettingsTitle), findsOneWidget);
+
+      // `pageBack` cherche une infobulle « Back » : l'application est en
+      // français, son bouton dit « Retour ».
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+
+      expect(find.text(l10n.setupDecksTitle), findsOneWidget);
+      // Et l'écran s'y compte dans le parcours complet, plutôt que d'annoncer
+      // une étape zéro sur un parcours qui ne le contient pas.
+      expect(find.text(l10n.setupStep(2, 5)), findsOneWidget);
+    });
+
+    testWidgets('le mode Famille garde ses cinq étapes', (tester) async {
+      // Rien d'autre ne fixe la longueur du parcours familial : raccourcir
+      // `setupStepsFor` laisserait toute la suite verte.
+      await installDeck('animaux');
+      await pumpApp(tester);
+
+      await tapText(tester, l10n.homePlay);
+      await tapText(tester, l10n.modeFamily);
+
+      expect(find.text(l10n.setupDecksTitle), findsOneWidget);
+      expect(find.text(l10n.setupStep(2, 5)), findsOneWidget);
+    });
+
     testWidgets('une categorie decochee ne revient pas seule', (tester) async {
       // La présélection n'a lieu qu'à la première arrivée : décocher est une
       // décision, et la voir annulée au retour serait pire que le problème

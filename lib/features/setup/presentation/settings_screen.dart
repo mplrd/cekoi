@@ -3,8 +3,8 @@ import 'package:cekoi/app/theme/app_colors.dart';
 import 'package:cekoi/app/theme/app_theme.dart';
 import 'package:cekoi/domain/entities/game_config.dart';
 import 'package:cekoi/features/setup/presentation/setup_controller.dart';
+import 'package:cekoi/features/setup/presentation/setup_steps.dart';
 import 'package:cekoi/features/setup/presentation/widgets/setup_scaffold.dart';
-import 'package:cekoi/features/setup/presentation/widgets/setup_steps.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -233,7 +233,7 @@ class _CardCount extends StatelessWidget {
             Switch(
               value: auto,
               onChanged: (actif) =>
-                  onChanged(actif ? null : GameConfig.cardCountPresets.first),
+                  onChanged(actif ? null : GameConfig.manualCardCountStart),
             ),
           ],
         ),
