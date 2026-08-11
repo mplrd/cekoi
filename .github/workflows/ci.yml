@@ -62,8 +62,13 @@ jobs:
       - name: Analyse statique
         run: flutter analyze --fatal-infos --fatal-warnings
 
+      # `apercu` est le banc de rendu de `test/apercus/` : il écrit un PNG par
+      # écran pour qu'on les regarde côte à côte avant une revue visuelle. Il
+      # n'assert rien, et ses images ne sont pas versionnées — elles dépendent
+      # de la machine qui les produit. Le lancer ici échouerait faute d'image
+      # de référence, sans rien vérifier au passage.
       - name: Tests
-        run: flutter test --coverage
+        run: flutter test --coverage --exclude-tags apercu
 
       # L'import de contenu est en Python et ne sert qu'en atelier — mais un
       # outil dont les tests ne tournent jamais pourrit en silence, et celui-ci
