@@ -69,6 +69,26 @@ abstract class GameState with _$GameState {
       [for (final card in deck) card.id]
         ..shuffle(Random(seed * 31 + roundIndex));
 
+  /// Le paquet **restant**, rebattu à l'ouverture d'un tour (R4.7).
+  ///
+  /// Ne remet aucune carte trouvée en jeu : il rebat ce qui reste. Sans ça,
+  /// l'équipe suivante recevrait le paquet dans l'ordre exact où la précédente
+  /// vient de buter dessus.
+  ///
+  /// [turnIndex] fait varier la graine d'un tour à l'autre : sans lui, tous
+  /// les tours d'une même manche retomberaient sur le même ordre, ce qui est
+  /// pire que pas de mélange du tout — le paquet ferait des allers-retours
+  /// entre deux dispositions.
+  static List<String> reshuffleRemaining({
+    required List<String> pile,
+    required int seed,
+    required int roundIndex,
+    required int turnIndex,
+  }) => [...pile]
+    ..shuffle(
+      Random(seed * 31 + roundIndex * 7919 + turnIndex * 104729),
+    );
+
   Round get round => rounds[roundIndex];
 
   Team get activeTeam => teams[activeTeamIndex];

@@ -104,6 +104,16 @@ même en plein milieu d'un tour. Le temps restant est perdu et n'est pas report�
 mélange est dérivé de la graine de la partie et du numéro de manche : rejouer la même partie
 depuis ses événements redonne le même ordre.
 
+**R4.7** — Le paquet est aussi **remélangé à chaque tour**, quand le téléphone change de mains.
+Sans cela, l'équipe suivante reprend le paquet exactement là où la précédente l'a laissé, dans
+un ordre qu'elle vient de voir défiler : les premières cartes de son tour sont celles que
+l'autre équipe n'a pas su faire deviner, dans l'ordre où elle a échoué. Le mélange est dérivé
+de la graine, du numéro de manche et du nombre de tours déjà joués — la partie reste
+reproductible à l'événement près.
+
+Ce qui est mélangé est le paquet **restant** : le remélange ne remet aucune carte trouvée en
+jeu, c'est R4.2 qui le fait, et seulement entre deux manches.
+
 **R4.3** — La manche suivante démarre avec **l'équipe qui suit** celle qui a terminé la manche
 précédente. Sans cette règle, l'équipe qui vide le paquet enchaînerait deux tours d'affilée.
 

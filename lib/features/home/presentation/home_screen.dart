@@ -55,10 +55,24 @@ class _Menu extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const Spacer(),
+        // Le logo porte déjà le nom du jeu à l'écran d'icône ; ici il annonce
+        // les trois manches — la bulle, le « 1 », le personnage qui mime.
+        // `semanticsLabel` le rend au lecteur d'écran, pour qui une image sans
+        // texte n'existe pas.
+        Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 220, maxWidth: 220),
+            child: Image.asset(
+              'assets/branding/logo.png',
+              semanticLabel: l10n.appTitle,
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
         Text(
           l10n.appTitle,
           textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.displayMedium?.copyWith(
+          style: Theme.of(context).textTheme.displaySmall?.copyWith(
             fontWeight: FontWeight.bold,
             color: Theme.of(context).colorScheme.primary,
           ),
