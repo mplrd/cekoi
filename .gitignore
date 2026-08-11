@@ -106,7 +106,7 @@ __pycache__/
 # Images de comparaison produites par un golden test qui echoue.
 test/failures/
 
-# Rendus du banc d'apercu, produits par `flutter test test/apercus --tags apercu
-# --update-goldens`. Ils dependent de la machine : on les regarde, on ne les
-# compare pas.
-test/apercus/img/
+# Rendus du banc d'apercu, produits par
+# `flutter test tool/apercus/apercu.dart --update-goldens`. Ils dependent de la
+# machine qui les fabrique : on les regarde, on ne les compare pas.
+tool/apercus/img/

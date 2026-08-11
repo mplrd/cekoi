@@ -20,7 +20,7 @@ class ActionZone extends StatelessWidget {
     required this.onPressed,
     this.background,
     this.foreground,
-    this.outlined = false,
+    this.secondaire = false,
     super.key,
   });
 
@@ -35,7 +35,11 @@ class ActionZone extends StatelessWidget {
 
   final Color? background;
   final Color? foreground;
-  final bool outlined;
+
+  /// Traitement secondaire : le vert du personnage plutôt que le teal des
+  /// actions. Le nom dit ce que ça fait, pas à quoi ça ressemblait — cette
+  /// option dessinait un contour vide, elle remplit désormais un aplat.
+  final bool secondaire;
 
   @override
   Widget build(BuildContext context) {
@@ -47,10 +51,10 @@ class ActionZone extends StatelessWidget {
     // indisponible — alors qu'elle est la moitié du jeu en manches 2 et 3.
     final fond =
         background ??
-        (outlined ? theme.colorScheme.secondary : theme.colorScheme.primary);
+        (secondaire ? theme.colorScheme.secondary : theme.colorScheme.primary);
     final encre =
         foreground ??
-        (outlined
+        (secondaire
             ? theme.colorScheme.onSecondary
             : theme.colorScheme.onPrimary);
 

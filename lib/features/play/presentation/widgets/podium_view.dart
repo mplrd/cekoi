@@ -85,7 +85,7 @@ class _PodiumViewState extends ConsumerState<PodiumView> {
               const SizedBox(height: 12),
               ActionZone(
                 label: l10n.actionNewGame,
-                outlined: true,
+                secondaire: true,
                 foreground: AppColors.ink,
                 onPressed: () {
                   ref.read(currentGameProvider.notifier).game = null;

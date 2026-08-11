@@ -8,13 +8,18 @@
 /// défauts-là.
 ///
 /// ```bash
-/// flutter test test/apercus --tags apercu --update-goldens
+/// flutter test tool/apercus/apercu.dart --update-goldens
 /// ```
 ///
-/// Les images vivent dans `test/apercus/img/` et ne sont pas versionnées :
-/// elles dépendent du moteur de rendu de la machine. La CI exclut donc
-/// l'étiquette `apercu`, faute de référence à comparer.
-@Tags(['apercu'])
+/// Le chemin du **fichier** est nécessaire : `flutter test tool/apercus`, avec
+/// le seul dossier, retombe silencieusement sur toute la suite de `test/`.
+///
+/// Il vit **hors de `test/`** exprès. `matchesGoldenFile` échoue quand l'image
+/// de référence manque, et ces images ne sont pas versionnées — elles
+/// dépendent du moteur de rendu de la machine. Dans `test/`, il aurait rendu
+/// `flutter test` rouge sur tout clone neuf, avec un message qui ne dit pas
+/// quoi faire. Ici, ni la commande du projet ni la CI ne le ramassent : on le
+/// lance quand on veut regarder.
 library;
 
 import 'dart:io';
@@ -45,8 +50,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
-import '../support/fixtures.dart';
-import '../support/providers.dart';
+import '../../test/support/fixtures.dart';
+import '../../test/support/providers.dart';
 
 /// Charge les vraies polices dans le binding de test.
 ///
@@ -327,7 +332,7 @@ void main() {
 
       return testGame(cardCount: 10, roundIndex: roundIndex).copyWith(
         teams: const [
-          Team(id: 't1', name: 'Les Renards', colorId: 0),
+          Team(id: 't1', name: 'Les Renards'),
           Team(id: 't2', name: 'Les Hiboux', colorId: 1),
         ],
         deck: [carte, ...autres],

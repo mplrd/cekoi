@@ -67,6 +67,10 @@ class TieBreakView extends ConsumerWidget {
             FilledButton(
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.team(team.colorId),
+                // L'encre se calcule : le blanc du thème tombait à 2,7:1 sur
+                // l'orange, seule couleur d'équipe assez claire pour le
+                // refuser — et c'est le seul écran où elle porte du texte.
+                foregroundColor: AppColors.onTeam(team.colorId),
               ),
               onPressed: () => controller.tieBreakWon(team.id),
               child: Text(l10n.tieBreakWinner(team.name)),

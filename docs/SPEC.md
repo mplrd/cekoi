@@ -173,9 +173,15 @@ date de moins de 24 h (R9.2), une bannière « Reprendre la partie » s'affiche 
 
 ## Réglages
 
-Sons, retour haptique, thème clair/sombre/système, langue, gestion du consentement
-publicitaire (obligatoire et accessible à tout moment), restauration des achats, mentions
-légales et politique de confidentialité.
+Sons, retour haptique, langue, gestion du consentement publicitaire (obligatoire et
+accessible à tout moment), restauration des achats, mentions légales et politique de
+confidentialité.
+
+**Pas de choix de thème.** L'application a un seul visage : le corail pastel du logo, en
+clair, quelle que soit la préférence du système. Un thème sombre serait une seconde
+interface à dessiner et à vérifier, pour un jeu qu'on sort le soir entre amis avec la
+lumière allumée — et l'identité tient précisément à cette couleur. C'est un arbitrage,
+pas un oubli : `AppTheme.dark()` renvoie délibérément le thème clair.
 
 ## Ce qui est explicitement hors périmètre v1
 

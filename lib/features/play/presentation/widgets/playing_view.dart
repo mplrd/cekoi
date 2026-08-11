@@ -64,11 +64,16 @@ class PlayingView extends ConsumerWidget {
         Expanded(
           flex: actionsAreSplit ? 1 : 2,
           child: switch ((countdown, game.isPaused)) {
+            // L'encre est celle du jeu, plus celle d'une couleur de manche :
+            // le fond est le pastel du thème. Ces deux vues portaient encore
+            // `onRound`, qui rend du blanc en manches 2 et 3 — soit 1,5:1 sur
+            // ce fond. L'écran de pause et le compte à rebours de reprise
+            // étaient donc invisibles deux manches sur trois.
             (final int seconds, _) => _Countdown(
               seconds: seconds,
-              color: AppColors.onRound(game.round),
+              color: AppColors.ink,
             ),
-            (_, true) => _PausePanel(encre: AppColors.onRound(game.round)),
+            (_, true) => const _PausePanel(encre: AppColors.ink),
             _ => _CardZone(game: game),
           },
         ),
@@ -173,7 +178,12 @@ class _RoundPill extends StatelessWidget {
         ),
         child: Text(
           l10n.scoreRoundShort(round.number),
+          // 19 px en gras, et non l'échelle du libellé : sur le rouge du mime,
+          // le blanc plafonne à 4:1, sous le seuil du texte courant. À cette
+          // taille et cette graisse, c'est du grand texte au sens WCAG, dont
+          // le seuil est 3:1. Deux caractères — la place ne manque pas.
           style: Theme.of(context).textTheme.labelLarge?.copyWith(
+            fontSize: 19,
             color: AppColors.onRound(round),
             fontWeight: FontWeight.w800,
           ),
@@ -379,7 +389,7 @@ class _Actions extends ConsumerWidget {
                 l10n.gamePassLocked,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: AppColors.onRound(game.round).withValues(alpha: 0.8),
+                  color: AppColors.inkSoft,
                 ),
               ),
             ),
@@ -397,7 +407,7 @@ class _Actions extends ConsumerWidget {
                       // Pleine, dans le vert du personnage : elle vaut la
                       // moitié du jeu en manches 2 et 3, un contour vide la
                       // faisait passer pour indisponible.
-                      outlined: true,
+                      secondaire: true,
                       onPressed: game.canPass ? controller.passed : null,
                     ),
                   ),

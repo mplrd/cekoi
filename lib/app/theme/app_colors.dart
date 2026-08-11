@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:cekoi/domain/rules/round.dart';
 import 'package:flutter/material.dart';
 
@@ -25,7 +27,7 @@ abstract final class AppColors {
   /// écrans ne se distinguent plus par leur fond — ils partagent le même.
   static const Color ground = Color(0xFFFDC8C2);
 
-  /// Le corail à 15 %, pour ce qui doit se détacher du fond sans devenir une
+  /// Le corail à 13 %, pour ce qui doit se détacher du fond sans devenir une
   /// surface à part entière : champs de saisie, tuiles non retenues.
   static const Color groundSoft = Color(0xFFFEEDEB);
 
@@ -96,8 +98,39 @@ abstract final class AppColors {
 
   /// L'encre à poser sur [round].
   ///
-  /// Se calcule et ne se devine pas : du blanc sur le corail tombe à 2,6:1,
-  /// sous le seuil lisible, alors qu'il passe largement sur les deux autres.
+  /// Se calcule et ne se devine pas. Mesuré, blanc sur chacune des trois :
+  /// corail **2,7:1**, teal **6,6:1**, rouge **4,0:1**. Le corail passe donc en
+  /// encre sombre, où il remonte à 7,0:1.
+  ///
+  /// Le rouge est le cas limite : 4,0 tient pour du grand texte (seuil 3:1)
+  /// mais pas pour du texte courant (4,5). Ce qui s'écrit dessus doit donc être
+  /// gros et gras — la pastille de manche et le chiffre du chrono le sont.
   static Color onRound(Round round) =>
       round == Round.freeDescription ? ink : Colors.white;
+
+  /// L'encre à poser sur une couleur d'équipe : celle des deux qui contraste
+  /// le mieux.
+  ///
+  /// Même discipline que [onRound], mais la palette est trop large pour se
+  /// trancher à la main — l'orange du logo rendait 2,7:1 en blanc, illisible.
+  /// Un seuil de luminance ne suffisait pas non plus : le rouge tombe des deux
+  /// côtés du seuil selon où on le place, et il ne passe qu'en encre sombre
+  /// (4,7:1 contre 4,0:1 en blanc).
+  ///
+  /// On compare donc les deux, ce qui a l'avantage de rester juste si une
+  /// couleur d'équipe bouge. `test/app/theme_test.dart` vérifie qu'aucune des
+  /// huit ne descend sous le seuil, même après ce choix.
+  static Color onTeam(int colorId) {
+    final fond = team(colorId);
+    return _contrast(fond, ink) >= _contrast(fond, Colors.white)
+        ? ink
+        : Colors.white;
+  }
+
+  /// Le rapport de contraste WCAG entre deux couleurs opaques.
+  static double _contrast(Color a, Color b) {
+    final la = a.computeLuminance();
+    final lb = b.computeLuminance();
+    return (math.max(la, lb) + 0.05) / (math.min(la, lb) + 0.05);
+  }
 }

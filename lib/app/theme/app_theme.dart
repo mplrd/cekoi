@@ -41,17 +41,6 @@ abstract final class AppTheme {
   static ThemeData dark() => _build();
 
   static ThemeData _build() {
-    // Les libellés de boutons partent de la typographie Material et non d'un
-    // `TextStyle` nu : celui-ci n'emporte ni famille ni police de repli, et le
-    // texte retombait sur la police par défaut de la plateforme — visible au
-    // banc de rendu, où les libellés de boutons étaient les seuls à ne pas se
-    // composer.
-    final typographie = Typography.material2021().black;
-    final libelle = typographie.labelLarge!.copyWith(
-      fontSize: 20,
-      fontWeight: FontWeight.w800,
-    );
-
     const scheme = ColorScheme(
       brightness: Brightness.light,
       // L'action principale est le teal des étincelles : la seule couleur du
@@ -81,10 +70,35 @@ abstract final class AppTheme {
       shadow: AppColors.ink,
     );
 
-    return ThemeData(
+    // Le thème se construit en deux temps, et ce n'est pas un détour.
+    //
+    // Les styles qu'on pose ici ont besoin d'une police, et un `TextStyle` nu
+    // n'en porte aucune : le libellé retombait sur la police par défaut de la
+    // plateforme, seul élément de l'écran à ne pas se composer comme le reste.
+    // On part donc du `textTheme` que `ThemeData` a composé, qui apporte la
+    // famille — et la bonne, celle de la plateforme : figer
+    // `Typography.material2021()` aurait imposé Roboto sur iOS, à côté de la
+    // police système du reste de l'interface.
+    //
+    // **La taille, elle, doit être écrite.** `ThemeData.textTheme` ne porte pas
+    // encore la géométrie : elle n'est fusionnée qu'au rendu, par le widget
+    // `Theme`, selon la catégorie d'écriture de la locale. Un `headlineSmall`
+    // pris ici a un `fontSize` nul — sans conséquence pour un style hérité,
+    // mais l'`AppBar` *remplace* le style ambiant au lieu de le fusionner, et
+    // son titre retombait alors sur les 14 px par défaut de `TextStyle`.
+    // Mesuré, pas supposé.
+    final base = ThemeData(
       colorScheme: scheme,
       useMaterial3: true,
       scaffoldBackgroundColor: AppColors.ground,
+    );
+    final texte = base.textTheme;
+    final libelle = texte.labelLarge!.copyWith(
+      fontSize: 20,
+      fontWeight: FontWeight.w800,
+    );
+
+    return base.copyWith(
       // La barre ne se distingue plus du contenu : elle porte le titre et le
       // retour, et disparaît dans le fond. Le bandeau plein qu'elle formait
       // avant coupait chaque écran en deux, avec ses angles arrondis qui
@@ -96,7 +110,8 @@ abstract final class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        titleTextStyle: typographie.headlineSmall?.copyWith(
+        titleTextStyle: texte.headlineSmall?.copyWith(
+          fontSize: 24,
           color: AppColors.ink,
           fontWeight: FontWeight.w800,
         ),
@@ -174,7 +189,11 @@ abstract final class AppTheme {
           horizontal: 20,
           vertical: 18,
         ),
-        hintStyle: TextStyle(color: AppColors.ink.withValues(alpha: 0.45)),
+        // 0,6 et non 0,45 : plus clair, l'indication tombait à 3:1 sur ce
+        // fond. Or c'est elle qui porte R8.3 — le nom d'équipe par défaut est
+        // un libellé, pas une valeur à effacer — et elle n'est écrite nulle
+        // part ailleurs.
+        hintStyle: TextStyle(color: AppColors.ink.withValues(alpha: 0.6)),
         border: const OutlineInputBorder(
           borderRadius: _rounded,
           borderSide: BorderSide.none,
@@ -197,7 +216,10 @@ abstract final class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         backgroundColor: AppColors.ink,
-        contentTextStyle: typographie.bodyLarge?.copyWith(color: Colors.white),
+        contentTextStyle: texte.bodyLarge?.copyWith(
+          fontSize: 16,
+          color: Colors.white,
+        ),
         behavior: SnackBarBehavior.floating,
         shape: const RoundedRectangleBorder(borderRadius: _rounded),
       ),
