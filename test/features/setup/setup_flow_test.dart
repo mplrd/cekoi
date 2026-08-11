@@ -11,6 +11,7 @@ import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/deck_origin.dart';
 import 'package:cekoi/domain/entities/difficulty.dart';
 import 'package:cekoi/domain/entities/min_age.dart';
+import 'package:cekoi/features/setup/presentation/setup_controller.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -281,6 +282,10 @@ void main() {
       // Le cas qui a fait remonter la règle : ce mode n'a aucun profil, donc
       // l'étape s'ouvrait sur une sélection vide et il fallait cocher les
       // catégories une par une avant de pouvoir continuer.
+      //
+      // Depuis R7.10 elle est carrément sautée — mais la sélection doit être
+      // faite quand même, sinon on arriverait aux réglages avec un paquet vide
+      // et un bouton de lancement grisé sans explication.
       await installDeck('animaux', easy: 10, medium: 10, hard: 10);
       await installDeck(
         'sans-filtres',
@@ -296,12 +301,59 @@ void main() {
       await tapText(tester, l10n.modeAdult);
       await tapText(tester, l10n.adultConfirmAccept);
 
-      // R7.1 : ce mode tire aussi dans le tout public, donc les deux
-      // catégories sont là, et les 45 cartes avec.
-      expect(find.text(l10n.setupSelectionSummary(45)), findsOneWidget);
-
-      await tapText(tester, l10n.actionContinue);
+      // R7.10 : on atterrit directement sur les réglages, l'étape des
+      // catégories n'étant pas sur le chemin.
       expect(find.text(l10n.setupSettingsTitle), findsOneWidget);
+
+      // R7.1 : ce mode tire aussi dans le tout public, donc les deux
+      // catégories sont retenues, et les 45 cartes avec.
+      final setup = ProviderScope.containerOf(
+        tester.element(find.byType(CekoiApp)),
+      ).read(setupControllerProvider);
+      expect(setup.deckIds, containsAll(['animaux', 'sans-filtres']));
+
+      // Et le parcours annonce quatre étapes, pas cinq.
+      expect(find.text(l10n.setupStep(2, 4)), findsOneWidget);
+    });
+
+    testWidgets('R7.10 — le retour depuis les réglages ramène aux catégories', (
+      tester,
+    ) async {
+      // La promesse de R7.10 : l'étape est sautée à l'aller, pas supprimée.
+      // Sans ce test, une navigation qui n'empile jamais l'écran passait —
+      // et la sélection faite à sa place n'était plus corrigeable nulle part,
+      // notamment pour une catégorie créée après un premier passage.
+      await installDeck('animaux');
+      await installDeck('sans-filtres', audience: Audience.adult);
+      await pumpApp(tester);
+
+      await tapText(tester, l10n.homePlay);
+      await tapText(tester, l10n.modeAdult);
+      await tapText(tester, l10n.adultConfirmAccept);
+      expect(find.text(l10n.setupSettingsTitle), findsOneWidget);
+
+      // `pageBack` cherche une infobulle « Back » : l'application est en
+      // français, son bouton dit « Retour ».
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+
+      expect(find.text(l10n.setupDecksTitle), findsOneWidget);
+      // Et l'écran s'y compte dans le parcours complet, plutôt que d'annoncer
+      // une étape zéro sur un parcours qui ne le contient pas.
+      expect(find.text(l10n.setupStep(2, 5)), findsOneWidget);
+    });
+
+    testWidgets('le mode Famille garde ses cinq étapes', (tester) async {
+      // Rien d'autre ne fixe la longueur du parcours familial : raccourcir
+      // `setupStepsFor` laisserait toute la suite verte.
+      await installDeck('animaux');
+      await pumpApp(tester);
+
+      await tapText(tester, l10n.homePlay);
+      await tapText(tester, l10n.modeFamily);
+
+      expect(find.text(l10n.setupDecksTitle), findsOneWidget);
+      expect(find.text(l10n.setupStep(2, 5)), findsOneWidget);
     });
 
     testWidgets('une categorie decochee ne revient pas seule', (tester) async {
@@ -426,6 +478,8 @@ void main() {
 
     await tapText(tester, l10n.modeAdult);
     await tapText(tester, l10n.adultConfirmAccept);
-    expect(find.text(l10n.setupDecksTitle), findsOneWidget);
+    // R7.10 : accepter mène aux réglages, l'étape des catégories étant sautée
+    // dans ce mode.
+    expect(find.text(l10n.setupSettingsTitle), findsOneWidget);
   });
 }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cekoi/app/router.dart';
 import 'package:cekoi/domain/engine/draw.dart';
 import 'package:cekoi/domain/entities/audience.dart';
@@ -8,6 +10,7 @@ import 'package:cekoi/domain/rules/game_profiles.dart';
 import 'package:cekoi/domain/setup/game_setup.dart';
 import 'package:cekoi/features/setup/presentation/deck_catalog.dart';
 import 'package:cekoi/features/setup/presentation/setup_controller.dart';
+import 'package:cekoi/features/setup/presentation/setup_steps.dart';
 import 'package:cekoi/features/setup/presentation/widgets/deck_icon.dart';
 import 'package:cekoi/features/setup/presentation/widgets/setup_scaffold.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
@@ -69,17 +72,34 @@ class _DecksScreenState extends ConsumerState<DecksScreen> {
     // une construction est interdit : d'où le report d'une frame.
     if (loaded != null && _preselectionne != setup.mode) {
       _preselectionne = setup.mode;
-      if (setup.deckIds.isEmpty && loaded.decks.isNotEmpty) {
-        final ids = [for (final deck in loaded.decks) deck.id];
+      final ids = [for (final deck in loaded.decks) deck.id];
+      final presele = setup.deckIds.isEmpty && ids.isNotEmpty;
+      // Quand le mode saute cette étape (R7.10), l'écran s'efface **une fois
+      // son travail fait** : le catalogue chargé et tout coché. Il reste dans
+      // la pile, donc joignable par le retour depuis les réglages — c'est
+      // précisément ce que R7.10 promet, et ce qu'une navigation qui l'aurait
+      // court-circuité n'aurait pas pu tenir.
+      //
+      // La décision est ici et non sur l'écran du mode parce que lui seul sait
+      // quand le catalogue a répondu, et lui seul peut montrer une erreur si
+      // la base répond mal.
+      final efface = !setupStepsFor(setup.mode).contains(SetupStep.decks);
+
+      if (presele || efface) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
-          ref.read(setupControllerProvider.notifier).selectAllDecks(ids);
+          if (presele) {
+            ref.read(setupControllerProvider.notifier).selectAllDecks(ids);
+          }
+          // Seulement à l'arrivée : revenir sur l'écran ne doit pas le faire
+          // repartir en avant, sinon le retour serait impossible à tenir.
+          if (efface) unawaited(context.push(AppRoutes.setupSettings));
         });
       }
     }
 
     return SetupScaffold(
-      step: 2,
+      step: SetupStep.decks,
       title: l10n.setupDecksTitle,
       // Pas de compteur ni de bouton tant que le contenu n'est pas là : ils
       // annonceraient zéro carte, ce qui ressemble à une erreur.

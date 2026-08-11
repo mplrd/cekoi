@@ -129,13 +129,16 @@ abstract final class AppTheme {
           shape: const RoundedRectangleBorder(borderRadius: _rounded),
         ),
       ),
-      // L'action secondaire est pleine elle aussi, dans le vert du personnage.
-      // Un contour vide sur fond pastel ne se voit pas.
+      // L'action secondaire est blanche, cernée du corail de la marque.
+      //
+      // Elle a été essayée dans le vert du personnage : deux pastels voisins,
+      // elle ne se détachait pas du fond. Le blanc tranche, et le liseré dit
+      // que c'est une action — un aplat blanc seul ne le dirait pas.
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          backgroundColor: AppColors.secondary,
+          backgroundColor: AppColors.card,
           foregroundColor: AppColors.ink,
-          side: BorderSide.none,
+          side: const BorderSide(color: AppColors.main, width: 3),
           minimumSize: const Size.fromHeight(minTouchTarget),
           textStyle: libelle,
           shape: const RoundedRectangleBorder(borderRadius: _rounded),

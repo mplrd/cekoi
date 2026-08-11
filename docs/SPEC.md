@@ -18,7 +18,8 @@ table**, un téléphone qu'on se passe, avec du bruit et de l'agitation. Concrè
 
 ## Parcours de configuration
 
-Cinq étapes, avec une barre de progression et un retour possible à chaque niveau. L'objectif
+Cinq étapes en mode Famille, **quatre en Sans filtres** — qui saute le choix des catégories
+(R7.10) —, avec une barre de progression et un retour possible à chaque niveau. L'objectif
 est de pouvoir enchaîner en moins d'une minute quand on relance une partie identique.
 
 ### 1. Choix du mode
@@ -53,10 +54,14 @@ marquage discret, en fin de liste.
 
 ### 3. Réglages de partie
 
-Durée du tour et nombre de cartes — voir le tableau de R6. Chaque réglage propose des valeurs
-prédéfinies en gros boutons plus une saisie libre repliée. Les défauts dépendent du mode choisi
-à l'étape 1, ce qui doit permettre de traverser cet écran sans y toucher dans la majorité des
-cas.
+Durée du tour et nombre de cartes — voir le tableau de R6. Chaque réglage est **un curseur**,
+avec sa valeur courante affichée à côté de son libellé. Le nombre de cartes garde un
+interrupteur *Auto*, qui applique R6.1 et masque le curseur tant qu'il est actif.
+
+Les défauts dépendent du mode choisi à l'étape 1, ce qui doit permettre de traverser cet écran
+sans y toucher dans la majorité des cas. Chaque réglage a porté un temps une rangée de valeurs
+prédéfinies **en plus** du curseur : deux commandes pour un même nombre, dont l'une débordait
+sur deux lignes.
 
 Le nombre de manches n'y figure pas : une partie, c'est les trois (R2.2).
 
@@ -144,12 +149,15 @@ suppression avec confirmation.
 Dans une catégorie : liste des cartes, ajout rapide (un champ, une validation, on enchaîne),
 édition, suppression.
 
-**La difficulté appartient à la carte, jamais à la catégorie.** Elle ne se choisit donc pas au
-moment de la saisie : une carte entre avec un niveau moyen, et se règle d'un tap sur elle dans
-la liste. Retour d'usage — un sélecteur en tête d'écran se lisait comme le niveau de la
-catégorie entière, alors qu'une catégorie « Vacances » contient des faciles comme des
-difficiles. Sortir le niveau du formulaire allège aussi la saisie en rafale, qui ne demande
-plus que du texte.
+**La difficulté appartient à la carte, jamais à la catégorie.** Elle se choisit **dans le
+formulaire d'ajout**, entre le champ de texte et le bouton, où elle se lit comme le niveau de
+la carte qu'on est en train d'écrire. Un sélecteur *en tête d'écran* aurait au contraire classé
+la catégorie entière, alors que « Vacances » contient des faciles comme des difficiles : c'est
+la position qui décide de ce qu'on lit, pas la présence du contrôle.
+
+Le niveau garde son dernier choix d'une carte à l'autre — on saisit par séries — et la saisie
+en rafale ne demande toujours que du texte : moyen par défaut, on ne touche au sélecteur que
+si on veut. La liste permet toujours de corriger après coup d'un tap sur la carte.
 
 Le formulaire d'ajout se lit de haut en bas et **finit par son action** : le texte, puis le
 bouton *Ajouter*, et plus rien après lui.

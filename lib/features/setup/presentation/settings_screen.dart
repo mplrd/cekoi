@@ -1,8 +1,9 @@
 import 'package:cekoi/app/router.dart';
 import 'package:cekoi/app/theme/app_colors.dart';
+import 'package:cekoi/app/theme/app_theme.dart';
 import 'package:cekoi/domain/entities/game_config.dart';
 import 'package:cekoi/features/setup/presentation/setup_controller.dart';
-import 'package:cekoi/features/setup/presentation/widgets/choice_tile.dart';
+import 'package:cekoi/features/setup/presentation/setup_steps.dart';
 import 'package:cekoi/features/setup/presentation/widgets/setup_scaffold.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -15,6 +16,11 @@ import 'package:go_router/go_router.dart';
 /// cas, cet écran se traverse sans y toucher.
 ///
 /// Le nombre de manches n'y figure pas : une partie, c'est les trois (R2.2).
+///
+/// Des curseurs, et rien d'autre. Chaque réglage avait une rangée de valeurs
+/// prédéfinies **et** un curseur replié dessous : deux commandes pour un même
+/// nombre, dont l'une débordait sur deux lignes. Un curseur dit mieux qu'une
+/// valeur est continue, et tient sur une ligne quelle que soit la plage.
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
@@ -25,7 +31,7 @@ class SettingsScreen extends ConsumerWidget {
     final controller = ref.read(setupControllerProvider.notifier);
 
     return SetupScaffold(
-      step: 3,
+      step: SetupStep.settings,
       title: l10n.setupSettingsTitle,
       footer: FilledButton(
         onPressed: () => context.push(AppRoutes.setupTeams),
@@ -36,34 +42,25 @@ class SettingsScreen extends ConsumerWidget {
         children: [
           _Setting(
             label: l10n.settingTurnDuration,
-            chips: [
-              for (final preset in GameConfig.turnDurationPresets)
-                _Choice(
-                  label: l10n.valueSeconds(preset.inSeconds),
-                  isSelected: setup.turnDuration == preset,
-                  onSelected: () => controller.setTurnDuration(preset),
-                ),
-            ],
-            freeEntry: _DurationSlider(
-              value: setup.turnDuration,
-              onChanged: controller.setTurnDuration,
+            value: l10n.valueSeconds(setup.turnDuration.inSeconds),
+            child: _Slider(
+              value: setup.turnDuration.inSeconds.toDouble(),
+              min: GameConfig.minimumTurnDuration.inSeconds.toDouble(),
+              max: GameConfig.maximumTurnDuration.inSeconds.toDouble(),
+              pas: 5,
+              onChanged: (s) =>
+                  controller.setTurnDuration(Duration(seconds: s.round())),
             ),
           ),
+          const SizedBox(height: 8),
           _Setting(
             label: l10n.settingCardCount,
-            chips: [
-              _Choice(
-                label: l10n.valueAuto,
-                isSelected: setup.cardCount == null,
-                onSelected: () => controller.setCardCount(null),
-              ),
-              for (final preset in GameConfig.cardCountPresets)
-                _Choice(
-                  label: '$preset',
-                  isSelected: setup.cardCount == preset,
-                  onSelected: () => controller.setCardCount(preset),
-                ),
-            ],
+            // Pas de pastille en automatique : l'interrupteur juste dessous
+            // porte déjà le mot, et « Auto » écrit deux fois de suite sur la
+            // même ligne ressemble à un bug d'affichage.
+            value: setup.cardCount == null
+                ? null
+                : l10n.cardCount(setup.cardCount!),
             // Le nombre d'équipes se règle à l'étape suivante : annoncer un
             // total ici reviendrait à le calculer sur deux équipes, et à
             // mentir à qui en prendra trois. L'indice dit le taux de R6.1,
@@ -72,8 +69,8 @@ class SettingsScreen extends ConsumerWidget {
             hint: setup.cardCount == null
                 ? l10n.valueAutoExplained(GameConfig.cardsPerTeam)
                 : null,
-            freeEntry: _CardCountSlider(
-              value: setup.cardCount ?? setup.resolvedCardCount,
+            child: _CardCount(
+              value: setup.cardCount,
               onChanged: controller.setCardCount,
             ),
           ),
@@ -83,129 +80,171 @@ class SettingsScreen extends ConsumerWidget {
   }
 }
 
-class _Choice {
-  const _Choice({
-    required this.label,
-    required this.isSelected,
-    required this.onSelected,
-  });
-
-  final String label;
-  final bool isSelected;
-  final VoidCallback onSelected;
-}
-
 class _Setting extends StatelessWidget {
   const _Setting({
     required this.label,
-    required this.chips,
+    required this.value,
+    required this.child,
     this.hint,
-    this.freeEntry,
   });
 
   final String label;
-  final List<_Choice> chips;
-  final String? hint;
 
-  /// Saisie libre, repliée : elle ne doit pas encombrer le cas courant.
-  final Widget? freeEntry;
+  /// La valeur courante, à côté de son libellé : c'est elle qu'on lit en
+  /// poussant le curseur, pas la graduation. `null` quand un autre contrôle
+  /// l'annonce déjà.
+  final String? value;
+  final Widget child;
+  final String? hint;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.only(bottom: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: AppColors.ink,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
+          Row(
             children: [
-              for (final choice in chips)
-                ChoiceTile(
-                  label: choice.label,
-                  selected: choice.isSelected,
-                  onTap: choice.onSelected,
+              Expanded(
+                child: Text(
+                  label,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: AppColors.ink,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
+              ),
+              if (value != null) ...[
+                const SizedBox(width: 12),
+                DecoratedBox(
+                  decoration: const BoxDecoration(
+                    color: AppColors.card,
+                    borderRadius: BorderRadius.all(
+                      Radius.circular(AppTheme.radius),
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 6,
+                    ),
+                    child: Text(
+                      value!,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: AppColors.deep,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
-          if (hint != null) ...[
-            const SizedBox(height: 8),
-            Text(hint!, style: theme.textTheme.bodySmall),
-          ],
-          ?freeEntry,
+          const SizedBox(height: 4),
+          child,
+          if (hint != null)
+            Text(
+              hint!,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.inkSoft,
+              ),
+            ),
         ],
       ),
     );
   }
 }
 
-class _DurationSlider extends StatelessWidget {
-  const _DurationSlider({required this.value, required this.onChanged});
+/// Un curseur, aux dimensions du pouce.
+class _Slider extends StatelessWidget {
+  const _Slider({
+    required this.value,
+    required this.min,
+    required this.max,
+    required this.pas,
+    required this.onChanged,
+  });
 
-  final Duration value;
-  final ValueChanged<Duration> onChanged;
+  final double value;
+  final double min;
+  final double max;
+
+  /// L'écart entre deux crans, dans l'unité du réglage.
+  final int pas;
+  final ValueChanged<double> onChanged;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final min = GameConfig.minimumTurnDuration.inSeconds;
-    final max = GameConfig.maximumTurnDuration.inSeconds;
-
-    return ExpansionTile(
-      tilePadding: EdgeInsets.zero,
-      title: Text(l10n.valueSeconds(value.inSeconds)),
-      children: [
-        Slider(
-          value: value.inSeconds.toDouble().clamp(
-            min.toDouble(),
-            max.toDouble(),
-          ),
-          min: min.toDouble(),
-          max: max.toDouble(),
-          divisions: (max - min) ~/ 5,
-          label: l10n.valueSeconds(value.inSeconds),
-          onChanged: (seconds) => onChanged(Duration(seconds: seconds.round())),
-        ),
-      ],
+    return SliderTheme(
+      data: SliderTheme.of(context).copyWith(
+        trackHeight: 10,
+        inactiveTrackColor: AppColors.card,
+        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 14),
+        overlayShape: const RoundSliderOverlayShape(overlayRadius: 26),
+      ),
+      child: Slider(
+        value: value.clamp(min, max),
+        min: min,
+        max: max,
+        divisions: ((max - min) / pas).round(),
+        onChanged: onChanged,
+      ),
     );
   }
 }
 
-class _CardCountSlider extends StatelessWidget {
-  const _CardCountSlider({required this.value, required this.onChanged});
+/// Le nombre de cartes : un interrupteur *Auto*, et le curseur s'il est coupé.
+///
+/// R6.1 fixe le volume à douze cartes par équipe, ce qui reste le bon choix
+/// dans la quasi-totalité des parties — d'où l'automatique en tête, et un
+/// curseur qui n'apparaît que si on le refuse.
+class _CardCount extends StatelessWidget {
+  const _CardCount({required this.value, required this.onChanged});
 
-  final int value;
-  final ValueChanged<int> onChanged;
+  /// `null` vaut automatique.
+  final int? value;
+  final ValueChanged<int?> onChanged;
+
+  /// Au-delà, le paquet dépasse ce qu'une tablée finit en trois manches.
+  static const int _max = 80;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    const min = GameConfig.minimumCardCount;
-    const max = 80;
+    final theme = Theme.of(context);
+    final auto = value == null;
 
-    return ExpansionTile(
-      tilePadding: EdgeInsets.zero,
-      title: Text(l10n.cardCount(value)),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Slider(
-          value: value.toDouble().clamp(min.toDouble(), max.toDouble()),
-          min: min.toDouble(),
-          max: max.toDouble(),
-          divisions: (max - min) ~/ 4,
-          label: '$value',
-          onChanged: (count) => onChanged(count.round()),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                l10n.valueAuto,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: AppColors.ink,
+                ),
+              ),
+            ),
+            Switch(
+              value: auto,
+              onChanged: (actif) =>
+                  onChanged(actif ? null : GameConfig.manualCardCountStart),
+            ),
+          ],
         ),
+        if (!auto)
+          _Slider(
+            value: value!.toDouble(),
+            min: GameConfig.minimumCardCount.toDouble(),
+            max: _max.toDouble(),
+            pas: 4,
+            onChanged: (count) => onChanged(count.round()),
+          ),
       ],
     );
   }

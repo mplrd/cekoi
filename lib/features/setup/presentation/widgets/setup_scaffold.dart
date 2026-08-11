@@ -1,13 +1,20 @@
 import 'package:cekoi/app/theme/app_colors.dart';
+import 'package:cekoi/features/setup/presentation/setup_controller.dart';
+import 'package:cekoi/features/setup/presentation/setup_steps.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Ossature commune aux cinq étapes de la configuration.
+/// Ossature commune aux étapes de la configuration.
 ///
 /// La barre de progression et le retour sont ici plutôt que recopiés dans
 /// chaque écran : `SPEC.md` demande de pouvoir revenir à chaque niveau, et
 /// cinq implémentations finiraient par diverger.
-class SetupScaffold extends StatelessWidget {
+///
+/// Le rang et le total se calculent depuis le mode en cours : le parcours
+/// compte cinq étapes en Famille, quatre en Sans filtres (R7.10). Aucun écran
+/// ne connaît son numéro — il déclare quelle étape il est.
+class SetupScaffold extends ConsumerWidget {
   const SetupScaffold({
     required this.step,
     required this.title,
@@ -16,11 +23,7 @@ class SetupScaffold extends StatelessWidget {
     super.key,
   });
 
-  /// Nombre d'étapes du parcours, de `SPEC.md`.
-  static const int stepCount = 5;
-
-  /// Étape courante, de 1 à [stepCount].
-  final int step;
+  final SetupStep step;
   final String title;
   final Widget child;
 
@@ -29,9 +32,18 @@ class SetupScaffold extends StatelessWidget {
   final Widget? footer;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
+
+    final parcours = setupStepsFor(ref.watch(setupControllerProvider).mode);
+    // Un écran hors du parcours du mode — les catégories en Sans filtres, où
+    // l'on ne revient que par le retour (R7.10) — se compte dans le parcours
+    // **complet**. Sans ça, `indexOf` rendait -1 et l'en-tête affichait
+    // « Étape 0 sur 4 », avec les quatre points éteints.
+    final etapes = parcours.contains(step) ? parcours : SetupStep.values;
+    final rang = etapes.indexOf(step) + 1;
+    final stepCount = etapes.length;
 
     // Un seul fond, du haut de l'écran au bas : celui du thème.
     //
@@ -58,7 +70,7 @@ class SetupScaffold extends StatelessWidget {
                       // que de les compter en toutes lettres.
                       Flexible(
                         child: Text(
-                          l10n.setupStep(step, stepCount),
+                          l10n.setupStep(rang, stepCount),
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.labelLarge?.copyWith(
                             color: AppColors.inkSoft,
@@ -75,13 +87,13 @@ class SetupScaffold extends StatelessWidget {
                       // le teal des actions, les franchies des points d'encre.
                       for (var i = 1; i <= stepCount; i++)
                         Container(
-                          width: i == step ? 22 : 8,
+                          width: i == rang ? 22 : 8,
                           height: 8,
                           margin: const EdgeInsets.only(left: 5),
                           decoration: BoxDecoration(
                             color: switch (i) {
-                              _ when i == step => AppColors.deep,
-                              _ when i < step => AppColors.ink,
+                              _ when i == rang => AppColors.deep,
+                              _ when i < rang => AppColors.ink,
                               _ => AppColors.ink.withValues(alpha: 0.22),
                             },
                             borderRadius: const BorderRadius.all(

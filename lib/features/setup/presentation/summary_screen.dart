@@ -11,6 +11,7 @@ import 'package:cekoi/domain/setup/game_launch.dart';
 import 'package:cekoi/domain/setup/game_setup.dart';
 import 'package:cekoi/features/setup/presentation/deck_catalog.dart';
 import 'package:cekoi/features/setup/presentation/setup_controller.dart';
+import 'package:cekoi/features/setup/presentation/setup_steps.dart';
 import 'package:cekoi/features/setup/presentation/widgets/setup_scaffold.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -49,7 +50,7 @@ class SummaryScreen extends ConsumerWidget {
     ];
 
     return SetupScaffold(
-      step: 5,
+      step: SetupStep.summary,
       title: l10n.setupSummaryTitle,
       footer: _LaunchButton(catalog: catalog),
       // Le récapitulatif tient dans une carte, comme les catégories et le

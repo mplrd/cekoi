@@ -404,9 +404,10 @@ class _Actions extends ConsumerWidget {
                   Expanded(
                     child: ActionZone(
                       label: l10n.actionPass,
-                      // Pleine, dans le vert du personnage : elle vaut la
-                      // moitié du jeu en manches 2 et 3, un contour vide la
-                      // faisait passer pour indisponible.
+                      // Pleine elle aussi — blanche cernée de corail : elle
+                      // vaut la moitié du jeu en manches 2 et 3, et le contour
+                      // vide qu'elle a porté la faisait passer pour
+                      // indisponible.
                       secondaire: true,
                       onPressed: game.canPass ? controller.passed : null,
                     ),

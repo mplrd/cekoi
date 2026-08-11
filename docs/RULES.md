@@ -226,6 +226,15 @@ La présélection n'a lieu **qu'à la première arrivée** dans un mode donné :
 catégorie est une décision, et la voir revenir seule serait pire que le problème d'origine
 (R7.6).
 
+**R7.10** — **Le mode Sans filtres saute l'étape des catégories.** Il prend tout (R7.1) et
+n'a aucun profil : l'étape s'ouvrait sur une liste entièrement cochée, sans profil à choisir
+ni rien à décider — un écran à traverser pour rien. Le parcours y compte donc quatre étapes
+au lieu de cinq, et le numéro affiché suit.
+
+L'écran reste **joignable par le retour** depuis les réglages : qui veut retirer une
+catégorie le peut encore, il ne l'a simplement plus sur le chemin. En mode Famille, où les
+profils portent une vraie décision (R7.5), l'étape reste dans le parcours.
+
 ## 8. Équipes
 
 **R8.1** — Aucune limite haute sur le nombre d'équipes. L'interface doit rester utilisable

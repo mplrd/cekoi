@@ -51,15 +51,13 @@ abstract class GameConfig with _$GameConfig {
   static bool isTurnDurationAllowed(Duration duration) =>
       duration >= minimumTurnDuration && duration <= maximumTurnDuration;
 
-  /// Valeurs proposées en gros boutons, avant la saisie libre (R6).
-  static const List<Duration> turnDurationPresets = [
-    Duration(seconds: 30),
-    Duration(seconds: 45),
-    Duration(seconds: 60),
-    Duration(seconds: 90),
-  ];
-
-  static const List<int> cardCountPresets = [24, 32, 40, 48];
+  /// Le volume proposé quand on refuse l'automatique.
+  ///
+  /// Les réglages se font au curseur depuis les retours d'août 2026 : il n'y a
+  /// plus de rangée de valeurs prédéfinies, et la liste des durées a disparu
+  /// avec elle. Celle-ci survit pour un seul usage — le point de départ du
+  /// curseur quand on coupe *Auto*, qui ne doit pas être le minimum de R6.2.
+  static const int manualCardCountStart = 24;
 
   /// Défauts par mode (table de R6). Ils doivent permettre de traverser
   /// l'écran de réglages sans y toucher dans la majorité des cas.

@@ -1,6 +1,7 @@
 import 'package:cekoi/app/router.dart';
 import 'package:cekoi/domain/engine/team_builder.dart';
 import 'package:cekoi/features/setup/presentation/setup_controller.dart';
+import 'package:cekoi/features/setup/presentation/setup_steps.dart';
 import 'package:cekoi/features/setup/presentation/widgets/choice_tile.dart';
 import 'package:cekoi/features/setup/presentation/widgets/setup_scaffold.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
@@ -62,7 +63,7 @@ class _TeamsScreenState extends ConsumerState<TeamsScreen> {
     final controller = ref.read(setupControllerProvider.notifier);
 
     return SetupScaffold(
-      step: 4,
+      step: SetupStep.teams,
       title: l10n.setupTeamsTitle,
       footer: FilledButton(
         onPressed: () => context.push(AppRoutes.setupSummary),
@@ -110,10 +111,14 @@ class _TeamCountSelector extends StatelessWidget {
   final int value;
   final ValueChanged<int> onChanged;
 
-  /// R8.1 ne pose pas de limite haute, seulement une exigence d'ergonomie :
-  /// au-delà de six équipes on passe par la saisie, pas par une rangée de
-  /// pastilles qui déborde.
-  static const int _presetTop = 6;
+  /// R8.1 ne pose pas de limite haute, seulement une exigence d'ergonomie.
+  ///
+  /// Trois valeurs plus *Plus* : la rangée tient sur **une ligne** au format
+  /// d'un téléphone courant. Jusqu'à six, elle repliait « 6 » et « Plus » sur
+  /// une seconde ligne, ce qui donnait l'impression d'une liste alors que
+  /// c'est un choix. Au-delà de quatre équipes, la rangée s'étend d'elle-même
+  /// jusqu'à la valeur retenue — on ne perd donc pas l'accès au réglage.
+  static const int _presetTop = 4;
 
   @override
   Widget build(BuildContext context) {

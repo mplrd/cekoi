@@ -1,8 +1,8 @@
 import 'dart:async';
-
 import 'package:cekoi/app/router.dart';
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/features/setup/presentation/setup_controller.dart';
+import 'package:cekoi/features/setup/presentation/setup_steps.dart';
 import 'package:cekoi/features/setup/presentation/widgets/setup_scaffold.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -18,7 +18,7 @@ class ModeScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
 
     return SetupScaffold(
-      step: 1,
+      step: SetupStep.mode,
       title: l10n.setupModeTitle,
       child: ListView(
         padding: const EdgeInsets.all(24),
@@ -43,6 +43,14 @@ class ModeScreen extends ConsumerWidget {
 
   void _choose(BuildContext context, WidgetRef ref, Audience mode) {
     ref.read(setupControllerProvider.notifier).chooseMode(mode);
+
+    // Toujours vers les catégories, quel que soit le mode.
+    //
+    // C'est l'écran des catégories qui s'efface lui-même quand son mode le
+    // saute (R7.10), une fois son travail fait — il est le seul à savoir
+    // quand le catalogue a répondu, et le seul à pouvoir montrer une erreur si
+    // la base répond mal. Trancher ici obligerait à recopier sa sélection, et
+    // ferait disparaître l'écran du chemin de retour que R7.10 promet.
     unawaited(context.push(AppRoutes.setupDecks));
   }
 
