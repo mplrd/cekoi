@@ -112,6 +112,22 @@ abstract class GameSetup with _$GameSetup {
     );
   }
 
+  /// Sélectionne toutes les catégories du mode (R7.9).
+  ///
+  /// L'état de départ de l'étape des catégories : on joue avec tout, et un
+  /// profil sert ensuite à restreindre. Sans ça, le mode Sans filtres — qui
+  /// n'a aucun profil — s'ouvrait sur une sélection vide qu'il fallait cocher
+  /// à la main avant de pouvoir continuer.
+  ///
+  /// Comme une sélection manuelle, cela met la partie en « personnalisé » :
+  /// aucune restriction de difficulté ne s'applique tant qu'un profil n'a pas
+  /// été choisi.
+  GameSetup withAllDecks(List<String> ids) => copyWith(
+    deckIds: [...ids],
+    profileId: null,
+    difficulties: Difficulty.values.toSet(),
+  );
+
   /// Coche ou décoche une catégorie.
   ///
   /// Fait passer la sélection en « personnalisé » : les filtres du profil ne

@@ -213,6 +213,19 @@ tirage prend uniformément dans le vivier autorisé.
 **R7.8** — Si un profil ne réunit pas les 12 cartes minimum (R6.2), il est affiché mais
 désactivé, avec la raison indiquée. Il ne disparaît pas silencieusement de la liste.
 
+**R7.9** — **Par défaut, on joue avec tout.** En arrivant sur l'étape des catégories, toutes
+celles du mode sont sélectionnées. Un profil sert alors à *restreindre* — par âge ou par
+difficulté — et non à constituer une sélection depuis rien.
+
+Retour d'usage d'août 2026 : le mode Sans filtres n'a aucun profil, donc l'étape s'ouvrait sur
+une sélection vide et il fallait cocher les catégories une par une avant de pouvoir continuer.
+Personne ne veut composer un paquet avant de jouer ; ceux qui le veulent ont le bouton
+*Personnaliser*.
+
+La présélection n'a lieu **qu'à la première arrivée** dans un mode donné : décocher une
+catégorie est une décision, et la voir revenir seule serait pire que le problème d'origine
+(R7.6).
+
 ## 8. Équipes
 
 **R8.1** — Aucune limite haute sur le nombre d'équipes. L'interface doit rester utilisable

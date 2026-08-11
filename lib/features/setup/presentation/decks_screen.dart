@@ -1,5 +1,6 @@
 import 'package:cekoi/app/router.dart';
 import 'package:cekoi/domain/engine/draw.dart';
+import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/deck.dart';
 import 'package:cekoi/domain/entities/deck_origin.dart';
 import 'package:cekoi/domain/entities/game_config.dart';
@@ -7,6 +8,7 @@ import 'package:cekoi/domain/rules/game_profiles.dart';
 import 'package:cekoi/domain/setup/game_setup.dart';
 import 'package:cekoi/features/setup/presentation/deck_catalog.dart';
 import 'package:cekoi/features/setup/presentation/setup_controller.dart';
+import 'package:cekoi/features/setup/presentation/widgets/deck_icon.dart';
 import 'package:cekoi/features/setup/presentation/widgets/setup_scaffold.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -37,12 +39,24 @@ String? profileUnavailabilityLabel(
   null => null,
 };
 
-/// Étape 2 — profils d'abord, grille ensuite (R7.5 à R7.8).
-class DecksScreen extends ConsumerWidget {
+/// Étape 2 — profils d'abord, grille ensuite (R7.5 à R7.9).
+class DecksScreen extends ConsumerStatefulWidget {
   const DecksScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DecksScreen> createState() => _DecksScreenState();
+}
+
+class _DecksScreenState extends ConsumerState<DecksScreen> {
+  /// Le mode dont la présélection a déjà eu lieu (R7.9).
+  ///
+  /// Retenu pour ne présélectionner qu'à la **première** arrivée dans un mode :
+  /// décocher une catégorie est une décision, et la voir revenir seule au
+  /// retour sur l'écran serait pire que la sélection vide qu'on corrige ici.
+  Audience? _preselectionne;
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final setup = ref.watch(setupControllerProvider);
     final catalog = ref.watch(deckCatalogProvider(setup.mode));
@@ -50,6 +64,19 @@ class DecksScreen extends ConsumerWidget {
       AsyncData<DeckCatalog>(:final value) => value,
       _ => null,
     };
+
+    // Le catalogue arrive après le premier rendu, et modifier l'état pendant
+    // une construction est interdit : d'où le report d'une frame.
+    if (loaded != null && _preselectionne != setup.mode) {
+      _preselectionne = setup.mode;
+      if (setup.deckIds.isEmpty && loaded.decks.isNotEmpty) {
+        final ids = [for (final deck in loaded.decks) deck.id];
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          ref.read(setupControllerProvider.notifier).selectAllDecks(ids);
+        });
+      }
+    }
 
     return SetupScaffold(
       step: 2,
@@ -235,6 +262,8 @@ class _DeckTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
 
+    final theme = Theme.of(context);
+
     return CheckboxListTile(
       value: isSelected,
       onChanged: onChanged,
@@ -248,7 +277,18 @@ class _DeckTile extends StatelessWidget {
           if (deck.origin == DeckOrigin.custom) l10n.deckCustom,
         ].join(' · '),
       ),
-      secondary: deck.isPremium ? const Icon(Icons.lock_outline) : null,
+      // L'icône de la catégorie plutôt que la case seule : une liste de vingt
+      // et une lignes de texte se parcourt mal, et chaque catégorie porte déjà
+      // la sienne dans son JSON. Le cadenas d'une catégorie premium prend sa
+      // place — c'est l'information qui prime à ce moment-là.
+      secondary: deck.isPremium
+          ? const Icon(Icons.lock_outline)
+          : Icon(
+              deckIcon(deck.icon),
+              color: isSelected
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.onSurfaceVariant,
+            ),
     );
   }
 }
