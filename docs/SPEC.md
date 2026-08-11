@@ -18,7 +18,8 @@ table**, un téléphone qu'on se passe, avec du bruit et de l'agitation. Concrè
 
 ## Parcours de configuration
 
-Cinq étapes, avec une barre de progression et un retour possible à chaque niveau. L'objectif
+Cinq étapes en mode Famille, **quatre en Sans filtres** — qui saute le choix des catégories
+(R7.10) —, avec une barre de progression et un retour possible à chaque niveau. L'objectif
 est de pouvoir enchaîner en moins d'une minute quand on relance une partie identique.
 
 ### 1. Choix du mode

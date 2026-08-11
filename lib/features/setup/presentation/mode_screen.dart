@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:cekoi/app/router.dart';
 import 'package:cekoi/domain/entities/audience.dart';
+import 'package:cekoi/features/setup/presentation/deck_catalog.dart';
 import 'package:cekoi/features/setup/presentation/setup_controller.dart';
 import 'package:cekoi/features/setup/presentation/widgets/setup_scaffold.dart';
+import 'package:cekoi/features/setup/presentation/widgets/setup_steps.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,7 +20,7 @@ class ModeScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
 
     return SetupScaffold(
-      step: 1,
+      step: SetupStep.mode,
       title: l10n.setupModeTitle,
       child: ListView(
         padding: const EdgeInsets.all(24),
@@ -43,7 +45,37 @@ class ModeScreen extends ConsumerWidget {
 
   void _choose(BuildContext context, WidgetRef ref, Audience mode) {
     ref.read(setupControllerProvider.notifier).chooseMode(mode);
-    unawaited(context.push(AppRoutes.setupDecks));
+    unawaited(
+      mode == Audience.adult
+          ? _skipDecks(context, ref)
+          : context.push(AppRoutes.setupDecks),
+    );
+  }
+
+  /// Sans filtres saute le choix des catégories (R7.10).
+  ///
+  /// Le mode prend tout — familial et adulte, tous niveaux (R7.1) — et n'a
+  /// aucun profil : l'étape s'ouvrait sur une liste dont tout était déjà coché
+  /// et rien à décider. On sélectionne donc ici ce qu'elle sélectionnait, et
+  /// on va droit aux réglages.
+  ///
+  /// L'écran reste joignable par le retour depuis les réglages, pour qui veut
+  /// malgré tout retirer une catégorie.
+  Future<void> _skipDecks(BuildContext context, WidgetRef ref) async {
+    final catalog = await ref.read(
+      deckCatalogProvider(Audience.adult).future,
+    );
+    if (!context.mounted) return;
+
+    final setup = ref.read(setupControllerProvider);
+    if (setup.deckIds.isEmpty && catalog.decks.isNotEmpty) {
+      ref.read(setupControllerProvider.notifier).selectAllDecks([
+        for (final deck in catalog.decks) deck.id,
+      ]);
+    }
+
+    if (!context.mounted) return;
+    await context.push(AppRoutes.setupSettings);
   }
 
   /// Le mode adultes passe par une confirmation d'âge simple, non bloquante

@@ -10,6 +10,7 @@ import 'package:cekoi/features/setup/presentation/deck_catalog.dart';
 import 'package:cekoi/features/setup/presentation/setup_controller.dart';
 import 'package:cekoi/features/setup/presentation/widgets/deck_icon.dart';
 import 'package:cekoi/features/setup/presentation/widgets/setup_scaffold.dart';
+import 'package:cekoi/features/setup/presentation/widgets/setup_steps.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -79,7 +80,7 @@ class _DecksScreenState extends ConsumerState<DecksScreen> {
     }
 
     return SetupScaffold(
-      step: 2,
+      step: SetupStep.decks,
       title: l10n.setupDecksTitle,
       // Pas de compteur ni de bouton tant que le contenu n'est pas là : ils
       // annonceraient zéro carte, ce qui ressemble à une erreur.

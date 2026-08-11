@@ -258,7 +258,21 @@ void main() {
     await shoot(tester, '12-mes-categories');
   });
 
-  testWidgets('le mode adulte', (tester) async {
+  testWidgets('créer une carte custom', (tester) async {
+    // L'écran que le niveau par carte a fait bouger : le sélecteur doit se
+    // lire comme celui de la carte en cours de saisie, pas de la catégorie.
+    await installCatalogue();
+    await pumpApp(tester);
+
+    await tapText(tester, l10n.homeMyDecks);
+    await tapText(tester, l10n.actionCreateDeck);
+    await tester.enterText(find.byType(TextField).first, 'Souvenirs de fac');
+    await tapText(tester, l10n.actionSave);
+    await tapText(tester, 'Souvenirs de fac');
+    await shoot(tester, '13-carte-custom');
+  });
+
+  testWidgets('le mode sans filtres saute les catégories', (tester) async {
     await installCatalogue();
     await installDeck(
       'sexe-et-tabou',
@@ -269,7 +283,10 @@ void main() {
 
     await tapText(tester, l10n.homePlay);
     await tapText(tester, l10n.modeAdult);
-    await shoot(tester, '03b-categories-adulte');
+    await tapText(tester, l10n.adultConfirmAccept);
+    // R7.10 : l'étape des catégories est sautée, on tombe sur les réglages —
+    // et le parcours annonce quatre étapes.
+    await shoot(tester, '03b-sans-filtres-va-aux-reglages');
   });
 
   /// Une partie posée directement dans la phase voulue : traverser tout le
