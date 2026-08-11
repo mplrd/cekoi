@@ -5,6 +5,7 @@ import 'package:cekoi/data/providers.dart';
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/difficulty.dart';
 import 'package:cekoi/features/decks/presentation/deck_cards_screen.dart';
+import 'package:cekoi/features/decks/presentation/widgets/difficulty_labels.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -88,24 +89,46 @@ void main() {
       );
     });
 
-    testWidgets('aucun niveau ne se choisit avant la carte', (tester) async {
-      // Retour d'usage : un sélecteur en tête d'écran se lit comme le niveau
-      // de la catégorie, alors qu'une même catégorie contient des faciles et
-      // des difficiles. La difficulté n'appartient qu'à la carte, et se règle
-      // en touchant celle-ci une fois écrite.
+    testWidgets('le niveau se choisit avec le texte, pas après', (
+      tester,
+    ) async {
+      // Retour d'usage d'août 2026 : il fallait ajouter la carte puis la
+      // rouvrir pour la classer — deux gestes pour une décision. Le sélecteur
+      // est donc *dans* le formulaire, entre le texte et l'action, où il se
+      // lit comme celui de la carte en cours d'écriture. En tête d'écran il
+      // aurait classé la catégorie, ce qui n'a pas de sens : « Vacances »
+      // contient des faciles comme des difficiles.
       await pumpScreen(tester);
 
-      expect(find.byType(SegmentedButton<Difficulty>), findsNothing);
+      expect(find.byType(SegmentedButton<Difficulty>), findsOneWidget);
 
+      await tester.tap(find.text(Difficulty.hard.label(l10n)));
+      await tester.pumpAndSettle();
       await typeCard(tester, 'Le camping');
 
       final cards = await container
           .read(deckRepositoryProvider)
           .cardsOfDeck(deckId);
+      expect(cards.single.difficulty, Difficulty.hard);
+    });
+
+    testWidgets('le niveau retenu sert à la carte suivante', (tester) async {
+      // On saisit par séries : remettre « moyen » après chaque ajout
+      // obligerait à repositionner le sélecteur à chaque carte.
+      await pumpScreen(tester);
+
+      await tester.tap(find.text(Difficulty.easy.label(l10n)));
+      await tester.pumpAndSettle();
+      await typeCard(tester, 'Le chat');
+      await typeCard(tester, 'Le chien');
+
+      final cards = await container
+          .read(deckRepositoryProvider)
+          .cardsOfDeck(deckId);
       expect(
-        cards.single.difficulty,
-        Difficulty.medium,
-        reason: 'une carte entre en moyen, et se corrige ensuite',
+        cards.map((c) => c.difficulty),
+        everyElement(Difficulty.easy),
+        reason: 'le champ de texte se vide, le niveau non',
       );
     });
 
@@ -148,8 +171,8 @@ void main() {
     testWidgets('deux cartes de suite gardent chacune le niveau par défaut', (
       tester,
     ) async {
-      // Saisir en rafale ne doit rien demander d'autre que le texte : c'est
-      // tout l'intérêt d'avoir sorti le niveau du formulaire.
+      // Saisir en rafale ne doit rien demander d'autre que le texte : le
+      // sélecteur est là si on le veut, il n'oblige à rien si on l'ignore.
       await pumpScreen(tester);
 
       await typeCard(tester, 'Le vertige');
@@ -225,16 +248,24 @@ void main() {
       );
     });
 
-    testWidgets('le niveau se règle en touchant la carte', (tester) async {
-      // C'est le seul endroit où la difficulté se choisit désormais. Sans ce
-      // test, la retirer du formulaire d'ajout aurait pu la rendre
-      // inatteignable sans que rien ne rougisse.
+    testWidgets('le niveau se règle aussi en touchant la carte', (
+      tester,
+    ) async {
+      // Le formulaire pose le niveau à la saisie ; rouvrir la carte reste le
+      // moyen de le corriger après coup. Les deux chemins existent, et les
+      // libellés étant les mêmes, le tap est porté sur celui de la boîte de
+      // dialogue — sinon il atteindrait le sélecteur du formulaire.
       await pumpScreen(tester);
       await typeCard(tester, 'Le vertige');
 
       await tester.tap(find.text('Le vertige'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text(l10n.difficultyHard));
+      await tester.tap(
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.text(l10n.difficultyHard),
+        ),
+      );
       await tester.tap(find.text(l10n.actionSave));
       await tester.pumpAndSettle();
 
@@ -242,7 +273,14 @@ void main() {
           .read(deckRepositoryProvider)
           .cardsOfDeck(deckId);
       expect(cards.single.difficulty, Difficulty.hard);
-      expect(find.text(l10n.difficultyHard), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(ListTile),
+          matching: find.text(l10n.difficultyHard),
+        ),
+        findsOneWidget,
+        reason: 'la ligne de la carte annonce son nouveau niveau',
+      );
     });
 
     testWidgets('supprimer demande confirmation', (tester) async {

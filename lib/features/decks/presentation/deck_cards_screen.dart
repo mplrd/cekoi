@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:cekoi/app/theme/app_colors.dart';
+import 'package:cekoi/app/theme/app_theme.dart';
 import 'package:cekoi/domain/entities/card.dart' as domain;
 import 'package:cekoi/domain/entities/deck.dart';
 import 'package:cekoi/domain/entities/difficulty.dart';
@@ -62,6 +64,14 @@ class _QuickAddState extends ConsumerState<_QuickAdd> {
   final _focus = FocusNode();
   bool _doublon = false;
 
+  /// Le niveau reste sur son dernier choix d'une carte à l'autre.
+  ///
+  /// On saisit par séries — dix faciles, puis quelques difficiles — et
+  /// remettre « moyen » après chaque ajout obligerait à le repositionner à
+  /// chaque fois. Le champ de texte se vide, le niveau non : c'est le texte
+  /// qui change à chaque carte, pas le classement.
+  Difficulty _difficulty = Difficulty.medium;
+
   @override
   void dispose() {
     _text.dispose();
@@ -73,13 +83,9 @@ class _QuickAddState extends ConsumerState<_QuickAdd> {
     final propre = _text.text.trim();
     if (propre.isEmpty) return;
 
-    // Pas de niveau à la saisie : une carte entre en moyen et se règle ensuite
-    // d'un tap sur elle. Un sélecteur en tête d'écran se lisait comme le niveau
-    // de la catégorie, alors que « Vacances » contient des faciles comme des
-    // difficiles — la difficulté n'appartient qu'à la carte.
     final ajoutee = await ref
         .read(deckCardsProvider(widget.deckId).notifier)
-        .add(propre);
+        .add(propre, difficulty: _difficulty);
 
     if (!mounted) return;
     setState(() => _doublon = !ajoutee);
@@ -115,9 +121,16 @@ class _QuickAddState extends ConsumerState<_QuickAdd> {
             onSubmitted: (_) => unawaited(_add()),
             decoration: InputDecoration(
               labelText: l10n.cardTextHint,
-              border: const OutlineInputBorder(),
               errorText: _doublon ? l10n.cardAlreadyThere : null,
             ),
+          ),
+          const SizedBox(height: 12),
+          // Le niveau est **dans le formulaire**, entre le texte et l'action :
+          // il se lit comme celui de la carte qu'on est en train d'écrire. En
+          // tête d'écran, il aurait eu l'air de classer la catégorie entière.
+          _DifficultyPicker(
+            value: _difficulty,
+            onChanged: (d) => setState(() => _difficulty = d),
           ),
           const SizedBox(height: 12),
           FilledButton.icon(
@@ -143,6 +156,17 @@ class _DifficultyPicker extends StatelessWidget {
 
     return SegmentedButton<Difficulty>(
       showSelectedIcon: false,
+      // Même hauteur que les autres commandes de l'écran : le sélecteur
+      // arrivait douze pixels plus bas que le champ et le bouton, ce qui
+      // suffisait à le faire lire comme un accessoire.
+      style: SegmentedButton.styleFrom(
+        minimumSize: const Size.fromHeight(AppTheme.minTile),
+        backgroundColor: AppColors.groundSoft,
+        selectedBackgroundColor: AppColors.secondary,
+        foregroundColor: AppColors.ink,
+        selectedForegroundColor: AppColors.ink,
+        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+      ),
       segments: [
         for (final d in Difficulty.values)
           ButtonSegment(value: d, label: Text(d.label(l10n))),

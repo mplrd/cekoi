@@ -77,14 +77,24 @@ class DeckCards extends _$DeckCards {
   /// même carte est une maladresse quotidienne, et faire remonter une
   /// exception jusqu'à l'écran pour ça serait disproportionné.
   ///
-  /// Aucun niveau ne se choisit ici : une carte entre au niveau par défaut du
-  /// dépôt et se règle ensuite avec [edit]. Garder un paramètre ouvrirait un
-  /// chemin par lequel un appelant contournerait la règle sans le vouloir.
-  Future<bool> add(String text) async {
+  /// Le niveau se choisit **à la saisie**, avec le texte de la carte.
+  ///
+  /// Il fallait auparavant ajouter la carte, puis la rouvrir pour la classer :
+  /// deux gestes pour une seule décision, et un niveau moyen par défaut sur
+  /// tout ce qu'on n'avait pas repris. Il reste attaché à la carte et non à la
+  /// catégorie — « Vacances » contient des faciles comme des difficiles.
+  Future<bool> add(
+    String text, {
+    Difficulty difficulty = Difficulty.medium,
+  }) async {
     final repository = ref.read(deckRepositoryProvider);
     if (await repository.customDeckContains(deckId, text)) return false;
 
-    await repository.addCustomCard(deckId: deckId, text: text);
+    await repository.addCustomCard(
+      deckId: deckId,
+      text: text,
+      difficulty: difficulty,
+    );
     ref.invalidateSelf();
     return true;
   }
