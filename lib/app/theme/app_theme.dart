@@ -1,11 +1,16 @@
 import 'package:cekoi/app/theme/app_colors.dart';
 import 'package:flutter/material.dart';
 
-/// Thèmes clair et sombre.
+/// Thème de l'application.
 ///
 /// Le contexte d'usage guide tout : téléphone tenu à bout de bras, souvent
 /// debout, lu par des joueurs à un mètre. D'où des cibles tactiles larges et
 /// une typographie généreuse plutôt que les valeurs Material par défaut.
+///
+/// La palette est **posée**, pas dérivée. `ColorScheme.fromSeed` construisait
+/// à partir du corail un brique désaturé qui n'existe nulle part dans le logo,
+/// et le posait sur tous les boutons pleins de l'application. Les couleurs
+/// viennent donc de [AppColors], qui les tient du dessin.
 abstract final class AppTheme {
   /// Hauteur minimale d'une zone tactile principale.
   ///
@@ -13,62 +18,226 @@ abstract final class AppTheme {
   /// personne debout qui ne regarde pas l'écran en permanence.
   static const double minTouchTarget = 64;
 
-  static ThemeData light() => _build(Brightness.light);
+  /// Hauteur minimale d'un contrôle secondaire — une tuile de choix, un
+  /// nombre d'équipes. Assez haut pour ne pas être un bouton écrasé sur une
+  /// ligne, assez bas pour qu'il en tienne plusieurs de front.
+  static const double minTile = 60;
 
-  static ThemeData dark() => _build(Brightness.dark);
+  /// Rayon commun. Un seul, pour que rien n'ait l'air emprunté ailleurs.
+  static const double radius = 18;
 
-  static ThemeData _build(Brightness brightness) {
-    // `fidelity` plutôt que le schéma par défaut : celui-ci désature fortement
-    // la graine pour construire sa palette, et le corail du logo en ressortait
-    // brun. Une identité qu'on ne reconnaît plus entre l'icône et le premier
-    // écran ne sert à rien. Cette variante garde la teinte source et se
-    // contente d'ajuster ce qu'il faut pour les contrastes.
-    final scheme = ColorScheme.fromSeed(
-      seedColor: AppColors.seed,
-      brightness: brightness,
-      dynamicSchemeVariant: DynamicSchemeVariant.fidelity,
+  static const BorderRadius _rounded = BorderRadius.all(
+    Radius.circular(radius),
+  );
+
+  static ThemeData light() => _build();
+
+  /// L'application garde le même visage en thème sombre.
+  ///
+  /// Le corail pastel *est* l'identité, au même titre que le logo : la
+  /// retourner en gris foncé donnerait une seconde application, à concevoir et
+  /// à vérifier, pour un jeu qu'on sort le soir entre amis avec la lumière
+  /// allumée. C'est un choix, pas un oubli.
+  static ThemeData dark() => _build();
+
+  static ThemeData _build() {
+    // Les libellés de boutons partent de la typographie Material et non d'un
+    // `TextStyle` nu : celui-ci n'emporte ni famille ni police de repli, et le
+    // texte retombait sur la police par défaut de la plateforme — visible au
+    // banc de rendu, où les libellés de boutons étaient les seuls à ne pas se
+    // composer.
+    final typographie = Typography.material2021().black;
+    final libelle = typographie.labelLarge!.copyWith(
+      fontSize: 20,
+      fontWeight: FontWeight.w800,
+    );
+
+    const scheme = ColorScheme(
+      brightness: Brightness.light,
+      // L'action principale est le teal des étincelles : la seule couleur du
+      // logo qui porte du texte blanc sans effort.
+      primary: AppColors.deep,
+      onPrimary: Colors.white,
+      primaryContainer: AppColors.secondary,
+      onPrimaryContainer: AppColors.ink,
+      // Le secondaire est le personnage du logo. Trop clair pour du blanc :
+      // il se remplit d'encre.
+      secondary: AppColors.secondary,
+      onSecondary: AppColors.ink,
+      secondaryContainer: AppColors.secondary,
+      onSecondaryContainer: AppColors.ink,
+      tertiary: AppColors.main,
+      onTertiary: AppColors.ink,
+      error: AppColors.urgent,
+      onError: Colors.white,
+      // La surface est le fond corail pastélisé, et non un blanc neutre : les
+      // écrans Material qui n'ont pas de fond explicite le prennent d'ici.
+      surface: AppColors.ground,
+      onSurface: AppColors.ink,
+      surfaceContainerHighest: AppColors.groundSoft,
+      onSurfaceVariant: AppColors.ink,
+      outline: AppColors.main,
+      outlineVariant: AppColors.groundSoft,
+      shadow: AppColors.ink,
     );
 
     return ThemeData(
       colorScheme: scheme,
       useMaterial3: true,
-      // Les écrans qui gardent une barre Material — les catégories du joueur —
-      // la portent dans le corail du jeu plutôt que dans le gris de la
-      // plateforme. Le titre et les icônes passent en encre : sur cette
-      // teinte, le blanc de Material tombe sous le seuil lisible.
-      appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.seed,
+      scaffoldBackgroundColor: AppColors.ground,
+      // La barre ne se distingue plus du contenu : elle porte le titre et le
+      // retour, et disparaît dans le fond. Le bandeau plein qu'elle formait
+      // avant coupait chaque écran en deux, avec ses angles arrondis qui
+      // laissaient des encoches dans les coins.
+      appBarTheme: AppBarTheme(
+        backgroundColor: AppColors.ground,
         foregroundColor: AppColors.ink,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: false,
-        titleTextStyle: TextStyle(
+        titleTextStyle: typographie.headlineSmall?.copyWith(
           color: AppColors.ink,
-          fontSize: 22,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w800,
         ),
       ),
+      // Toutes les actions sont pleines et colorées. Aucune n'est blanche :
+      // sur un fond pastel, un bouton blanc ressemble à un trou dans la page.
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
+          backgroundColor: AppColors.deep,
+          foregroundColor: Colors.white,
+          disabledBackgroundColor: AppColors.deep.withValues(alpha: 0.25),
+          disabledForegroundColor: Colors.white.withValues(alpha: 0.7),
           minimumSize: const Size.fromHeight(minTouchTarget),
-          textStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(16)),
-          ),
+          textStyle: libelle,
+          shape: const RoundedRectangleBorder(borderRadius: _rounded),
         ),
       ),
+      // L'action secondaire est pleine elle aussi, dans le vert du personnage.
+      // Un contour vide sur fond pastel ne se voit pas.
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
+          backgroundColor: AppColors.secondary,
+          foregroundColor: AppColors.ink,
+          side: BorderSide.none,
           minimumSize: const Size.fromHeight(minTouchTarget),
-          textStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(16)),
-          ),
+          textStyle: libelle,
+          shape: const RoundedRectangleBorder(borderRadius: _rounded),
+        ),
+      ),
+      // Même les actions discrètes — celles des boîtes de dialogue — gardent
+      // une vraie hauteur de doigt.
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: AppColors.ink,
+          minimumSize: const Size(88, 52),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          textStyle: libelle.copyWith(fontSize: 17),
+          shape: const RoundedRectangleBorder(borderRadius: _rounded),
+        ),
+      ),
+      // Le bouton flottant est une action principale comme une autre : même
+      // teal, même encre blanche. Sans le poser, Material lui donnait le
+      // conteneur secondaire et une ombre portée qui cernait la forme d'un
+      // trait noir épais sur ce fond pastel.
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: AppColors.deep,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        focusElevation: 0,
+        hoverElevation: 0,
+        highlightElevation: 0,
+        extendedTextStyle: libelle.copyWith(fontSize: 17),
+        extendedPadding: const EdgeInsets.symmetric(horizontal: 22),
+        shape: const RoundedRectangleBorder(borderRadius: _rounded),
+      ),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          foregroundColor: AppColors.ink,
+          minimumSize: const Size.square(52),
         ),
       ),
       cardTheme: const CardThemeData(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(20)),
+        color: AppColors.card,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(borderRadius: _rounded),
+      ),
+      // Les champs sont remplis plutôt que cernés : un contour fin sur fond
+      // pastel donne un formulaire fantôme.
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: AppColors.groundSoft,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 18,
         ),
+        hintStyle: TextStyle(color: AppColors.ink.withValues(alpha: 0.45)),
+        border: const OutlineInputBorder(
+          borderRadius: _rounded,
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: const OutlineInputBorder(
+          borderRadius: _rounded,
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: const OutlineInputBorder(
+          borderRadius: _rounded,
+          borderSide: BorderSide(color: AppColors.deep, width: 2),
+        ),
+      ),
+      dialogTheme: const DialogThemeData(
+        backgroundColor: AppColors.groundSoft,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(24)),
+        ),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: AppColors.ink,
+        contentTextStyle: typographie.bodyLarge?.copyWith(color: Colors.white),
+        behavior: SnackBarBehavior.floating,
+        shape: const RoundedRectangleBorder(borderRadius: _rounded),
+      ),
+      dividerTheme: DividerThemeData(
+        color: AppColors.ink.withValues(alpha: 0.12),
+        space: 1,
+        thickness: 1,
+      ),
+      checkboxTheme: CheckboxThemeData(
+        fillColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? AppColors.deep
+              : Colors.transparent,
+        ),
+        checkColor: const WidgetStatePropertyAll(Colors.white),
+        side: const BorderSide(color: AppColors.ink, width: 2),
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? Colors.white
+              : AppColors.groundSoft,
+        ),
+        trackColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? AppColors.deep
+              : AppColors.ink.withValues(alpha: 0.2),
+        ),
+        trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
+      ),
+      sliderTheme: const SliderThemeData(
+        activeTrackColor: AppColors.deep,
+        thumbColor: AppColors.deep,
+      ),
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: AppColors.deep,
+      ),
+      listTileTheme: const ListTileThemeData(
+        iconColor: AppColors.ink,
+        textColor: AppColors.ink,
       ),
     );
   }
