@@ -1,0 +1,252 @@
+{
+  "id": "divertissement",
+  "name": "Divertissement",
+  "audience": "family",
+  "minAge": 10,
+  "contentVersion": 1,
+  "isPremium": false,
+  "sortOrder": 140,
+  "icon": "movie",
+  "cards": [
+    {
+      "text": "Harry Potter",
+      "difficulty": 1
+    },
+    {
+      "text": "Minion",
+      "difficulty": 1
+    },
+    {
+      "text": "Shrek",
+      "difficulty": 1
+    },
+    {
+      "text": "Bob l'Éponge",
+      "difficulty": 1
+    },
+    {
+      "text": "Obélix",
+      "difficulty": 1
+    },
+    {
+      "text": "Pikachu",
+      "difficulty": 1
+    },
+    {
+      "text": "Barbie",
+      "difficulty": 1
+    },
+    {
+      "text": "Mario",
+      "difficulty": 1
+    },
+    {
+      "text": "Pat' Patrouille",
+      "difficulty": 1
+    },
+    {
+      "text": "Dark Vador",
+      "difficulty": 1
+    },
+    {
+      "text": "Yoda",
+      "difficulty": 1
+    },
+    {
+      "text": "E.T. l'extraterrestre",
+      "difficulty": 1
+    },
+    {
+      "text": "Jurassic Park",
+      "difficulty": 1
+    },
+    {
+      "text": "Marsupilami",
+      "difficulty": 1
+    },
+    {
+      "text": "Tintin",
+      "difficulty": 1
+    },
+    {
+      "text": "Godzilla",
+      "difficulty": 1
+    },
+    {
+      "text": "Indiana Jones",
+      "difficulty": 1
+    },
+    {
+      "text": "Jumanji",
+      "difficulty": 1
+    },
+    {
+      "text": "Garfield",
+      "difficulty": 1
+    },
+    {
+      "text": "Un p'tit truc en plus",
+      "difficulty": 1
+    },
+    {
+      "text": "Rumi (K pop demon hunters)",
+      "difficulty": 1
+    },
+    {
+      "text": "Maman j'ai raté l'avion",
+      "difficulty": 1
+    },
+    {
+      "text": "The Mask",
+      "difficulty": 1
+    },
+    {
+      "text": "Friends",
+      "difficulty": 1
+    },
+    {
+      "text": "Les Schtroumpfs",
+      "difficulty": 1
+    },
+    {
+      "text": "Lady bug",
+      "difficulty": 1
+    },
+    {
+      "text": "Les Simpson",
+      "difficulty": 1
+    },
+    {
+      "text": "Mr. Bean",
+      "difficulty": 1
+    },
+    {
+      "text": "Fort Boyard",
+      "difficulty": 1
+    },
+    {
+      "text": "Koh-Lanta",
+      "difficulty": 1
+    },
+    {
+      "text": "Gandalf",
+      "difficulty": 2
+    },
+    {
+      "text": "Gollum",
+      "difficulty": 2
+    },
+    {
+      "text": "Chewbacca",
+      "difficulty": 2
+    },
+    {
+      "text": "Jack Skellington",
+      "difficulty": 2
+    },
+    {
+      "text": "Terminator",
+      "difficulty": 2
+    },
+    {
+      "text": "Matrix",
+      "difficulty": 2
+    },
+    {
+      "text": "Men in Black",
+      "difficulty": 2
+    },
+    {
+      "text": "Jean-Claude Dusse (Les Bronzés)",
+      "difficulty": 2
+    },
+    {
+      "text": "Les profs (film)",
+      "difficulty": 2
+    },
+    {
+      "text": "Fast and Furious",
+      "difficulty": 2
+    },
+    {
+      "text": "Jacquouille (Les Visiteurs)",
+      "difficulty": 2
+    },
+    {
+      "text": "Inspecteur Gadget",
+      "difficulty": 2
+    },
+    {
+      "text": "Burger Quiz",
+      "difficulty": 2
+    },
+    {
+      "text": "Dora l'Exploratrice",
+      "difficulty": 2
+    },
+    {
+      "text": "Alien",
+      "difficulty": 2
+    },
+    {
+      "text": "The Walking Dead",
+      "difficulty": 3
+    },
+    {
+      "text": "Mercredi Addams",
+      "difficulty": 3
+    },
+    {
+      "text": "Forrest Gump",
+      "difficulty": 3
+    },
+    {
+      "text": "Marty McFly",
+      "difficulty": 3
+    },
+    {
+      "text": "Breaking Bad",
+      "difficulty": 3
+    },
+    {
+      "text": "Kaamelott",
+      "difficulty": 3
+    },
+    {
+      "text": "Game of Thrones",
+      "difficulty": 3
+    },
+    {
+      "text": "Beetlejuice",
+      "difficulty": 3
+    },
+    {
+      "text": "Edward aux mains d'argent",
+      "difficulty": 3
+    },
+    {
+      "text": "La 7e Compagnie",
+      "difficulty": 3
+    },
+    {
+      "text": "Brice de Nice",
+      "difficulty": 3
+    },
+    {
+      "text": "Dragon Ball Z",
+      "difficulty": 3
+    },
+    {
+      "text": "Taxi",
+      "difficulty": 3
+    },
+    {
+      "text": "Sister Act",
+      "difficulty": 3
+    },
+    {
+      "text": "Sherlock Holmes",
+      "difficulty": 3
+    }
+  ]
+}

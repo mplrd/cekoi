@@ -109,9 +109,21 @@ jobs:
   # Branché dès le lot 1 volontairement : une CI iOS ajoutée tardivement fait
   # remonter d'un coup pods, permissions et signature au pire moment.
   # Voir docs/ROADMAP.md, lot 1.
+  #
+  # Mais depuis que le dépôt est privé — le contenu des cartes ne doit pas être
+  # public — les minutes ne sont plus gratuites, et **un runner macOS compte
+  # dix fois**. Ce seul job coûtait plus de quota que les trois autres réunis.
+  # Il ne tourne donc plus à chaque PR vers `develop`, mais sur `main` et sur
+  # tout ce qui touche à la plateforme iOS : c'est là qu'une régression de
+  # pods ou de permissions se paie, et une remontée vers `main` est de toute
+  # façon un arbitrage humain qui peut attendre quatre minutes de plus.
   ios-build:
     needs: scaffolded
-    if: needs.scaffolded.outputs.ready == 'true'
+    if: >-
+      needs.scaffolded.outputs.ready == 'true' &&
+      (github.ref_name == 'main' ||
+       github.base_ref == 'main' ||
+       contains(github.event.pull_request.labels.*.name, 'ios'))
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4

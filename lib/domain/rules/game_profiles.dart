@@ -15,7 +15,7 @@ part 'game_profiles.g.dart';
 /// cocher (R7.5).
 ///
 /// Un profil est **de la donnée**, pas du code. En ajouter un — notamment pour
-/// le mode Entre adultes — n'implique aucune modification du moteur.
+/// le mode Sans filtres — n'implique aucune modification du moteur.
 ///
 /// Le libellé affiché n'est pas ici : il vient de l'ARB, indexé par [id].
 @freezed

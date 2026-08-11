@@ -57,7 +57,7 @@ orthographe incertaine, carte à la limite du ton demandé.
 les mêmes cartes. Personnalités très connues, objets du quotidien, animaux, métiers, lieux,
 films et dessins animés grand public.
 
-**Entre adultes** — le registre est celui de **l'apéro entre amis** : grivois, gras, taquin,
+**Sans filtres** — le registre est celui de **l'apéro entre amis** : grivois, gras, taquin,
 mais **jamais explicite**.
 
 Cette limite n'est pas de la pudibonderie, elle a une conséquence très concrète : l'application
@@ -112,7 +112,9 @@ En hésitation entre 1 et 2, choisis 2.
 ÉCRITURE
 - Pas d'article en tête : « Brosse à dents », pas « Une brosse à dents »
 - Majuscules et accents corrects sur les noms propres : « Zinédine Zidane », « Élysée »
-- 30 caractères maximum environ
+- 30 caractères environ pour un mot à faire deviner ; jusqu'à 60 pour une **situation**
+  (« Se cogner le petit orteil dans le meuble »), qui ne tient pas en un nom commun. Au-delà,
+  la carte devient illisible à bout de bras et l'import la refuse.
 - Français de France, sans anglicismes évitables
 - Titres d'œuvres en version française quand c'est la plus connue
 - Aucun doublon dans la liste

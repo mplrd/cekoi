@@ -5,25 +5,149 @@
   "icon": "pets",
   "audience": "family",
   "minAge": 6,
-  "contentVersion": 2,
+  "contentVersion": 3,
   "isPremium": false,
-  "sortOrder": 10,
+  "sortOrder": 20,
   "cards": [
-    { "text": "Éléphant", "difficulty": 1 },
-    { "text": "Girafe", "difficulty": 1 },
-    { "text": "Pingouin", "difficulty": 1 },
-    { "text": "Escargot", "difficulty": 1 },
-    { "text": "Hérisson", "difficulty": 1 },
-    { "text": "Coccinelle", "difficulty": 1 },
-    { "text": "Kangourou", "difficulty": 2 },
-    { "text": "Caméléon", "difficulty": 2 },
-    { "text": "Chauve-souris", "difficulty": 2 },
-    { "text": "Hippopotame", "difficulty": 2 },
-    { "text": "Loutre", "difficulty": 2 },
-    { "text": "Ornithorynque", "difficulty": 3 },
-    { "text": "Tatou", "difficulty": 3 },
-    { "text": "Axolotl", "difficulty": 3 },
-    { "text": "Fourmilier", "difficulty": 3 },
-    { "text": "Narval", "difficulty": 3 }
+    {
+      "text": "Singe",
+      "difficulty": 1
+    },
+    {
+      "text": "Lion",
+      "difficulty": 1
+    },
+    {
+      "text": "Éléphant",
+      "difficulty": 1
+    },
+    {
+      "text": "Chien",
+      "difficulty": 1
+    },
+    {
+      "text": "Chat",
+      "difficulty": 1
+    },
+    {
+      "text": "Grenouille",
+      "difficulty": 1
+    },
+    {
+      "text": "Chauve-souris",
+      "difficulty": 1
+    },
+    {
+      "text": "Kangourou",
+      "difficulty": 1
+    },
+    {
+      "text": "Lapin",
+      "difficulty": 1
+    },
+    {
+      "text": "Serpent",
+      "difficulty": 1
+    },
+    {
+      "text": "Tortue",
+      "difficulty": 1
+    },
+    {
+      "text": "Vache",
+      "difficulty": 1
+    },
+    {
+      "text": "Poule",
+      "difficulty": 1
+    },
+    {
+      "text": "Hippopotame",
+      "difficulty": 1
+    },
+    {
+      "text": "Souris",
+      "difficulty": 1
+    },
+    {
+      "text": "Cheval",
+      "difficulty": 1
+    },
+    {
+      "text": "Cochon",
+      "difficulty": 1
+    },
+    {
+      "text": "Ours",
+      "difficulty": 2
+    },
+    {
+      "text": "Moustique",
+      "difficulty": 2
+    },
+    {
+      "text": "Narval",
+      "difficulty": 2
+    },
+    {
+      "text": "Écureuil",
+      "difficulty": 2
+    },
+    {
+      "text": "Requin",
+      "difficulty": 2
+    },
+    {
+      "text": "Girafe",
+      "difficulty": 2
+    },
+    {
+      "text": "T-Rex",
+      "difficulty": 2
+    },
+    {
+      "text": "Ornithorynque",
+      "difficulty": 2
+    },
+    {
+      "text": "Crocodile",
+      "difficulty": 2
+    },
+    {
+      "text": "Paresseux",
+      "difficulty": 3
+    },
+    {
+      "text": "Sardine",
+      "difficulty": 3
+    },
+    {
+      "text": "Aigle",
+      "difficulty": 3
+    },
+    {
+      "text": "Chenille",
+      "difficulty": 3
+    },
+    {
+      "text": "Scorpion",
+      "difficulty": 3
+    },
+    {
+      "text": "Pingouin",
+      "difficulty": 3
+    },
+    {
+      "text": "Crabe",
+      "difficulty": 3
+    },
+    {
+      "text": "Flamant rose",
+      "difficulty": 3
+    },
+    {
+      "text": "Axolotl",
+      "difficulty": 3
+    }
   ]
 }

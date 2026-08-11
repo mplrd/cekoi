@@ -7,13 +7,16 @@ invisible jusqu'à ce qu'un joueur la cherche dans le jeu.
 Lancer : `python -m unittest discover -s tool`
 """
 
+import tempfile
 import unittest
+from pathlib import Path
 
 from import_decks import (
     ImportError_,
     parse_csv,
     slugify,
     split_by_category,
+    workbook_to_csv,
 )
 
 
@@ -111,9 +114,9 @@ class TexteDesCartes(unittest.TestCase):
         self.assertIn("ligne 3", str(e.exception))
 
     def test_texte_trop_long_refuse(self):
-        # 30 caractères environ, dit CONTENU.md. Au-delà, la carte devient
-        # illisible à bout de bras.
-        long = "A" * 60
+        # 30 caractères pour un mot, 60 pour une situation, dit CONTENU.md.
+        # Au-delà, la carte devient illisible à bout de bras.
+        long = "A" * 80
         with self.assertRaises(ImportError_) as e:
             parse_csv(csv_of("texte,difficulte", f"{long},1"))
 
@@ -139,8 +142,10 @@ class Difficulte(unittest.TestCase):
         self.assertIn("ligne 2", str(e.exception))
 
     def test_non_numerique_refuse(self):
+        # « facile » est devenu un niveau valide ; il faut donc un mot que
+        # personne n'écrirait dans cette colonne pour tester le refus.
         with self.assertRaises(ImportError_) as e:
-            parse_csv(csv_of("texte,difficulte", "Girafe,facile"))
+            parse_csv(csv_of("texte,difficulte", "Girafe,pastèque"))
 
         self.assertIn("ligne 2", str(e.exception))
 
@@ -251,7 +256,7 @@ class ToutesLesErreursDUnCoup(unittest.TestCase):
                     "texte,difficulte",
                     ",1",
                     "Girafe,9",
-                    "Tatou,facile",
+                    "Tatou,bof",
                 )
             )
 
@@ -259,6 +264,119 @@ class ToutesLesErreursDUnCoup(unittest.TestCase):
         self.assertIn("ligne 2", rapport)
         self.assertIn("ligne 3", rapport)
         self.assertIn("ligne 4", rapport)
+
+
+class NiveauxEcritsEnToutesLettres(unittest.TestCase):
+    """La feuille livre « 🟢 Facile », pas « 1 »."""
+
+    def test_libelle_avec_pastille_de_couleur(self):
+        cartes = parse_csv(
+            csv_of(
+                "texte;difficulte",
+                "Chocolat;🟢 Facile",
+                "Phare;🟡 Moyen",
+                "Huissier;🔴 Expert",
+            )
+        )
+
+        self.assertEqual([c["difficulty"] for c in cartes], [1, 2, 3])
+
+    def test_libelle_sans_pastille_ni_accent(self):
+        cartes = parse_csv(
+            csv_of("texte,difficulte", "Chat,FACILE", "Trac,difficile")
+        )
+
+        self.assertEqual([c["difficulty"] for c in cartes], [1, 3])
+
+    def test_mot_inconnu_reste_refuse(self):
+        # Tolérer les libellés connus ne doit pas faire passer n'importe quoi
+        # pour un niveau : une colonne mal placée serait avalée en silence.
+        with self.assertRaises(ImportError_) as e:
+            parse_csv(csv_of("texte,difficulte", "Chat,pastèque"))
+
+        self.assertIn("pastèque", str(e.exception))
+
+
+class LectureDUnClasseur(unittest.TestCase):
+    """La livraison arrive en .xlsx, un onglet par catégorie."""
+
+    def setUp(self):
+        try:
+            import openpyxl  # noqa: F401
+        except ModuleNotFoundError:
+            self.skipTest("openpyxl absent")
+
+    def _classeur(self, feuilles: dict[str, list[tuple]]) -> Path:
+        import openpyxl
+
+        wb = openpyxl.Workbook()
+        wb.remove(wb.active)
+        for nom, lignes in feuilles.items():
+            ws = wb.create_sheet(nom)
+            for ligne in lignes:
+                ws.append(list(ligne))
+
+        chemin = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        fichier = chemin / "livraison.xlsx"
+        wb.save(fichier)
+        return fichier
+
+    def test_une_feuille_devient_une_categorie(self):
+        fichier = self._classeur(
+            {
+                "Animaux": [("Girafe", "🟢 Facile"), ("Tatou", "🔴 Expert")],
+                "Métiers": [("Pompier", "🟢 Facile")],
+            }
+        )
+
+        cartes = parse_csv(workbook_to_csv(fichier))
+
+        self.assertEqual(
+            [(c["text"], c["category"], c["difficulty"]) for c in cartes],
+            [
+                ("Girafe", "Animaux", 1),
+                ("Tatou", "Animaux", 3),
+                ("Pompier", "Métiers", 1),
+            ],
+        )
+
+    def test_premiere_ligne_lue_comme_une_carte(self):
+        # Le classeur n'a pas d'en-tête : la prendre pour un titre mangerait
+        # une carte par catégorie, en silence.
+        fichier = self._classeur({"Animaux": [("Girafe", "🟢 Facile")]})
+
+        cartes = parse_csv(workbook_to_csv(fichier))
+
+        self.assertEqual([c["text"] for c in cartes], ["Girafe"])
+
+    def test_colonne_de_niveau_absente_vaut_le_defaut(self):
+        # Le mode adultes ne note aucune difficulté : il tire dans tout le
+        # vivier (R7.1), le niveau n'y trie rien.
+        fichier = self._classeur({"Tabou": [("Panne au lit",)]})
+
+        cartes = parse_csv(workbook_to_csv(fichier))
+
+        self.assertEqual(cartes[0]["difficulty"], 2)
+
+    def test_lignes_et_colonnes_de_travail_ignorees(self):
+        # Une feuille traîne des colonnes vides sur toute sa largeur et des
+        # lignes de mise en page : ni les unes ni les autres ne sont des
+        # cartes, et les signaler noierait les vraies fautes.
+        fichier = self._classeur(
+            {
+                "Honte": [
+                    ("Péter en public", None, None, None),
+                    (None, None, None, None),
+                    ("Chuter en public", None, None, None),
+                ]
+            }
+        )
+
+        cartes = parse_csv(workbook_to_csv(fichier))
+
+        self.assertEqual(
+            [c["text"] for c in cartes], ["Péter en public", "Chuter en public"]
+        )
 
 
 if __name__ == "__main__":

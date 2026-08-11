@@ -1,0 +1,72 @@
+{
+  "id": "honte-absolue",
+  "name": "Honte absolue",
+  "audience": "adult",
+  "minAge": 18,
+  "contentVersion": 1,
+  "isPremium": false,
+  "sortOrder": 210,
+  "icon": "sentiment_dissatisfied",
+  "cards": [
+    {
+      "text": "Péter en public",
+      "difficulty": 2
+    },
+    {
+      "text": "Avoir de la salade entre les dents",
+      "difficulty": 2
+    },
+    {
+      "text": "Tomber en public",
+      "difficulty": 2
+    },
+    {
+      "text": "Se promener avec la braguette ouverte",
+      "difficulty": 2
+    },
+    {
+      "text": "Papier toilette collé sous la chaussure",
+      "difficulty": 2
+    },
+    {
+      "text": "Tache de règles sur le pantalon",
+      "difficulty": 2
+    },
+    {
+      "text": "Oublier le prénom de quelqu'un",
+      "difficulty": 2
+    },
+    {
+      "text": "Envoyer un message au mauvais destinataire",
+      "difficulty": 2
+    },
+    {
+      "text": "Confondre une femme enceinte et du bide",
+      "difficulty": 2
+    },
+    {
+      "text": "Tacher son t-shirt en mangeant",
+      "difficulty": 2
+    },
+    {
+      "text": "Se faire rejeter la carte bleue à la caisse",
+      "difficulty": 2
+    },
+    {
+      "text": "Saluer quelqu'un qui ne nous parlait pas",
+      "difficulty": 2
+    },
+    {
+      "text": "Avoir une crotte de nez apparente",
+      "difficulty": 2
+    },
+    {
+      "text": "Micro resté ouvert en visioconférence",
+      "difficulty": 2
+    },
+    {
+      "text": "Se tromper de voiture sur le parking",
+      "difficulty": 2
+    }
+  ]
+}

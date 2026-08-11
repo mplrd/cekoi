@@ -1,0 +1,132 @@
+{
+  "id": "musique",
+  "name": "Musique",
+  "audience": "family",
+  "minAge": 6,
+  "contentVersion": 1,
+  "isPremium": false,
+  "sortOrder": 70,
+  "icon": "music_note",
+  "cards": [
+    {
+      "text": "Harmonica",
+      "difficulty": 1
+    },
+    {
+      "text": "Piano",
+      "difficulty": 1
+    },
+    {
+      "text": "Guitare",
+      "difficulty": 1
+    },
+    {
+      "text": "Y.M.C.A. (Village People)",
+      "difficulty": 1
+    },
+    {
+      "text": "Trompette",
+      "difficulty": 1
+    },
+    {
+      "text": "Danse des canards",
+      "difficulty": 1
+    },
+    {
+      "text": "Saxophone",
+      "difficulty": 1
+    },
+    {
+      "text": "Hakuna Matata (Le Roi Lion)",
+      "difficulty": 1
+    },
+    {
+      "text": "Batterie",
+      "difficulty": 1
+    },
+    {
+      "text": "Soleil Bleu",
+      "difficulty": 1
+    },
+    {
+      "text": "Flûte à bec",
+      "difficulty": 1
+    },
+    {
+      "text": "Libérée, Délivrée (La Reine des Neiges)",
+      "difficulty": 1
+    },
+    {
+      "text": "Chanteur d'opéra",
+      "difficulty": 1
+    },
+    {
+      "text": "Triangle",
+      "difficulty": 1
+    },
+    {
+      "text": "La chenille",
+      "difficulty": 1
+    },
+    {
+      "text": "Chef d'orchestre",
+      "difficulty": 2
+    },
+    {
+      "text": "Accordéon",
+      "difficulty": 2
+    },
+    {
+      "text": "Les Démons de minuit",
+      "difficulty": 2
+    },
+    {
+      "text": "Contrebasse",
+      "difficulty": 2
+    },
+    {
+      "text": "Harpe",
+      "difficulty": 2
+    },
+    {
+      "text": "Thriller (Michael Jackson)",
+      "difficulty": 2
+    },
+    {
+      "text": "Gangnam Style (PSY)",
+      "difficulty": 2
+    },
+    {
+      "text": "Tourner les serviettes",
+      "difficulty": 2
+    },
+    {
+      "text": "Macarena",
+      "difficulty": 2
+    },
+    {
+      "text": "DJ",
+      "difficulty": 2
+    },
+    {
+      "text": "La Carioca",
+      "difficulty": 3
+    },
+    {
+      "text": "Parle à ma main (Fatal Bazooka)",
+      "difficulty": 3
+    },
+    {
+      "text": "Tomber la chemise",
+      "difficulty": 3
+    },
+    {
+      "text": "Single Ladies (Beyoncé)",
+      "difficulty": 3
+    },
+    {
+      "text": "Allumer le feu (Johnny Hallyday)",
+      "difficulty": 3
+    }
+  ]
+}

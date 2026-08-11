@@ -1,0 +1,112 @@
+{
+  "id": "action",
+  "name": "Actions",
+  "audience": "family",
+  "minAge": 6,
+  "contentVersion": 1,
+  "isPremium": false,
+  "sortOrder": 110,
+  "icon": "directions_run",
+  "cards": [
+    {
+      "text": "Se brosser les dents",
+      "difficulty": 1
+    },
+    {
+      "text": "Prendre un selfie",
+      "difficulty": 1
+    },
+    {
+      "text": "Désamorcer une bombe",
+      "difficulty": 1
+    },
+    {
+      "text": "Manger un spaghetti",
+      "difficulty": 1
+    },
+    {
+      "text": "Faire de la balançoire",
+      "difficulty": 1
+    },
+    {
+      "text": "Taper au clavier",
+      "difficulty": 1
+    },
+    {
+      "text": "Gonfler un ballon de baudruche",
+      "difficulty": 1
+    },
+    {
+      "text": "Faire des boules de neige",
+      "difficulty": 1
+    },
+    {
+      "text": "Chasser un moustique",
+      "difficulty": 2
+    },
+    {
+      "text": "Monter une tente de camping",
+      "difficulty": 2
+    },
+    {
+      "text": "Glisser sur une peau de banane",
+      "difficulty": 2
+    },
+    {
+      "text": "Mettre des lentilles de contact",
+      "difficulty": 2
+    },
+    {
+      "text": "Pêcher un très gros poisson",
+      "difficulty": 2
+    },
+    {
+      "text": "S'installer dans un hamac",
+      "difficulty": 2
+    },
+    {
+      "text": "Enfiler un pantalon trop petit",
+      "difficulty": 2
+    },
+    {
+      "text": "Faire du patin à glace pour la première fois",
+      "difficulty": 2
+    },
+    {
+      "text": "Faire du hula hoop",
+      "difficulty": 2
+    },
+    {
+      "text": "Enfiler un fil dans une aiguille",
+      "difficulty": 2
+    },
+    {
+      "text": "Marcher sur un Lego pieds nus",
+      "difficulty": 3
+    },
+    {
+      "text": "Rater son bus",
+      "difficulty": 3
+    },
+    {
+      "text": "Enfiler une couette dans sa housse",
+      "difficulty": 3
+    },
+    {
+      "text": "Chercher ses lunettes alors qu'on les a sur la tête",
+      "difficulty": 3
+    },
+    {
+      "text": "Couper de l'oignon en pleurant",
+      "difficulty": 3
+    },
+    {
+      "text": "Trouver le bout du rouleau de scotch",
+      "difficulty": 3
+    },
+    {
+      "text": "Ouvrir une bouteille de champagne",
+      "difficulty": 3
+    }
+  ]
+}

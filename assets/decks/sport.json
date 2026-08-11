@@ -1,0 +1,132 @@
+{
+  "id": "sport",
+  "name": "Sport",
+  "audience": "family",
+  "minAge": 6,
+  "contentVersion": 1,
+  "isPremium": false,
+  "sortOrder": 60,
+  "icon": "sports_soccer",
+  "cards": [
+    {
+      "text": "Football",
+      "difficulty": 1
+    },
+    {
+      "text": "Basketball",
+      "difficulty": 1
+    },
+    {
+      "text": "Tennis",
+      "difficulty": 1
+    },
+    {
+      "text": "Natation",
+      "difficulty": 1
+    },
+    {
+      "text": "Boxe",
+      "difficulty": 1
+    },
+    {
+      "text": "Judo / Karaté",
+      "difficulty": 1
+    },
+    {
+      "text": "Équitation / Cheval",
+      "difficulty": 1
+    },
+    {
+      "text": "Cyclisme / Vélo",
+      "difficulty": 1
+    },
+    {
+      "text": "Ski",
+      "difficulty": 1
+    },
+    {
+      "text": "Golf",
+      "difficulty": 1
+    },
+    {
+      "text": "Rugby",
+      "difficulty": 1
+    },
+    {
+      "text": "Course à pied",
+      "difficulty": 1
+    },
+    {
+      "text": "Punching ball",
+      "difficulty": 1
+    },
+    {
+      "text": "Bowling",
+      "difficulty": 1
+    },
+    {
+      "text": "Corde à sauter",
+      "difficulty": 1
+    },
+    {
+      "text": "Skateboard",
+      "difficulty": 2
+    },
+    {
+      "text": "Volleyball",
+      "difficulty": 2
+    },
+    {
+      "text": "Tir à l'arc",
+      "difficulty": 2
+    },
+    {
+      "text": "Patinage artistique",
+      "difficulty": 2
+    },
+    {
+      "text": "Haltérophilie",
+      "difficulty": 2
+    },
+    {
+      "text": "Escalade",
+      "difficulty": 2
+    },
+    {
+      "text": "Badminton",
+      "difficulty": 2
+    },
+    {
+      "text": "Carton rouge",
+      "difficulty": 2
+    },
+    {
+      "text": "Escrime",
+      "difficulty": 2
+    },
+    {
+      "text": "Surf",
+      "difficulty": 2
+    },
+    {
+      "text": "Curling",
+      "difficulty": 3
+    },
+    {
+      "text": "Saut à la perche",
+      "difficulty": 3
+    },
+    {
+      "text": "Kayak",
+      "difficulty": 3
+    },
+    {
+      "text": "Podium",
+      "difficulty": 3
+    },
+    {
+      "text": "Sumo",
+      "difficulty": 3
+    }
+  ]
+}

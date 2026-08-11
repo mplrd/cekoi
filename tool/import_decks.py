@@ -40,12 +40,35 @@ import unicodedata
 from pathlib import Path
 
 #: Longueur au-delà de laquelle une carte devient illisible à bout de bras.
-#: `docs/CONTENU.md` dit « 30 caractères environ » ; on laisse une marge et on
-#: refuse ce qui est manifestement une phrase.
-MAX_TEXT_LENGTH = 40
+#:
+#: `docs/CONTENU.md` vise « 30 caractères environ » pour un mot à faire
+#: deviner, et c'est toujours la cible. Mais la livraison d'août 2026 a
+#: apporté des catégories de **situations** — « Se cogner le petit orteil dans
+#: le meuble » — dont le format est intrinsèquement plus long qu'un nom commun.
+#: La limite passe donc de 40 à 60 : assez pour une situation, trop peu pour
+#: un paragraphe. Ce qu'elle protège reste la lisibilité d'un coup d'œil, pas
+#: une norme d'écriture.
+MAX_TEXT_LENGTH = 60
 
 #: `docs/CONTENU.md` : en hésitation entre 1 et 2, choisir 2.
 DEFAULT_DIFFICULTY = 2
+
+#: Niveaux écrits en toutes lettres, tels qu'une feuille les porte réellement.
+#:
+#: La livraison d'août 2026 note « 🟢 Facile », « 🟡 Moyen », « 🔴 Expert » :
+#: une pastille de couleur pour trier à l'œil dans le tableur, et un mot. Les
+#: convertir à la main avant l'import remettrait un humain sur le chemin de
+#: 500 lignes, ce que cet outil existe précisément pour éviter.
+DIFFICULTY_ALIASES = {
+    "facile": 1,
+    "simple": 1,
+    "moyen": 2,
+    "moyenne": 2,
+    "intermediaire": 2,
+    "difficile": 3,
+    "expert": 3,
+    "dur": 3,
+}
 
 #: Séparateurs qu'une feuille de calcul produit selon sa locale.
 CANDIDATE_DELIMITERS = [",", ";", "\t"]
@@ -136,15 +159,35 @@ def split_by_category(
     return groupes
 
 
+def _letters_only(value: str) -> str:
+    """Ne garde que les lettres, sans accent, en minuscules.
+
+    Jette donc les pastilles de couleur et la ponctuation dont une feuille
+    décore ses niveaux : « 🟢 Facile » devient « facile ».
+    """
+    sans_accent = "".join(
+        c
+        for c in unicodedata.normalize("NFD", value)
+        if unicodedata.category(c) != "Mn"
+    )
+    return "".join(c for c in sans_accent if c.isalpha()).lower()
+
+
 def _parse_difficulty(cell: str, line: int, problems: list[str]) -> int:
     if cell == "":
         return DEFAULT_DIFFICULTY
 
+    mot = _letters_only(cell)
+    if mot in DIFFICULTY_ALIASES:
+        return DIFFICULTY_ALIASES[mot]
+
     try:
         valeur = int(cell)
     except ValueError:
+        niveaux = ", ".join(sorted(DIFFICULTY_ALIASES))
         problems.append(
-            f"ligne {line} : difficulté « {cell} » illisible, attendu 1, 2 ou 3"
+            f"ligne {line} : difficulté « {cell} » illisible, attendu 1, 2 ou "
+            f"3, ou l'un de : {niveaux}"
         )
         return DEFAULT_DIFFICULTY
 
@@ -155,6 +198,56 @@ def _parse_difficulty(cell: str, line: int, problems: list[str]) -> int:
         return DEFAULT_DIFFICULTY
 
     return valeur
+
+
+#: Colonnes du CSV que produit un classeur, dans cet ordre.
+WORKBOOK_HEADER = ["texte", "difficulte", "categorie"]
+
+
+def workbook_to_csv(path: Path) -> str:
+    """Met un classeur à plat en CSV, **une feuille par catégorie**.
+
+    La livraison arrive en `.xlsx`, un onglet par catégorie — vingt et un pour
+    la livraison d'août 2026. Exporter chaque onglet à la main serait vingt et
+    une occasions de se tromper de séparateur ou d'oublier une feuille.
+
+    Le classeur ne porte **pas d'en-tête** : la première ligne est déjà une
+    carte. On le sait parce qu'on lit une feuille et non un fichier plat — la
+    position des colonnes y est stable — alors qu'un CSV anonyme ne permet pas
+    de deviner si sa première ligne est un titre ou une donnée. D'où l'en-tête
+    ajouté ici, qui rend la suite du chemin identique à celui d'un CSV.
+
+    Rien n'est validé ici : longueur, doublons et niveaux illisibles restent
+    l'affaire de [parse_csv], pour qu'il n'existe qu'un seul jeu de règles.
+    """
+    try:
+        import openpyxl  # noqa: PLC0415 — dépendance du seul mode classeur
+    except ModuleNotFoundError as absente:  # pragma: no cover
+        raise ImportError_(
+            "Lire un classeur demande openpyxl : pip install openpyxl"
+        ) from absente
+
+    classeur = openpyxl.load_workbook(path, data_only=True)
+    sortie = io.StringIO()
+    writer = csv.writer(sortie, delimiter=";", lineterminator="\n")
+    writer.writerow(WORKBOOK_HEADER)
+
+    for nom in classeur.sheetnames:
+        feuille = classeur[nom]
+        for row in feuille.iter_rows(values_only=True):
+            cellules = ["" if c is None else str(c) for c in row]
+            # Une feuille traîne des colonnes de travail vides sur toute sa
+            # largeur : n'en garder que deux évite de les prendre pour des
+            # champs. Les lignes de mise en page, elles, sont sautées ici
+            # plutôt que signalées comme des cartes sans catégorie.
+            if not any(c.strip() for c in cellules):
+                continue
+            texte = cellules[0] if cellules else ""
+            niveau = cellules[1] if len(cellules) > 1 else ""
+            writer.writerow([texte, niveau, nom])
+
+    classeur.close()
+    return sortie.getvalue()
 
 
 def parse_csv(content: str) -> list[dict[str, object]]:
@@ -199,6 +292,21 @@ def parse_csv(content: str) -> list[dict[str, object]]:
             )
             continue
 
+        categorie = ""
+        if "category" in colonnes:
+            categorie = _clean_cell(row.get(colonnes["category"]))
+            # Une ligne sans catégorie, dans une feuille qui en a une, n'irait
+            # nulle part : elle serait perdue en silence.
+            if not categorie:
+                problems.append(f"ligne {index} : catégorie vide")
+                continue
+
+        # Le doublon se juge sur **toute la livraison**, catégories confondues.
+        # Deux catégories qui portent la même entrée ne la feraient sortir
+        # qu'une fois au tirage (R6.4), mais le total annoncé au joueur avant
+        # de démarrer (R6.2) compterait les deux : il jouerait avec une carte
+        # de moins que ce qu'on lui a promis. C'est au contenu de trancher dans
+        # quelle catégorie l'entrée vit.
         if texte in vus:
             problems.append(
                 f"ligne {index} : « {texte} » déjà livré ligne {vus[texte]}"
@@ -212,14 +320,7 @@ def parse_csv(content: str) -> list[dict[str, object]]:
             problems,
         )
         carte: dict[str, object] = {"text": texte, "difficulty": difficulte}
-
-        if "category" in colonnes:
-            categorie = _clean_cell(row.get(colonnes["category"]))
-            # Une ligne sans catégorie, dans une feuille qui en a une, n'irait
-            # nulle part : elle serait perdue en silence.
-            if not categorie:
-                problems.append(f"ligne {index} : catégorie vide")
-                continue
+        if categorie:
             carte["category"] = categorie
 
         cards.append(carte)
@@ -332,7 +433,11 @@ def _write_many(
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("csv", type=Path, help="livraison à convertir")
+    parser.add_argument(
+        "csv",
+        type=Path,
+        help="livraison à convertir : CSV, TSV, ou classeur .xlsx",
+    )
     parser.add_argument("--out", type=Path, help="JSON produit, une catégorie")
     parser.add_argument(
         "--out-dir",
@@ -350,7 +455,13 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     try:
-        cards = parse_csv(args.csv.read_text(encoding="utf-8-sig"))
+        # Un classeur passe par le même chemin qu'un CSV : il est mis à plat,
+        # puis relu par `parse_csv`. Les règles de refus n'existent qu'une
+        # fois, quel que soit le format d'arrivée.
+        if args.csv.suffix.lower() in {".xlsx", ".xlsm"}:
+            cards = parse_csv(workbook_to_csv(args.csv))
+        else:
+            cards = parse_csv(args.csv.read_text(encoding="utf-8-sig"))
     except ImportError_ as erreur:
         print(f"Import refusé.\n{erreur}", file=sys.stderr)
         return 1

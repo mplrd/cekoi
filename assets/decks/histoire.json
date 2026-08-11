@@ -1,0 +1,92 @@
+{
+  "id": "histoire",
+  "name": "Histoire",
+  "audience": "family",
+  "minAge": 10,
+  "contentVersion": 1,
+  "isPremium": false,
+  "sortOrder": 150,
+  "icon": "history_edu",
+  "cards": [
+    {
+      "text": "Cléopâtre",
+      "difficulty": 1
+    },
+    {
+      "text": "Jules César",
+      "difficulty": 1
+    },
+    {
+      "text": "Napoléon Bonaparte",
+      "difficulty": 1
+    },
+    {
+      "text": "Jeanne d'Arc",
+      "difficulty": 1
+    },
+    {
+      "text": "Ninja",
+      "difficulty": 1
+    },
+    {
+      "text": "Homme des cavernes",
+      "difficulty": 1
+    },
+    {
+      "text": "Louis XIV (Le Roi-Soleil)",
+      "difficulty": 1
+    },
+    {
+      "text": "Chevalier",
+      "difficulty": 1
+    },
+    {
+      "text": "Cow-boy",
+      "difficulty": 1
+    },
+    {
+      "text": "Pirate",
+      "difficulty": 1
+    },
+    {
+      "text": "Reine Elisabeth II",
+      "difficulty": 1
+    },
+    {
+      "text": "Albert Einstein",
+      "difficulty": 2
+    },
+    {
+      "text": "Mère Teresa",
+      "difficulty": 2
+    },
+    {
+      "text": "Mozart",
+      "difficulty": 2
+    },
+    {
+      "text": "Van Gogh",
+      "difficulty": 2
+    },
+    {
+      "text": "Christophe Colomb",
+      "difficulty": 2
+    },
+    {
+      "text": "Jean Moulin",
+      "difficulty": 3
+    },
+    {
+      "text": "Charles de Gaulle",
+      "difficulty": 3
+    },
+    {
+      "text": "Gandhi",
+      "difficulty": 3
+    },
+    {
+      "text": "Toutânkhamon",
+      "difficulty": 3
+    }
+  ]
+}

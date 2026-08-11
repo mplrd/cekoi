@@ -1,0 +1,112 @@
+{
+  "id": "natureespace",
+  "name": "Nature et espace",
+  "audience": "family",
+  "minAge": 6,
+  "contentVersion": 1,
+  "isPremium": false,
+  "sortOrder": 80,
+  "icon": "rocket_launch",
+  "cards": [
+    {
+      "text": "Volcan",
+      "difficulty": 1
+    },
+    {
+      "text": "Fusée",
+      "difficulty": 1
+    },
+    {
+      "text": "Arc-en-ciel",
+      "difficulty": 1
+    },
+    {
+      "text": "Ortie",
+      "difficulty": 1
+    },
+    {
+      "text": "Météorite",
+      "difficulty": 1
+    },
+    {
+      "text": "Neige",
+      "difficulty": 1
+    },
+    {
+      "text": "Tornade",
+      "difficulty": 1
+    },
+    {
+      "text": "Cactus",
+      "difficulty": 1
+    },
+    {
+      "text": "Carotte",
+      "difficulty": 1
+    },
+    {
+      "text": "Oignon",
+      "difficulty": 1
+    },
+    {
+      "text": "Tournesol",
+      "difficulty": 1
+    },
+    {
+      "text": "Avalanche",
+      "difficulty": 1
+    },
+    {
+      "text": "Soleil",
+      "difficulty": 1
+    },
+    {
+      "text": "Citrouille",
+      "difficulty": 1
+    },
+    {
+      "text": "Arbre",
+      "difficulty": 1
+    },
+    {
+      "text": "Diamant",
+      "difficulty": 2
+    },
+    {
+      "text": "Stalactite",
+      "difficulty": 2
+    },
+    {
+      "text": "Séisme",
+      "difficulty": 2
+    },
+    {
+      "text": "Brocoli",
+      "difficulty": 2
+    },
+    {
+      "text": "Plante carnivore",
+      "difficulty": 2
+    },
+    {
+      "text": "Jungle",
+      "difficulty": 2
+    },
+    {
+      "text": "Constellation",
+      "difficulty": 3
+    },
+    {
+      "text": "Aurore boréale",
+      "difficulty": 3
+    },
+    {
+      "text": "Thomas Pesquet",
+      "difficulty": 3
+    },
+    {
+      "text": "Iceberg",
+      "difficulty": 3
+    }
+  ]
+}

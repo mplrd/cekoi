@@ -1,0 +1,72 @@
+{
+  "id": "monuments",
+  "name": "Monuments",
+  "audience": "family",
+  "minAge": 6,
+  "contentVersion": 1,
+  "isPremium": false,
+  "sortOrder": 100,
+  "icon": "location_city",
+  "cards": [
+    {
+      "text": "Tour Eiffel",
+      "difficulty": 1
+    },
+    {
+      "text": "Statue de la Liberté",
+      "difficulty": 1
+    },
+    {
+      "text": "Désert",
+      "difficulty": 1
+    },
+    {
+      "text": "Tour de Pise",
+      "difficulty": 1
+    },
+    {
+      "text": "Gondole",
+      "difficulty": 1
+    },
+    {
+      "text": "Big Ben",
+      "difficulty": 1
+    },
+    {
+      "text": "Montgolfière",
+      "difficulty": 2
+    },
+    {
+      "text": "Château",
+      "difficulty": 2
+    },
+    {
+      "text": "Igloo",
+      "difficulty": 2
+    },
+    {
+      "text": "Safari",
+      "difficulty": 2
+    },
+    {
+      "text": "Colisée de Rome",
+      "difficulty": 3
+    },
+    {
+      "text": "Rio de Janeiro",
+      "difficulty": 3
+    },
+    {
+      "text": "Plongée sous marine",
+      "difficulty": 3
+    },
+    {
+      "text": "Arc de Triomphe",
+      "difficulty": 3
+    },
+    {
+      "text": "Grande Muraille de Chine",
+      "difficulty": 3
+    }
+  ]
+}
