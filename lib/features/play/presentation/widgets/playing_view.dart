@@ -4,6 +4,7 @@ import 'package:cekoi/app/current_game.dart';
 import 'package:cekoi/app/theme/app_colors.dart';
 import 'package:cekoi/domain/engine/game_state.dart';
 import 'package:cekoi/features/play/presentation/play_controller.dart';
+import 'package:cekoi/features/play/presentation/widgets/action_zone.dart';
 import 'package:cekoi/features/play/presentation/widgets/game_card_face.dart';
 import 'package:cekoi/features/play/presentation/widgets/turn_timer_ring.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
@@ -142,23 +143,87 @@ class _CardZone extends ConsumerWidget {
 
     final controller = ref.read(playControllerProvider.notifier);
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onHorizontalDragEnd: (details) {
-        final vitesse = details.primaryVelocity ?? 0;
-        if (vitesse > 0) {
-          controller.found();
-        } else if (vitesse < 0 && game.canPass) {
-          // Muet en manche 1 (R3.9), par cohérence avec la zone retirée. Ce
-          // qui rend la règle étanche est le réducteur, qui refuse
-          // l'événement ; cette garde lui évite un envoi sans effet.
-          controller.passed();
-        }
-      },
+    return _SwipeZone(
+      // Le glissement décidait sur la seule vélocité, et le moindre signe
+      // suffisait : un mouvement lent ne faisait rien du tout — le narrateur
+      // croyait son geste ignoré — pendant qu'une dérive vive vers la gauche
+      // passait la carte, qui ressortait plus tard. Deux plaintes distinctes
+      // en partie, une seule cause.
+      //
+      // La distance parcourue décide désormais, la vélocité ne fait
+      // qu'ouvrir un raccourci pour les gestes francs. En dessous des deux
+      // seuils, le geste n'est pas une intention : on ne fait rien.
+      onFound: controller.found,
+      onPassed: game.canPass ? controller.passed : null,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         child: GameCardFace(card: card),
       ),
+    );
+  }
+}
+
+/// Le glissement horizontal qui double les deux zones d'action.
+///
+/// Décide sur la **distance**, pas sur la vélocité seule : un glissement lent
+/// mais franc est une intention aussi claire qu'un geste vif, et l'ancienne
+/// version ne faisait rien du tout dans ce cas. La vélocité reste un raccourci
+/// pour les gestes rapides et courts, qui n'atteignent pas la distance.
+///
+/// En dessous des deux seuils, aucune action : mieux vaut un geste sans effet
+/// qu'une carte passée par erreur, qui ressortira plus tard sans que personne
+/// comprenne pourquoi.
+class _SwipeZone extends StatefulWidget {
+  const _SwipeZone({
+    required this.onFound,
+    required this.onPassed,
+    required this.child,
+  });
+
+  final VoidCallback onFound;
+
+  /// `null` en manche 1 : *Passer* n'y existe pas (R3.9).
+  final VoidCallback? onPassed;
+
+  final Widget child;
+
+  @override
+  State<_SwipeZone> createState() => _SwipeZoneState();
+}
+
+class _SwipeZoneState extends State<_SwipeZone> {
+  /// Un quart de la largeur de l'écran, plafonné : au-delà, le geste
+  /// deviendrait pénible à faire d'une main sur un grand téléphone.
+  static const double _distanceMax = 90;
+
+  /// Un geste vif et court compte aussi — c'est ainsi qu'on balaie quand on
+  /// enchaîne les cartes.
+  static const double _vitesseFranche = 600;
+
+  double _parcouru = 0;
+
+  void _decider(double vitesse, double largeur) {
+    final seuil = (largeur / 4).clamp(40.0, _distanceMax);
+    final franc = _parcouru.abs() >= seuil || vitesse.abs() >= _vitesseFranche;
+    if (!franc) return;
+
+    if (_parcouru > 0 || vitesse > 0) {
+      widget.onFound();
+    } else {
+      widget.onPassed?.call();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final largeur = MediaQuery.sizeOf(context).width;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onHorizontalDragStart: (_) => _parcouru = 0,
+      onHorizontalDragUpdate: (d) => _parcouru += d.delta.dx,
+      onHorizontalDragEnd: (d) => _decider(d.primaryVelocity ?? 0, largeur),
+      child: widget.child,
     );
   }
 }
@@ -267,20 +332,20 @@ class _Actions extends ConsumerWidget {
               children: [
                 if (offersPass) ...[
                   Expanded(
-                    child: OutlinedButton(
+                    child: ActionZone(
+                      label: l10n.actionPass,
+                      outlined: true,
                       onPressed: game.canPass ? controller.passed : null,
-                      child: Text(l10n.actionPass),
                     ),
                   ),
                   const SizedBox(width: 12),
                 ],
                 Expanded(
-                  child: FilledButton(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.found,
-                    ),
+                  child: ActionZone(
+                    label: l10n.actionFound,
+                    background: AppColors.found,
+                    foreground: Colors.white,
                     onPressed: game.canAct ? controller.found : null,
-                    child: Text(l10n.actionFound),
                   ),
                 ),
               ],

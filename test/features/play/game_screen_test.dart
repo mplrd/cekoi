@@ -8,6 +8,7 @@ import 'package:cekoi/domain/engine/turn.dart';
 import 'package:cekoi/domain/entities/card.dart' as domain;
 import 'package:cekoi/domain/entities/difficulty.dart';
 import 'package:cekoi/features/play/presentation/game_screen.dart';
+import 'package:cekoi/features/play/presentation/widgets/action_zone.dart';
 import 'package:cekoi/features/play/presentation/widgets/game_card_face.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -242,16 +243,16 @@ void main() {
       await pumpScreen(tester, game: testGame(cardCount: 2));
       await startTurn(tester);
 
-      var passer = tester.widget<OutlinedButton>(
-        find.widgetWithText(OutlinedButton, l10n.actionPass),
+      var passer = tester.widget<ActionZone>(
+        find.widgetWithText(ActionZone, l10n.actionPass),
       );
       expect(passer.onPressed, isNotNull, reason: 'deux cartes au paquet');
 
       await tester.tap(find.text(l10n.actionFound));
       await tester.pump();
 
-      passer = tester.widget<OutlinedButton>(
-        find.widgetWithText(OutlinedButton, l10n.actionPass),
+      passer = tester.widget<ActionZone>(
+        find.widgetWithText(ActionZone, l10n.actionPass),
       );
       expect(passer.onPressed, isNull);
       expect(find.text(l10n.gamePassLocked), findsOneWidget);
@@ -293,6 +294,84 @@ void main() {
     });
   });
 
+  group('on tape sans regarder, et le doigt bouge', () {
+    testWidgets('un tap dont le doigt roule de 40 px vaut un tap', (
+      tester,
+    ) async {
+      // Retour de partie : « des taps sur Trouvé qui passent pas ». Un
+      // `TapGestureRecognizer` ordinaire rejette le tap dès 18 px de dérive ;
+      // à bout de bras, debout, sans regarder l'écran, le pouce roule bien
+      // plus que ça. L'action était perdue en silence, au pire moment — chrono
+      // qui tourne, table qui crie.
+      await pumpScreen(tester, game: testGame(cardCount: 12));
+      await startTurn(tester);
+      final avant = partie().pile.length;
+
+      final geste = await tester.startGesture(
+        tester.getCenter(find.widgetWithText(ActionZone, l10n.actionFound)),
+      );
+      await geste.moveBy(const Offset(40, 12));
+      await geste.up();
+      await tester.pump();
+
+      expect(
+        partie().pile.length,
+        avant - 1,
+        reason: 'le doigt a roulé, mais le narrateur a bien tapé Trouvé',
+      );
+      await stopGame(tester);
+    });
+
+    testWidgets('un glissement lent mais franc passe la carte', (tester) async {
+      // L'ancienne version décidait sur la seule vélocité : un glissement lent
+      // ne faisait rien du tout, et le geste semblait ignoré.
+      await pumpScreen(tester, game: testGame(cardCount: 12));
+      await startTurn(tester);
+      final avant = [...partie().pile];
+
+      final geste = await tester.startGesture(
+        tester.getCenter(find.byType(GameCardFace)),
+      );
+      for (var i = 0; i < 10; i++) {
+        await geste.moveBy(
+          const Offset(-30, 0),
+          timeStamp: Duration(milliseconds: 40 * (i + 1)),
+        );
+      }
+      await geste.up();
+      await tester.pump();
+
+      expect(
+        partie().turn!.results.single.outcome,
+        TurnOutcome.passed,
+        reason: 'lent ou vif, un geste franc reste un geste',
+      );
+      expect(partie().pile.last, avant.first);
+      await stopGame(tester);
+    });
+
+    testWidgets('une derive de quelques pixels ne decide de rien', (
+      tester,
+    ) async {
+      // Le pire des deux mondes serait qu'une hésitation passe la carte : elle
+      // ressortirait plus tard sans que personne comprenne pourquoi.
+      await pumpScreen(tester, game: testGame(cardCount: 12));
+      await startTurn(tester);
+      final avant = [...partie().pile];
+
+      final geste = await tester.startGesture(
+        tester.getCenter(find.byType(GameCardFace)),
+      );
+      await geste.moveBy(const Offset(-18, 0));
+      await geste.up();
+      await tester.pump();
+
+      expect(partie().pile, avant);
+      expect(partie().turn!.results, isEmpty);
+      await stopGame(tester);
+    });
+  });
+
   group("R3.9 — en manche 1, l'action Passer n'est pas à l'écran", () {
     testWidgets('la zone Passer est absente, pas grisée', (tester) async {
       // Un bouton mort pendant toute une manche se lit comme une panne.
@@ -319,7 +398,7 @@ void main() {
         await pumpScreen(tester, game: testGame(roundIndex: roundIndex));
         await startTurn(tester);
         final hauteur = tester
-            .getSize(find.widgetWithText(FilledButton, l10n.actionFound))
+            .getSize(find.widgetWithText(ActionZone, l10n.actionFound))
             .height;
         await stopGame(tester);
         return hauteur;
@@ -532,11 +611,11 @@ void main() {
       await tester.tap(find.byIcon(Icons.pause));
       await tester.pump();
 
-      final trouve = tester.widget<FilledButton>(
-        find.widgetWithText(FilledButton, l10n.actionFound),
+      final trouve = tester.widget<ActionZone>(
+        find.widgetWithText(ActionZone, l10n.actionFound),
       );
-      final passer = tester.widget<OutlinedButton>(
-        find.widgetWithText(OutlinedButton, l10n.actionPass),
+      final passer = tester.widget<ActionZone>(
+        find.widgetWithText(ActionZone, l10n.actionPass),
       );
 
       expect(trouve.onPressed, isNull);
