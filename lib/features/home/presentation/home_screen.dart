@@ -23,16 +23,10 @@ class HomeScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final seeding = ref.watch(deckSeedingProvider);
 
-    // L'accueil prend le corail du logo comme fond, et non le fond neutre du
-    // thème. Deux raisons : c'est la couleur qu'on vient de toucher sur
-    // l'icône, et le logo porte lui-même ce corail — posé dessus, son cadre
-    // disparaît et le dessin flotte, au lieu d'être une image collée sur une
-    // page blanche.
-    //
-    // Le texte passe donc en encre sombre, comme les contours du dessin : du
-    // blanc sur ce corail tomberait à 2,6:1, sous le minimum lisible.
+    // Le fond vient du thème — le corail pastélisé, comme partout ailleurs.
+    // L'accueil n'a pas de fond à lui : c'est ce qui fait que l'application
+    // ressemble à une seule application d'un écran à l'autre.
     return Scaffold(
-      backgroundColor: AppColors.seed,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -51,47 +45,46 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-/// L'encre de l'accueil : le noir chaud des contours du logo.
-///
-/// Sur le corail, du blanc tomberait à 2,6:1 — sous le seuil lisible, même
-/// pour du gros texte.
-const Color _encre = Color(0xFF1A0F0C);
-
 /// Une entrée de l'accueil.
 ///
-/// Trois traitements pour une seule forme : plein pour l'action principale,
-/// clair pour les autres, effacé pour ce qui n'est pas encore là. Les boutons
-/// Material par défaut tiraient leurs couleurs du thème et ressortaient
-/// délavés sur ce fond.
+/// Trois traitements pour une seule forme : le teal des étincelles pour
+/// l'action principale, le vert du personnage pour les autres, et le corail
+/// plein pour la reprise de partie. Aucune n'est blanche — sur ce fond pastel,
+/// un bouton blanc fait un trou dans la page.
 class _HomeAction extends StatelessWidget {
   const _HomeAction({
     required this.label,
     required this.onPressed,
     this.principal = false,
-    this.discret = false,
+    this.reprise = false,
   });
 
   final String label;
   final VoidCallback? onPressed;
   final bool principal;
-  final bool discret;
+  final bool reprise;
 
   @override
   Widget build(BuildContext context) {
     final actif = onPressed != null;
-    final fond = principal
-        ? AppColors.accent
-        : (discret ? Colors.white24 : Colors.white);
-    final texte = principal ? Colors.white : _encre;
+    final (fond, texte) = switch ((principal, reprise)) {
+      (true, _) => (AppColors.deep, Colors.white),
+      (_, true) => (AppColors.main, AppColors.ink),
+      _ => (AppColors.secondary, AppColors.ink),
+    };
 
     return Opacity(
-      opacity: actif ? 1 : 0.45,
+      opacity: actif ? 1 : 0.4,
       child: Material(
         color: fond,
-        borderRadius: const BorderRadius.all(Radius.circular(18)),
+        borderRadius: const BorderRadius.all(
+          Radius.circular(AppTheme.radius),
+        ),
         child: InkWell(
           onTap: onPressed,
-          borderRadius: const BorderRadius.all(Radius.circular(18)),
+          borderRadius: const BorderRadius.all(
+            Radius.circular(AppTheme.radius),
+          ),
           child: SizedBox(
             height: AppTheme.minTouchTarget,
             child: Center(
@@ -99,7 +92,7 @@ class _HomeAction extends StatelessWidget {
                 label,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   color: texte,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ),
@@ -126,23 +119,25 @@ class _Menu extends ConsumerWidget {
       children: [
         const Spacer(),
         // Le logo annonce les trois manches — la bulle qui parle, le « 1 » du
-        // mot unique, le personnage qui mime. Son fond est le corail de
-        // l'écran : il se confond, et seul le dessin reste.
+        // mot unique, le personnage qui mime. C'est la version détourée : le
+        // dessin se pose directement sur le fond de l'écran, sans le carré
+        // corail qu'il traînait, qui se serait vu sur ce pastel.
         Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: 260, maxWidth: 260),
+            constraints: const BoxConstraints(maxHeight: 280, maxWidth: 280),
             child: Image.asset(
-              'assets/branding/logo.png',
+              'assets/branding/logo_mark.png',
               semanticLabel: l10n.appTitle,
             ),
           ),
         ),
+        const SizedBox(height: 8),
         Text(
           l10n.appTitle,
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.displayMedium?.copyWith(
             fontWeight: FontWeight.w800,
-            color: _encre,
+            color: AppColors.ink,
             letterSpacing: -1,
           ),
         ),
@@ -151,8 +146,9 @@ class _Menu extends ConsumerWidget {
           _HomeAction(
             label: l10n.homeResumeGame,
             // La reprise vient en second : c'est le cas rare, et elle ne doit
-            // pas prendre la place de « Jouer ».
-            discret: true,
+            // pas prendre la place de « Jouer ». Le corail la distingue sans
+            // la mettre en avant.
+            reprise: true,
             onPressed: () {
               ref.read(currentGameProvider.notifier).game = resumable;
               unawaited(context.push(AppRoutes.game));
@@ -160,8 +156,8 @@ class _Menu extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
         ],
-        // L'unique action pleine de l'écran, dans le teal des étincelles du
-        // logo : sur ce corail, c'est le seul contraste qui ne vibre pas.
+        // L'action principale, dans le teal des étincelles du logo : sur ce
+        // corail, c'est le seul contraste qui ne vibre pas.
         _HomeAction(
           label: l10n.homePlay,
           principal: true,

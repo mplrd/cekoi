@@ -4,9 +4,8 @@ import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// Une manche sombre : encre claire sur fond foncé.
-const Color _encre = Colors.white;
-const Color _fond = AppColors.accent;
+/// L'accent d'une manche quelconque : l'anneau le porte, le nombre non.
+const Color _accent = AppColors.deep;
 
 void main() {
   late AppLocalizations l10n;
@@ -19,6 +18,7 @@ void main() {
     WidgetTester tester, {
     required Duration remaining,
     Duration total = const Duration(seconds: 60),
+    Color accent = _accent,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -29,8 +29,7 @@ void main() {
           body: TurnTimerRing(
             remaining: remaining,
             total: total,
-            ink: _encre,
-            ground: _fond,
+            accent: accent,
           ),
         ),
       ),
@@ -39,11 +38,12 @@ void main() {
   }
 
   group('les dix dernières secondes se renversent', () {
-    // Depuis que chaque manche a sa couleur de fond, une teinte d'urgence
-    // fixe se noyait dedans — le rouge était invisible sur le rouge de la
-    // manche 3, au moment exact où il compte. L'anneau se remplit donc de
-    // l'encre et le nombre passe en négatif : le contraste ne dépend plus du
-    // fond.
+    // Le nombre reste en encre sombre tant qu'il reste du temps, quelle que
+    // soit la manche : l'accent d'une manche peut être clair — le corail — et
+    // un chiffre de cette teinte serait illisible sur le fond pastel. Sous le
+    // seuil, le disque se remplit de rouge et le nombre passe en blanc : le
+    // renversement se voit du coin de l'œil, un simple changement de teinte
+    // non.
     testWidgets('au-dessus du seuil, le nombre est dans l encre', (
       tester,
     ) async {
@@ -52,7 +52,7 @@ void main() {
         remaining: const Duration(seconds: 11),
       );
 
-      expect(texte.style?.color, _encre);
+      expect(texte.style?.color, AppColors.ink);
     });
 
     testWidgets('à dix secondes pile, le renversement est déjà là', (
@@ -65,7 +65,55 @@ void main() {
         remaining: const Duration(seconds: 10),
       );
 
-      expect(texte.style?.color, _fond);
+      expect(texte.style?.color, Colors.white);
+    });
+  });
+
+  group('l anneau porte la couleur de la manche', () {
+    // Depuis que le fond est le même sur tous les écrans, l'anneau et la
+    // pastille sont les deux seuls porteurs de l'identité de manche pendant le
+    // jeu. Sans ce test, remplacer `accent` par une constante ne ferait rougir
+    // personne — et « on est à la deux ou à la trois ? » redeviendrait une
+    // question qu'on pose à voix haute.
+    Color? anneau(WidgetTester tester) => tester
+        .widget<CircularProgressIndicator>(
+          find.byType(CircularProgressIndicator),
+        )
+        .valueColor
+        ?.value;
+
+    testWidgets('la couleur reçue arrive jusqu au trace', (tester) async {
+      await pumpRing(
+        tester,
+        remaining: const Duration(seconds: 30),
+        accent: AppColors.main,
+      );
+
+      expect(anneau(tester), AppColors.main);
+    });
+
+    testWidgets('une autre manche donne une autre couleur', (tester) async {
+      // Deux manches distinctes, sinon le test passerait sur une couleur
+      // codée en dur qui se trouverait être celle de la fixture.
+      await pumpRing(
+        tester,
+        remaining: const Duration(seconds: 30),
+        accent: AppColors.urgent,
+      );
+
+      expect(anneau(tester), AppColors.urgent);
+    });
+
+    testWidgets('en urgence, le renversement reprend la main', (tester) async {
+      // L'accent cède : sous le seuil, l'anneau passe en blanc sur le disque
+      // rouge. Une manche dont l'accent est clair y deviendrait invisible.
+      await pumpRing(
+        tester,
+        remaining: const Duration(seconds: 5),
+        accent: AppColors.main,
+      );
+
+      expect(anneau(tester), Colors.white);
     });
   });
 

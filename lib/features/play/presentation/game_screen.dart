@@ -1,6 +1,5 @@
 import 'package:cekoi/app/current_game.dart';
 import 'package:cekoi/app/router.dart';
-import 'package:cekoi/app/theme/app_colors.dart';
 import 'package:cekoi/domain/engine/game_phase.dart';
 import 'package:cekoi/features/play/presentation/widgets/playing_view.dart';
 import 'package:cekoi/features/play/presentation/widgets/podium_view.dart';
@@ -47,21 +46,11 @@ class GameScreen extends ConsumerWidget {
           context.go(AppRoutes.home);
         }
       },
-      // La partie se joue en couleur, et la couleur dit la manche : le corail
-      // de la bulle en description libre, le teal des étincelles au mot
-      // unique, le rouge de l'explosion au mime. C'est l'information qu'on
-      // perd le plus vite en jouant, et elle se lit ici sans un mot.
-      //
-      // Les écrans de bilan sortent de ce code : une manche vient de finir, la
-      // couleur suivante n'a pas encore de sens. Ils prennent le corail de la
-      // marque, comme l'accueil.
+      // Le fond vient du thème, comme sur tous les autres écrans. La manche se
+      // lit sur l'anneau du chrono et sur la pastille de l'en-tête : repeindre
+      // l'écran entier à chaque manche donnait trois applications différentes,
+      // et forçait chaque élément à recalculer son encre selon le fond.
       child: Scaffold(
-        backgroundColor: switch (game.phase) {
-          GamePhase.turnIntro ||
-          GamePhase.playing ||
-          GamePhase.turnSummary => AppColors.round(game.round),
-          _ => AppColors.seed,
-        },
         body: SafeArea(
           child: switch (game.phase) {
             GamePhase.turnIntro => TurnIntroView(game: game),

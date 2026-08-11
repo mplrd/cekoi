@@ -57,11 +57,14 @@ jobs:
         run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Formatage
-        run: dart format --output=none --set-exit-if-changed lib test
+        run: dart format --output=none --set-exit-if-changed lib test tool
 
       - name: Analyse statique
         run: flutter analyze --fatal-infos --fatal-warnings
 
+      # Le banc de rendu de `tool/apercus/` n'est pas ici : il vit hors de
+      # `test/` précisément pour que ni cette commande ni celle du poste de
+      # travail ne le ramassent.
       - name: Tests
         run: flutter test --coverage
 

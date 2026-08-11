@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:cekoi/app/current_game.dart';
 import 'package:cekoi/app/theme/app_colors.dart';
 import 'package:cekoi/domain/engine/game_state.dart';
+import 'package:cekoi/domain/rules/round.dart';
 import 'package:cekoi/features/play/presentation/play_controller.dart';
 import 'package:cekoi/features/play/presentation/widgets/action_zone.dart';
 import 'package:cekoi/features/play/presentation/widgets/game_card_face.dart';
+import 'package:cekoi/features/play/presentation/widgets/round_labels.dart';
 import 'package:cekoi/features/play/presentation/widgets/turn_timer_ring.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -62,11 +64,16 @@ class PlayingView extends ConsumerWidget {
         Expanded(
           flex: actionsAreSplit ? 1 : 2,
           child: switch ((countdown, game.isPaused)) {
+            // L'encre est celle du jeu, plus celle d'une couleur de manche :
+            // le fond est le pastel du thème. Ces deux vues portaient encore
+            // `onRound`, qui rend du blanc en manches 2 et 3 — soit 1,5:1 sur
+            // ce fond. L'écran de pause et le compte à rebours de reprise
+            // étaient donc invisibles deux manches sur trois.
             (final int seconds, _) => _Countdown(
               seconds: seconds,
-              color: AppColors.onRound(game.round),
+              color: AppColors.ink,
             ),
-            (_, true) => _PausePanel(encre: AppColors.onRound(game.round)),
+            (_, true) => const _PausePanel(encre: AppColors.ink),
             _ => _CardZone(game: game),
           },
         ),
@@ -86,28 +93,33 @@ class _Header extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final encre = AppColors.onRound(game.round);
     final remaining = ref.watch(
       currentGameProvider.select((g) => g?.remaining ?? Duration.zero),
     );
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
       child: Column(
         children: [
           Row(
             children: [
+              // La pastille de manche : le seul endroit où la couleur de la
+              // manche est nommée *et* montrée. C'est ce qu'on cherche quand
+              // on prend le téléphone au milieu d'une partie.
+              _RoundPill(round: game.round),
+              const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   l10n.gameTeamScore(
                     game.activeTeam.name,
                     game.scoreOf(game.activeTeam.id),
                   ),
+                  overflow: TextOverflow.ellipsis,
                   // Le nom de l'équipe prenait sa couleur d'équipe, illisible
-                  // sur un fond coloré. La pastille la porte désormais, et le
-                  // texte reste dans l'encre de la manche.
+                  // sur fond coloré : il reste en encre, la pastille de manche
+                  // porte la couleur.
                   style: theme.textTheme.titleMedium?.copyWith(
-                    color: encre,
+                    color: AppColors.ink,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -117,7 +129,7 @@ class _Header extends ConsumerWidget {
                     ? ref.read(playControllerProvider.notifier).requestResume
                     : ref.read(playControllerProvider.notifier).pause,
                 icon: Icon(game.isPaused ? Icons.play_arrow : Icons.pause),
-                color: encre,
+                color: AppColors.ink,
                 tooltip: game.isPaused ? l10n.actionResume : l10n.actionPause,
               ),
             ],
@@ -125,17 +137,57 @@ class _Header extends ConsumerWidget {
           TurnTimerRing(
             remaining: remaining,
             total: game.config.turnDuration,
-            ink: encre,
-            ground: AppColors.round(game.round),
+            accent: AppColors.round(game.round),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
             l10n.gameRemainingCards(game.pile.length),
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: encre.withValues(alpha: 0.75),
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: AppColors.inkSoft,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Le numéro de la manche, dans sa couleur.
+///
+/// Court exprès — « M2 » et non « Manche 2 » : la place de l'en-tête sert
+/// d'abord au nom de l'équipe, et la couleur porte déjà l'essentiel. Le libellé
+/// complet reste accessible aux lecteurs d'écran.
+class _RoundPill extends StatelessWidget {
+  const _RoundPill({required this.round});
+
+  final Round round;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
+    return Semantics(
+      label: round.label(l10n),
+      excludeSemantics: true,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: AppColors.round(round),
+          borderRadius: const BorderRadius.all(Radius.circular(999)),
+        ),
+        child: Text(
+          l10n.scoreRoundShort(round.number),
+          // 19 px en gras, et non l'échelle du libellé : sur le rouge du mime,
+          // le blanc plafonne à 4:1, sous le seuil du texte courant. À cette
+          // taille et cette graisse, c'est du grand texte au sens WCAG, dont
+          // le seuil est 3:1. Deux caractères — la place ne manque pas.
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+            fontSize: 19,
+            color: AppColors.onRound(round),
+            fontWeight: FontWeight.w800,
+          ),
+        ),
       ),
     );
   }
@@ -337,7 +389,7 @@ class _Actions extends ConsumerWidget {
                 l10n.gamePassLocked,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: AppColors.onRound(game.round).withValues(alpha: 0.8),
+                  color: AppColors.inkSoft,
                 ),
               ),
             ),
@@ -352,8 +404,10 @@ class _Actions extends ConsumerWidget {
                   Expanded(
                     child: ActionZone(
                       label: l10n.actionPass,
-                      outlined: true,
-                      foreground: AppColors.onRound(game.round),
+                      // Pleine, dans le vert du personnage : elle vaut la
+                      // moitié du jeu en manches 2 et 3, un contour vide la
+                      // faisait passer pour indisponible.
+                      secondaire: true,
                       onPressed: game.canPass ? controller.passed : null,
                     ),
                   ),
@@ -362,7 +416,7 @@ class _Actions extends ConsumerWidget {
                 Expanded(
                   child: ActionZone(
                     label: l10n.actionFound,
-                    background: AppColors.found,
+                    background: AppColors.deep,
                     foreground: Colors.white,
                     onPressed: game.canAct ? controller.found : null,
                   ),

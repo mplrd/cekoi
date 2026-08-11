@@ -1,6 +1,8 @@
 import 'package:cekoi/app/router.dart';
+import 'package:cekoi/app/theme/app_colors.dart';
 import 'package:cekoi/domain/entities/game_config.dart';
 import 'package:cekoi/features/setup/presentation/setup_controller.dart';
+import 'package:cekoi/features/setup/presentation/widgets/choice_tile.dart';
 import 'package:cekoi/features/setup/presentation/widgets/setup_scaffold.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -120,23 +122,20 @@ class _Setting extends StatelessWidget {
           Text(
             label,
             style: theme.textTheme.titleMedium?.copyWith(
+              color: AppColors.ink,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Wrap(
             spacing: 10,
             runSpacing: 10,
             children: [
               for (final choice in chips)
-                ChoiceChip(
-                  label: Text(choice.label),
+                ChoiceTile(
+                  label: choice.label,
                   selected: choice.isSelected,
-                  onSelected: (_) => choice.onSelected(),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
+                  onTap: choice.onSelected,
                 ),
             ],
           ),

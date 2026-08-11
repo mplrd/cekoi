@@ -79,10 +79,12 @@ flutter:
 
   assets:
     - assets/decks/
-    # Le seul fichier de marque que l'application lit. Le SVG source et le
-    # premier plan des icônes vivent à côté mais restent hors du bundle : ils
-    # servent à fabriquer, pas à exécuter, et pèsent 340 Ko à eux deux.
-    - assets/branding/logo.png
+    # Le seul fichier de marque que l'application lit : le dessin détouré, sans
+    # son fond corail — il se pose ainsi sur le fond pastel de l'application au
+    # lieu d'y coller un carré. Le SVG source, le PNG d'origine et le premier
+    # plan des icônes vivent à côté mais restent hors du bundle : ils servent à
+    # fabriquer, pas à exécuter, et pèsent 530 Ko à eux trois.
+    - assets/branding/logo_mark.png
 
 # Icônes de lanceur, générées depuis le logo par `dart run flutter_launcher_icons`.
 #

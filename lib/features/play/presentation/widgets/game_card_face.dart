@@ -37,14 +37,20 @@ class GameCardFace extends StatelessWidget {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
         child: Center(
           child: FittedBox(
             fit: BoxFit.scaleDown,
             child: Text(
               card.text,
               textAlign: TextAlign.center,
-              style: theme.textTheme.displayMedium?.copyWith(
+              // Volontairement plus gros que l'échelle du thème : le texte est
+              // seul sur la carte et se lit à un mètre. `scaleDown` ramène les
+              // longues phrases à la largeur disponible, les mots courts
+              // gardent cette taille — sans quoi « Chat » flottait, minuscule,
+              // au milieu d'un rectangle blanc.
+              style: theme.textTheme.displayLarge?.copyWith(
+                fontSize: 60,
                 fontWeight: FontWeight.w800,
                 color: AppColors.ink,
                 height: 1.1,

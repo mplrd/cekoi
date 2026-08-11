@@ -26,10 +26,9 @@ class TurnIntroView extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final countdown = ref.watch(playControllerProvider);
-    // L'écran porte la couleur de la manche (voir `GameScreen`) : l'encre s'y
-    // adapte, et les nuances de gris du thème n'y sont plus lisibles.
-    final encre = AppColors.onRound(game.round);
-    final voile = encre.withValues(alpha: 0.72);
+    // Le fond est celui du thème, comme partout : l'encre est celle du jeu.
+    const encre = AppColors.ink;
+    final voile = AppColors.inkSoft;
 
     return Padding(
       padding: const EdgeInsets.all(32),
@@ -81,8 +80,8 @@ class TurnIntroView extends ConsumerWidget {
           if (countdown == null)
             ActionZone(
               label: l10n.actionStartTurn,
-              background: Colors.white,
-              foreground: AppColors.ink,
+              background: AppColors.deep,
+              foreground: Colors.white,
               onPressed: ref.read(playControllerProvider.notifier).startTurn,
             )
           else

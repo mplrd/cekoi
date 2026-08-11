@@ -40,8 +40,9 @@ Ne réimplémente pas ce qui est déjà décidé. Avant de coder, lis le documen
 flutter pub get
 dart run build_runner build --delete-conflicting-outputs   # freezed, riverpod, drift
 flutter gen-l10n                                            # après toute modif des ARB
-dart format lib test                                        # la CI le vérifie, cf. ci.yml
+dart format lib test tool                                   # la CI le vérifie, cf. ci.yml
 flutter test                                                # tests domaine + widgets
+flutter test tool/apercus/apercu.dart --update-goldens       # banc de rendu : un PNG par écran
 flutter analyze
 flutter run
 ```

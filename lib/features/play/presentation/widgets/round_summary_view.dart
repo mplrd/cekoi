@@ -78,7 +78,7 @@ class RoundSummaryView extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
           child: ActionZone(
             label: l10n.actionNextRound,
-            background: AppColors.accent,
+            background: AppColors.deep,
             foreground: Colors.white,
             onPressed: ref.read(playControllerProvider.notifier).startNextRound,
           ),

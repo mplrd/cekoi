@@ -33,83 +33,82 @@ class SetupScaffold extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
 
-    // Un bandeau coloré en tête, le contenu sur fond clair en dessous.
+    // Un seul fond, du haut de l'écran au bas : celui du thème.
     //
-    // La configuration se lit et se coche : lui donner le fond plein des
-    // écrans de jeu rendrait des listes de vingt catégories fatigantes. Le
-    // bandeau suffit à dire qu'on est dans le même jeu, et il porte ce qui
-    // compte à ce moment-là — où on en est du parcours.
+    // La version précédente posait un bandeau corail sur un fond presque
+    // blanc. Deux surfaces, deux couleurs, une bordure arrondie qui laissait
+    // des encoches dans les coins hauts — l'écran avait l'air coupé en deux.
+    // Ici l'en-tête n'est plus une surface, juste le haut de la page.
     return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          DecoratedBox(
-            decoration: const BoxDecoration(
-              color: AppColors.seed,
-              borderRadius: BorderRadius.vertical(
-                bottom: Radius.circular(28),
-              ),
-            ),
-            child: SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      children: [
-                        const BackButton(color: AppColors.ink),
-                        // Le libellé cède avant les points : sur une petite
-                        // largeur, savoir combien d'étapes restent vaut mieux
-                        // que de les compter en toutes lettres.
-                        Flexible(
-                          child: Text(
-                            l10n.setupStep(step, stepCount),
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.labelLarge?.copyWith(
-                              color: AppColors.ink.withValues(alpha: 0.8),
-                              letterSpacing: 1.2,
-                              fontWeight: FontWeight.w600,
+          SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      const BackButton(color: AppColors.ink),
+                      // Le libellé cède avant les points : sur une petite
+                      // largeur, savoir combien d'étapes restent vaut mieux
+                      // que de les compter en toutes lettres.
+                      Flexible(
+                        child: Text(
+                          l10n.setupStep(step, stepCount),
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            color: AppColors.inkSoft,
+                            letterSpacing: 1.2,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Spacer(),
+                      // Cinq points valent mieux qu'une barre : on compte les
+                      // étapes restantes d'un coup d'œil, ce qu'un pourcentage
+                      // ne dit pas. L'étape courante est un trait plein dans
+                      // le teal des actions, les franchies des points d'encre.
+                      for (var i = 1; i <= stepCount; i++)
+                        Container(
+                          width: i == step ? 22 : 8,
+                          height: 8,
+                          margin: const EdgeInsets.only(left: 5),
+                          decoration: BoxDecoration(
+                            color: switch (i) {
+                              _ when i == step => AppColors.deep,
+                              _ when i < step => AppColors.ink,
+                              _ => AppColors.ink.withValues(alpha: 0.22),
+                            },
+                            borderRadius: const BorderRadius.all(
+                              Radius.circular(4),
                             ),
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        const Spacer(),
-                        // Cinq points valent mieux qu'une barre : on compte
-                        // les étapes restantes d'un coup d'œil, ce qu'un
-                        // pourcentage ne dit pas.
-                        for (var i = 1; i <= stepCount; i++)
-                          Container(
-                            width: i == step ? 20 : 8,
-                            height: 8,
-                            margin: const EdgeInsets.only(left: 4),
-                            decoration: BoxDecoration(
-                              color: AppColors.ink.withValues(
-                                alpha: i <= step ? 1 : 0.3,
-                              ),
-                              borderRadius: const BorderRadius.all(
-                                Radius.circular(4),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Text(
                       title,
                       style: theme.textTheme.displaySmall?.copyWith(
                         fontWeight: FontWeight.w800,
                         color: AppColors.ink,
                         letterSpacing: -0.5,
+                        height: 1.1,
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
+          const SizedBox(height: 16),
           Expanded(
             child: SafeArea(top: false, bottom: false, child: child),
           ),

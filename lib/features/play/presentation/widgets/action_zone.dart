@@ -1,3 +1,4 @@
+import 'package:cekoi/app/theme/app_theme.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
@@ -19,7 +20,7 @@ class ActionZone extends StatelessWidget {
     required this.onPressed,
     this.background,
     this.foreground,
-    this.outlined = false,
+    this.secondaire = false,
     super.key,
   });
 
@@ -34,25 +35,30 @@ class ActionZone extends StatelessWidget {
 
   final Color? background;
   final Color? foreground;
-  final bool outlined;
+
+  /// Traitement secondaire : le vert du personnage plutôt que le teal des
+  /// actions. Le nom dit ce que ça fait, pas à quoi ça ressemblait — cette
+  /// option dessinait un contour vide, elle remplit désormais un aplat.
+  final bool secondaire;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final actif = onPressed != null;
 
-    final fond = outlined
-        ? Colors.transparent
-        : (background ?? theme.colorScheme.primary);
+    // Les deux zones sont pleines. *Je passe…* était un contour vide, qui
+    // disparaissait sur le fond pastel et se lisait comme une action
+    // indisponible — alors qu'elle est la moitié du jeu en manches 2 et 3.
+    final fond =
+        background ??
+        (secondaire ? theme.colorScheme.secondary : theme.colorScheme.primary);
     final encre =
         foreground ??
-        (outlined ? theme.colorScheme.onSurface : theme.colorScheme.onPrimary);
+        (secondaire
+            ? theme.colorScheme.onSecondary
+            : theme.colorScheme.onPrimary);
 
-    // Sur le fond coloré d'une manche, un contour tiré du thème disparaît :
-    // la bordure et le texte prennent la même encre que le reste de l'écran.
-    final couleur = actif
-        ? fond
-        : (outlined ? Colors.transparent : encre.withValues(alpha: 0.15));
+    final couleur = actif ? fond : fond.withValues(alpha: 0.3);
     final texte = actif ? encre : encre.withValues(alpha: 0.4);
 
     return Semantics(
@@ -75,10 +81,9 @@ class ActionZone extends StatelessWidget {
         child: DecoratedBox(
           decoration: BoxDecoration(
             color: couleur,
-            borderRadius: const BorderRadius.all(Radius.circular(16)),
-            border: outlined
-                ? Border.all(color: texte.withValues(alpha: 0.55), width: 2)
-                : null,
+            borderRadius: const BorderRadius.all(
+              Radius.circular(AppTheme.radius),
+            ),
           ),
           child: Center(
             child: Padding(
@@ -88,7 +93,7 @@ class ActionZone extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: theme.textTheme.titleLarge?.copyWith(
                   color: texte,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ),

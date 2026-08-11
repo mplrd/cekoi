@@ -24,9 +24,9 @@ class TurnSummaryView extends ConsumerWidget {
     final theme = Theme.of(context);
     final turn = game.turn;
     final results = turn?.results ?? const <CardResult>[];
-    // L'écran garde le fond de la manche (voir `GameScreen`) : son encre en
-    // découle, et les lignes deviennent des cartes posées dessus.
-    final encre = AppColors.onRound(game.round);
+    // Le fond est celui du thème, comme partout : l'encre est donc l'encre
+    // du jeu, et les lignes sont des cartes blanches posées dessus.
+    const encre = AppColors.ink;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -107,8 +107,8 @@ class TurnSummaryView extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
           child: ActionZone(
             label: l10n.actionConfirmTurn,
-            background: Colors.white,
-            foreground: AppColors.ink,
+            background: AppColors.deep,
+            foreground: Colors.white,
             onPressed: ref.read(playControllerProvider.notifier).confirmTurn,
           ),
         ),
@@ -149,7 +149,7 @@ class _ResultTile extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Material(
-        color: Colors.white,
+        color: AppColors.card,
         borderRadius: const BorderRadius.all(Radius.circular(14)),
         child: ListTile(
           onTap: onToggle,
@@ -159,7 +159,7 @@ class _ResultTile extends StatelessWidget {
           leading: Icon(
             found ? Icons.check_circle : Icons.redo,
             color: found
-                ? AppColors.found
+                ? AppColors.deep
                 : AppColors.ink.withValues(alpha: 0.45),
           ),
           title: Text(
@@ -175,7 +175,7 @@ class _ResultTile extends StatelessWidget {
                 : (allowsPass ? l10n.outcomePassed : l10n.outcomeMissed),
             style: theme.textTheme.labelLarge?.copyWith(
               color: found
-                  ? AppColors.found
+                  ? AppColors.deep
                   : AppColors.ink.withValues(alpha: 0.55),
               fontWeight: FontWeight.w600,
             ),

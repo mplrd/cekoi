@@ -78,14 +78,14 @@ class _PodiumViewState extends ConsumerState<PodiumView> {
             children: [
               ActionZone(
                 label: l10n.actionReplaySameSettings,
-                background: AppColors.accent,
+                background: AppColors.deep,
                 foreground: Colors.white,
                 onPressed: _replaying ? null : _replay,
               ),
               const SizedBox(height: 12),
               ActionZone(
                 label: l10n.actionNewGame,
-                outlined: true,
+                secondaire: true,
                 foreground: AppColors.ink,
                 onPressed: () {
                   ref.read(currentGameProvider.notifier).game = null;
