@@ -127,9 +127,17 @@ class _DeckList extends ConsumerWidget {
       );
     }
 
-    return ListView(
-      padding: const EdgeInsets.only(bottom: 96),
-      children: [for (final deck in decks) _DeckTile(deck: deck)],
+    // Chaque catégorie sur sa carte blanche, comme les catégories du jeu et
+    // les lignes du récapitulatif de tour. Posées à même le fond, elles
+    // étaient le seul endroit de l'application où une liste flottait.
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 96),
+      itemCount: decks.length,
+      separatorBuilder: (_, _) => const SizedBox(height: 12),
+      itemBuilder: (_, index) => Card(
+        clipBehavior: Clip.antiAlias,
+        child: _DeckTile(deck: decks[index]),
+      ),
     );
   }
 }
