@@ -1,0 +1,72 @@
+{
+  "id": "emotions",
+  "name": "Émotions",
+  "audience": "family",
+  "minAge": 6,
+  "contentVersion": 1,
+  "isPremium": false,
+  "sortOrder": 40,
+  "icon": "mood",
+  "cards": [
+    {
+      "text": "Heureux",
+      "difficulty": 1
+    },
+    {
+      "text": "Triste",
+      "difficulty": 1
+    },
+    {
+      "text": "En colère",
+      "difficulty": 1
+    },
+    {
+      "text": "Surpris",
+      "difficulty": 1
+    },
+    {
+      "text": "Fatigué",
+      "difficulty": 1
+    },
+    {
+      "text": "Excité",
+      "difficulty": 1
+    },
+    {
+      "text": "Jaloux",
+      "difficulty": 2
+    },
+    {
+      "text": "Timide",
+      "difficulty": 2
+    },
+    {
+      "text": "Peur",
+      "difficulty": 2
+    },
+    {
+      "text": "Amoureux",
+      "difficulty": 2
+    },
+    {
+      "text": "dormir debout",
+      "difficulty": 2
+    },
+    {
+      "text": "Pleurer de rire",
+      "difficulty": 3
+    },
+    {
+      "text": "Avoir une faim de loup",
+      "difficulty": 3
+    },
+    {
+      "text": "La tête dans les nuages",
+      "difficulty": 3
+    },
+    {
+      "text": "Avoir le coeur brisé",
+      "difficulty": 3
+    }
+  ]
+}

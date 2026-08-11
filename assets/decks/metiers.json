@@ -1,0 +1,132 @@
+{
+  "id": "metiers",
+  "name": "Métiers",
+  "audience": "family",
+  "minAge": 6,
+  "contentVersion": 1,
+  "isPremium": false,
+  "sortOrder": 50,
+  "icon": "work",
+  "cards": [
+    {
+      "text": "Pompier",
+      "difficulty": 1
+    },
+    {
+      "text": "Policier",
+      "difficulty": 1
+    },
+    {
+      "text": "Médecin",
+      "difficulty": 1
+    },
+    {
+      "text": "Juge",
+      "difficulty": 1
+    },
+    {
+      "text": "Maître / Maîtresse",
+      "difficulty": 1
+    },
+    {
+      "text": "Jardinier",
+      "difficulty": 1
+    },
+    {
+      "text": "Coiffeur",
+      "difficulty": 1
+    },
+    {
+      "text": "Maçon",
+      "difficulty": 1
+    },
+    {
+      "text": "Chanteur",
+      "difficulty": 1
+    },
+    {
+      "text": "Astronaute",
+      "difficulty": 1
+    },
+    {
+      "text": "Pilote d'avion",
+      "difficulty": 1
+    },
+    {
+      "text": "Serveur",
+      "difficulty": 1
+    },
+    {
+      "text": "Cuisinier",
+      "difficulty": 1
+    },
+    {
+      "text": "Dentiste",
+      "difficulty": 1
+    },
+    {
+      "text": "Fermier",
+      "difficulty": 1
+    },
+    {
+      "text": "Facteur",
+      "difficulty": 2
+    },
+    {
+      "text": "Mécanicien",
+      "difficulty": 2
+    },
+    {
+      "text": "Magicien",
+      "difficulty": 2
+    },
+    {
+      "text": "Photographe",
+      "difficulty": 2
+    },
+    {
+      "text": "Chirurgien",
+      "difficulty": 2
+    },
+    {
+      "text": "Présentateur météo",
+      "difficulty": 2
+    },
+    {
+      "text": "Vétérinaire",
+      "difficulty": 2
+    },
+    {
+      "text": "Éboueur",
+      "difficulty": 2
+    },
+    {
+      "text": "Vendeur de glaces",
+      "difficulty": 2
+    },
+    {
+      "text": "Chauffeur de bus",
+      "difficulty": 2
+    },
+    {
+      "text": "Archéologue",
+      "difficulty": 3
+    },
+    {
+      "text": "Bibliothécaire",
+      "difficulty": 3
+    },
+    {
+      "text": "Guide touristique",
+      "difficulty": 3
+    },
+    {
+      "text": "Déménageur",
+      "difficulty": 3
+    },
+    {
+      "text": "Détective",
+      "difficulty": 3
+    }
+  ]
+}

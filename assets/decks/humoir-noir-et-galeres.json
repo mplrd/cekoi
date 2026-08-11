@@ -1,0 +1,72 @@
+{
+  "id": "humoir-noir-et-galeres",
+  "name": "Humour noir et galères",
+  "audience": "adult",
+  "minAge": 18,
+  "contentVersion": 1,
+  "isPremium": false,
+  "sortOrder": 200,
+  "icon": "mood_bad",
+  "cards": [
+    {
+      "text": "Marcher dans une crotte de chien",
+      "difficulty": 2
+    },
+    {
+      "text": "Se cogner le petit orteil dans le meuble",
+      "difficulty": 2
+    },
+    {
+      "text": "Crise d'hémorroïdes",
+      "difficulty": 2
+    },
+    {
+      "text": "Attaque de morpions",
+      "difficulty": 2
+    },
+    {
+      "text": "Gifle au visage",
+      "difficulty": 2
+    },
+    {
+      "text": "Pousser Mémé dans les orties",
+      "difficulty": 2
+    },
+    {
+      "text": "Faire du chantage",
+      "difficulty": 2
+    },
+    {
+      "text": "Crise cardiaque",
+      "difficulty": 2
+    },
+    {
+      "text": "Prendre en otage",
+      "difficulty": 2
+    },
+    {
+      "text": "Manger les pissenlits par la racine",
+      "difficulty": 2
+    },
+    {
+      "text": "Noyer son chagrin",
+      "difficulty": 2
+    },
+    {
+      "text": "Électrocution",
+      "difficulty": 2
+    },
+    {
+      "text": "Faire tomber son téléphone dans les toilettes",
+      "difficulty": 2
+    },
+    {
+      "text": "Ne pas avoir la lumière à tous les étages",
+      "difficulty": 2
+    },
+    {
+      "text": "Se faire renverser par un bus",
+      "difficulty": 2
+    }
+  ]
+}

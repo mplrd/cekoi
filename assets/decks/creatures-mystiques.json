@@ -1,0 +1,72 @@
+{
+  "id": "creatures-mystiques",
+  "name": "Créatures mystiques",
+  "audience": "family",
+  "minAge": 6,
+  "contentVersion": 1,
+  "isPremium": false,
+  "sortOrder": 90,
+  "icon": "auto_awesome",
+  "cards": [
+    {
+      "text": "Licorne",
+      "difficulty": 1
+    },
+    {
+      "text": "Dragon",
+      "difficulty": 1
+    },
+    {
+      "text": "Sirène",
+      "difficulty": 1
+    },
+    {
+      "text": "Fée",
+      "difficulty": 1
+    },
+    {
+      "text": "Sorcière",
+      "difficulty": 1
+    },
+    {
+      "text": "Loup-garou",
+      "difficulty": 1
+    },
+    {
+      "text": "Vampire",
+      "difficulty": 1
+    },
+    {
+      "text": "Momie",
+      "difficulty": 1
+    },
+    {
+      "text": "Elfe",
+      "difficulty": 2
+    },
+    {
+      "text": "Fantome",
+      "difficulty": 2
+    },
+    {
+      "text": "Minotaure",
+      "difficulty": 2
+    },
+    {
+      "text": "Cyclope",
+      "difficulty": 2
+    },
+    {
+      "text": "Ogre",
+      "difficulty": 3
+    },
+    {
+      "text": "Leprechaun",
+      "difficulty": 3
+    },
+    {
+      "text": "Yeti",
+      "difficulty": 3
+    }
+  ]
+}

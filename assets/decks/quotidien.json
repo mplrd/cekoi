@@ -1,0 +1,132 @@
+{
+  "id": "quotidien",
+  "name": "Quotidien",
+  "audience": "family",
+  "minAge": 6,
+  "contentVersion": 1,
+  "isPremium": false,
+  "sortOrder": 30,
+  "icon": "home",
+  "cards": [
+    {
+      "text": "Lit",
+      "difficulty": 1
+    },
+    {
+      "text": "Voiture",
+      "difficulty": 1
+    },
+    {
+      "text": "Téléphone",
+      "difficulty": 1
+    },
+    {
+      "text": "Puzzle",
+      "difficulty": 1
+    },
+    {
+      "text": "Porte",
+      "difficulty": 1
+    },
+    {
+      "text": "Caddie",
+      "difficulty": 1
+    },
+    {
+      "text": "Clé",
+      "difficulty": 1
+    },
+    {
+      "text": "Imprimante",
+      "difficulty": 1
+    },
+    {
+      "text": "Brosse à dents",
+      "difficulty": 1
+    },
+    {
+      "text": "Jardin",
+      "difficulty": 1
+    },
+    {
+      "text": "Chaise",
+      "difficulty": 1
+    },
+    {
+      "text": "École",
+      "difficulty": 1
+    },
+    {
+      "text": "Montre",
+      "difficulty": 1
+    },
+    {
+      "text": "Machine à laver",
+      "difficulty": 1
+    },
+    {
+      "text": "Ordinateur",
+      "difficulty": 1
+    },
+    {
+      "text": "Ascenseur",
+      "difficulty": 2
+    },
+    {
+      "text": "Rasoir",
+      "difficulty": 2
+    },
+    {
+      "text": "Prison",
+      "difficulty": 2
+    },
+    {
+      "text": "Sac à dos",
+      "difficulty": 2
+    },
+    {
+      "text": "Ampoule",
+      "difficulty": 2
+    },
+    {
+      "text": "Parapluie",
+      "difficulty": 2
+    },
+    {
+      "text": "Station-service",
+      "difficulty": 2
+    },
+    {
+      "text": "Timbre",
+      "difficulty": 2
+    },
+    {
+      "text": "Bibliothèque",
+      "difficulty": 2
+    },
+    {
+      "text": "Réveil",
+      "difficulty": 3
+    },
+    {
+      "text": "Aéroport",
+      "difficulty": 3
+    },
+    {
+      "text": "Défibrillateur",
+      "difficulty": 3
+    },
+    {
+      "text": "Cave",
+      "difficulty": 3
+    },
+    {
+      "text": "Sèche-cheveux",
+      "difficulty": 3
+    },
+    {
+      "text": "Aspirateur",
+      "difficulty": 3
+    }
+  ]
+}

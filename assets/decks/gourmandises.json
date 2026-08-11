@@ -1,0 +1,72 @@
+{
+  "id": "gourmandises",
+  "name": "Gourmandises",
+  "audience": "family",
+  "minAge": 6,
+  "contentVersion": 1,
+  "isPremium": false,
+  "sortOrder": 10,
+  "icon": "cookie",
+  "cards": [
+    {
+      "text": "Chocolat",
+      "difficulty": 1
+    },
+    {
+      "text": "Pop Corn",
+      "difficulty": 1
+    },
+    {
+      "text": "Pomme",
+      "difficulty": 1
+    },
+    {
+      "text": "Fourchette",
+      "difficulty": 1
+    },
+    {
+      "text": "Gâteau",
+      "difficulty": 1
+    },
+    {
+      "text": "Assiette",
+      "difficulty": 1
+    },
+    {
+      "text": "Pain",
+      "difficulty": 1
+    },
+    {
+      "text": "Poêle",
+      "difficulty": 1
+    },
+    {
+      "text": "Pizza",
+      "difficulty": 1
+    },
+    {
+      "text": "Croissant",
+      "difficulty": 2
+    },
+    {
+      "text": "Glace",
+      "difficulty": 2
+    },
+    {
+      "text": "Citron",
+      "difficulty": 2
+    },
+    {
+      "text": "Caviar",
+      "difficulty": 3
+    },
+    {
+      "text": "Raclette",
+      "difficulty": 3
+    },
+    {
+      "text": "Bière",
+      "difficulty": 3
+    }
+  ]
+}

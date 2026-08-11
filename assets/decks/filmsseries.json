@@ -1,0 +1,72 @@
+{
+  "id": "filmsseries",
+  "name": "Films et séries",
+  "audience": "adult",
+  "minAge": 18,
+  "contentVersion": 1,
+  "isPremium": false,
+  "sortOrder": 240,
+  "icon": "live_tv",
+  "cards": [
+    {
+      "text": "The Boys",
+      "difficulty": 2
+    },
+    {
+      "text": "La Casa de Papel",
+      "difficulty": 2
+    },
+    {
+      "text": "Squid Game",
+      "difficulty": 2
+    },
+    {
+      "text": "Fight Club",
+      "difficulty": 2
+    },
+    {
+      "text": "Pulp Fiction",
+      "difficulty": 2
+    },
+    {
+      "text": "Saw",
+      "difficulty": 2
+    },
+    {
+      "text": "Le Parrain",
+      "difficulty": 2
+    },
+    {
+      "text": "Peaky Blinders",
+      "difficulty": 2
+    },
+    {
+      "text": "Shining",
+      "difficulty": 2
+    },
+    {
+      "text": "Sons of Anarchy",
+      "difficulty": 2
+    },
+    {
+      "text": "Vikings (série)",
+      "difficulty": 2
+    },
+    {
+      "text": "Basic Instinct",
+      "difficulty": 2
+    },
+    {
+      "text": "Psychose",
+      "difficulty": 2
+    },
+    {
+      "text": "Narcos",
+      "difficulty": 2
+    },
+    {
+      "text": "Dexter",
+      "difficulty": 2
+    }
+  ]
+}

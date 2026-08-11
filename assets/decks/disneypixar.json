@@ -1,0 +1,232 @@
+{
+  "id": "disneypixar",
+  "name": "Disney et Pixar",
+  "audience": "family",
+  "minAge": 6,
+  "contentVersion": 1,
+  "isPremium": false,
+  "sortOrder": 130,
+  "icon": "castle",
+  "cards": [
+    {
+      "text": "Mickey Mouse",
+      "difficulty": 1
+    },
+    {
+      "text": "Olaf",
+      "difficulty": 1
+    },
+    {
+      "text": "Simba",
+      "difficulty": 1
+    },
+    {
+      "text": "Woody",
+      "difficulty": 1
+    },
+    {
+      "text": "Elsa",
+      "difficulty": 1
+    },
+    {
+      "text": "Stitch",
+      "difficulty": 1
+    },
+    {
+      "text": "Aladdin",
+      "difficulty": 1
+    },
+    {
+      "text": "Flash McQueen",
+      "difficulty": 1
+    },
+    {
+      "text": "Ariel (La Petite Sirène)",
+      "difficulty": 1
+    },
+    {
+      "text": "Cendrillon",
+      "difficulty": 1
+    },
+    {
+      "text": "Donald Duck",
+      "difficulty": 1
+    },
+    {
+      "text": "Winnie l'Ourson",
+      "difficulty": 1
+    },
+    {
+      "text": "Tarzan",
+      "difficulty": 1
+    },
+    {
+      "text": "L'age de glace",
+      "difficulty": 1
+    },
+    {
+      "text": "Capitaine Crochet",
+      "difficulty": 1
+    },
+    {
+      "text": "Baloo",
+      "difficulty": 1
+    },
+    {
+      "text": "Bourriquet",
+      "difficulty": 1
+    },
+    {
+      "text": "Pinocchio",
+      "difficulty": 1
+    },
+    {
+      "text": "Po (Kung Fu Panda)",
+      "difficulty": 1
+    },
+    {
+      "text": "Buzz L'Éclair",
+      "difficulty": 2
+    },
+    {
+      "text": "Le Génie",
+      "difficulty": 2
+    },
+    {
+      "text": "Peter Pan",
+      "difficulty": 2
+    },
+    {
+      "text": "Ratatouille",
+      "difficulty": 2
+    },
+    {
+      "text": "Mulan",
+      "difficulty": 2
+    },
+    {
+      "text": "Nemo",
+      "difficulty": 2
+    },
+    {
+      "text": "Vaiana",
+      "difficulty": 2
+    },
+    {
+      "text": "Tristesse (Vice-Versa)",
+      "difficulty": 2
+    },
+    {
+      "text": "Hercules",
+      "difficulty": 2
+    },
+    {
+      "text": "Scar",
+      "difficulty": 2
+    },
+    {
+      "text": "Raiponce",
+      "difficulty": 2
+    },
+    {
+      "text": "Baymax",
+      "difficulty": 2
+    },
+    {
+      "text": "Les Indestructibles",
+      "difficulty": 2
+    },
+    {
+      "text": "Robin des Bois",
+      "difficulty": 2
+    },
+    {
+      "text": "La Fée Clochette",
+      "difficulty": 2
+    },
+    {
+      "text": "Cruella d'Enfer",
+      "difficulty": 2
+    },
+    {
+      "text": "Dory",
+      "difficulty": 2
+    },
+    {
+      "text": "Bob Razowski",
+      "difficulty": 2
+    },
+    {
+      "text": "Mérida (Rebelle)",
+      "difficulty": 3
+    },
+    {
+      "text": "Hadès (Hercules)",
+      "difficulty": 3
+    },
+    {
+      "text": "Wall-E",
+      "difficulty": 3
+    },
+    {
+      "text": "Mirabel (Encanto)",
+      "difficulty": 3
+    },
+    {
+      "text": "Kuzco",
+      "difficulty": 3
+    },
+    {
+      "text": "Jafar (Aladdin)",
+      "difficulty": 3
+    },
+    {
+      "text": "Ursula",
+      "difficulty": 3
+    },
+    {
+      "text": "Quasimodo",
+      "difficulty": 3
+    },
+    {
+      "text": "Jack Sparrow",
+      "difficulty": 3
+    },
+    {
+      "text": "Pascal (le caméléon de Raiponce)",
+      "difficulty": 3
+    },
+    {
+      "text": "Yzma (Kuzco)",
+      "difficulty": 3
+    },
+    {
+      "text": "Nick Wilde (Zootopie) (Validé)",
+      "difficulty": 3
+    },
+    {
+      "text": "Mary Poppins",
+      "difficulty": 3
+    },
+    {
+      "text": "Mushu (Mulan)",
+      "difficulty": 3
+    },
+    {
+      "text": "Gaston (La Belle et la Bête)",
+      "difficulty": 3
+    },
+    {
+      "text": "Miguel (Coco)",
+      "difficulty": 3
+    },
+    {
+      "text": "Doug (là haut)",
+      "difficulty": 3
+    },
+    {
+      "text": "Lotso (Toy Story 3)",
+      "difficulty": 3
+    }
+  ]
+}

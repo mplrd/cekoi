@@ -1,0 +1,132 @@
+{
+  "id": "celebrites",
+  "name": "Célébrités",
+  "audience": "family",
+  "minAge": 10,
+  "contentVersion": 1,
+  "isPremium": false,
+  "sortOrder": 160,
+  "icon": "star",
+  "cards": [
+    {
+      "text": "Michael Jackson",
+      "difficulty": 1
+    },
+    {
+      "text": "Céline Dion",
+      "difficulty": 1
+    },
+    {
+      "text": "Nicolas Sarkozy",
+      "difficulty": 1
+    },
+    {
+      "text": "Rihanna",
+      "difficulty": 1
+    },
+    {
+      "text": "Elvis Presley",
+      "difficulty": 1
+    },
+    {
+      "text": "Bob Marley",
+      "difficulty": 1
+    },
+    {
+      "text": "Kylian Mbappé",
+      "difficulty": 1
+    },
+    {
+      "text": "Marilyn Monroe",
+      "difficulty": 1
+    },
+    {
+      "text": "Britney Spears",
+      "difficulty": 1
+    },
+    {
+      "text": "Mike Tyson",
+      "difficulty": 1
+    },
+    {
+      "text": "Louis de Funès",
+      "difficulty": 1
+    },
+    {
+      "text": "Claude François",
+      "difficulty": 1
+    },
+    {
+      "text": "Squeezie",
+      "difficulty": 1
+    },
+    {
+      "text": "Aya Nakamura",
+      "difficulty": 1
+    },
+    {
+      "text": "Shakira",
+      "difficulty": 1
+    },
+    {
+      "text": "Jul",
+      "difficulty": 2
+    },
+    {
+      "text": "Gims",
+      "difficulty": 2
+    },
+    {
+      "text": "Charlie Chaplin",
+      "difficulty": 2
+    },
+    {
+      "text": "MIckael Jordan",
+      "difficulty": 2
+    },
+    {
+      "text": "Alexandre Astier",
+      "difficulty": 2
+    },
+    {
+      "text": "Jean-Claude Van Damme",
+      "difficulty": 2
+    },
+    {
+      "text": "Sylvester Stallone",
+      "difficulty": 2
+    },
+    {
+      "text": "Donald Trump",
+      "difficulty": 2
+    },
+    {
+      "text": "Tom Cruise",
+      "difficulty": 2
+    },
+    {
+      "text": "Cyril Lignac",
+      "difficulty": 2
+    },
+    {
+      "text": "Johnny Hallyday",
+      "difficulty": 3
+    },
+    {
+      "text": "Jamel Debbouze",
+      "difficulty": 3
+    },
+    {
+      "text": "Zinedine Zidane",
+      "difficulty": 3
+    },
+    {
+      "text": "Snoop Dogg",
+      "difficulty": 3
+    },
+    {
+      "text": "Erling Haaland",
+      "difficulty": 3
+    }
+  ]
+}

@@ -1,0 +1,108 @@
+{
+  "id": "super-heros",
+  "name": "Super-héros",
+  "audience": "family",
+  "minAge": 6,
+  "contentVersion": 1,
+  "isPremium": false,
+  "sortOrder": 120,
+  "icon": "bolt",
+  "cards": [
+    {
+      "text": "Spider-Man",
+      "difficulty": 1
+    },
+    {
+      "text": "Batman",
+      "difficulty": 1
+    },
+    {
+      "text": "Hulk",
+      "difficulty": 1
+    },
+    {
+      "text": "Superman",
+      "difficulty": 1
+    },
+    {
+      "text": "Iron Man",
+      "difficulty": 1
+    },
+    {
+      "text": "Captain America",
+      "difficulty": 1
+    },
+    {
+      "text": "Thor",
+      "difficulty": 1
+    },
+    {
+      "text": "Wonder Woman",
+      "difficulty": 1
+    },
+    {
+      "text": "Le Joker",
+      "difficulty": 1
+    },
+    {
+      "text": "Flash",
+      "difficulty": 1
+    },
+    {
+      "text": "Wolverine",
+      "difficulty": 1
+    },
+    {
+      "text": "Catwoman",
+      "difficulty": 1
+    },
+    {
+      "text": "Magneto",
+      "difficulty": 1
+    },
+    {
+      "text": "Les Tortues Ninja",
+      "difficulty": 1
+    },
+    {
+      "text": "Nick Fury",
+      "difficulty": 1
+    },
+    {
+      "text": "Aquaman",
+      "difficulty": 2
+    },
+    {
+      "text": "Deadpool",
+      "difficulty": 2
+    },
+    {
+      "text": "Thanos",
+      "difficulty": 2
+    },
+    {
+      "text": "Harley Quinn",
+      "difficulty": 2
+    },
+    {
+      "text": "Loki",
+      "difficulty": 3
+    },
+    {
+      "text": "Docteur Strange",
+      "difficulty": 3
+    },
+    {
+      "text": "Double-Face (Two-Face)",
+      "difficulty": 3
+    },
+    {
+      "text": "Professeur X",
+      "difficulty": 3
+    },
+    {
+      "text": "Rocket Raccoon",
+      "difficulty": 3
+    }
+  ]
+}

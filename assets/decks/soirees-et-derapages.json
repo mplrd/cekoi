@@ -1,0 +1,72 @@
+{
+  "id": "soirees-et-derapages",
+  "name": "Soirées et dérapages",
+  "audience": "adult",
+  "minAge": 18,
+  "contentVersion": 1,
+  "isPremium": false,
+  "sortOrder": 220,
+  "icon": "local_bar",
+  "cards": [
+    {
+      "text": "sniffer sa ligne",
+      "difficulty": 2
+    },
+    {
+      "text": "Se prendre un râteau",
+      "difficulty": 2
+    },
+    {
+      "text": "Texto à son ex",
+      "difficulty": 2
+    },
+    {
+      "text": "boire de la tequila paf",
+      "difficulty": 2
+    },
+    {
+      "text": "Incruster une soirée",
+      "difficulty": 2
+    },
+    {
+      "text": "Pécho bourré",
+      "difficulty": 2
+    },
+    {
+      "text": "Tenir la chandelle",
+      "difficulty": 2
+    },
+    {
+      "text": "se faire virer de boite de nuit",
+      "difficulty": 2
+    },
+    {
+      "text": "Black-out",
+      "difficulty": 2
+    },
+    {
+      "text": "Blague beauf",
+      "difficulty": 2
+    },
+    {
+      "text": "Vomir dans un buisson",
+      "difficulty": 2
+    },
+    {
+      "text": "se faire un karaoké à 4h du mat",
+      "difficulty": 2
+    },
+    {
+      "text": "Être rond comme une queue de pelle",
+      "difficulty": 2
+    },
+    {
+      "text": "Avoir la tête dans le cul",
+      "difficulty": 2
+    },
+    {
+      "text": "L'alcool mauvais",
+      "difficulty": 2
+    }
+  ]
+}
