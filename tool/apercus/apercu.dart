@@ -285,6 +285,13 @@ void main() {
     await tester.enterText(find.byType(TextField).first, 'Souvenirs de fac');
     await tapText(tester, l10n.actionSave);
     await tapText(tester, 'Souvenirs de fac');
+    await tester.enterText(
+      find.byType(TextField).first,
+      'La soirée intégration',
+    );
+    await tapText(tester, l10n.actionAddCard);
+    await tester.enterText(find.byType(TextField).first, 'Le partiel de 8h');
+    await tapText(tester, l10n.actionAddCard);
     await shoot(tester, '13-carte-custom');
   });
 

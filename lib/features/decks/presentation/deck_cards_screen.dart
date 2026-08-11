@@ -165,7 +165,14 @@ class _DifficultyPicker extends StatelessWidget {
         selectedBackgroundColor: AppColors.secondary,
         foregroundColor: AppColors.ink,
         selectedForegroundColor: AppColors.ink,
-        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+        // Depuis le thème, et non un `TextStyle` nu : celui-ci n'emporte pas
+        // la famille, et le libellé retombe sur la police par défaut de la
+        // plateforme — seul élément de l'écran à ne pas se composer comme le
+        // reste. C'est le défaut que `test/app/theme_test.dart` surveille.
+        textStyle: Theme.of(context).textTheme.titleMedium?.copyWith(
+          fontSize: 16,
+          fontWeight: FontWeight.w700,
+        ),
       ),
       segments: [
         for (final d in Difficulty.values)
@@ -191,10 +198,17 @@ class _CardList extends ConsumerWidget {
       return Center(child: Text(l10n.deckCardsEmpty));
     }
 
-    return ListView(
-      children: [
-        for (final card in cards)
-          ListTile(
+    // Une carte blanche par carte : c'est bien ce que c'est, et le reste de
+    // l'application pose ses listes sur des surfaces.
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      itemCount: cards.length,
+      separatorBuilder: (_, _) => const SizedBox(height: 10),
+      itemBuilder: (_, index) {
+        final card = cards[index];
+        return Card(
+          clipBehavior: Clip.antiAlias,
+          child: ListTile(
             title: Text(card.text),
             subtitle: Text(card.difficulty.label(l10n)),
             trailing: IconButton(
@@ -204,7 +218,8 @@ class _CardList extends ConsumerWidget {
             ),
             onTap: () => unawaited(_edit(context, ref, card)),
           ),
-      ],
+        );
+      },
     );
   }
 
