@@ -194,7 +194,21 @@ GameState _turnConfirmed(GameState state) {
     activeTeamIndex: nextTeamIndex,
   );
 
-  if (state.pile.isNotEmpty) return _openTurn(committed);
+  // Le paquet restant est rebattu avant de changer de mains (R4.7) : l'équipe
+  // suivante ne doit pas le reprendre dans l'ordre où la précédente vient d'y
+  // buter. Le nombre de tours déjà joués fait varier la graine.
+  if (state.pile.isNotEmpty) {
+    return _openTurn(
+      committed.copyWith(
+        pile: GameState.reshuffleRemaining(
+          pile: state.pile,
+          seed: state.seed,
+          roundIndex: state.roundIndex,
+          turnIndex: committed.history.length,
+        ),
+      ),
+    );
+  }
 
   // Manche terminée. L'équipe suivante ouvrira la prochaine, sans quoi celle
   // qui a vidé le paquet enchaînerait deux tours (R4.3).

@@ -144,11 +144,15 @@ void main() {
       );
     });
 
-    test('les cartes passees repartent au tour suivant, remises au fond', () {
+    test('les cartes passees repartent au tour suivant', () {
       // Ce que cette règle ajoute au cas limite 5 (`turn_test.dart`), qui
       // s'arrête à la fin du tour : les cartes passées franchissent le
-      // `turnConfirmed` et se retrouvent dans le tour de l'équipe suivante,
-      // dans l'ordre où R3.3 les a remises — au fond, pas mélangées.
+      // `turnConfirmed` et se retrouvent dans le tour de l'équipe suivante.
+      //
+      // Leur **ordre**, lui, n'est plus garanti d'un tour à l'autre depuis
+      // R4.7 : le paquet restant est rebattu quand le téléphone change de
+      // mains. C'est le contenu qui fait la règle ici, pas la disposition —
+      // « au fond du paquet » (R3.3) ne vaut que dans le tour.
       final state = testGame(cardCount: 6);
       final avant = [...state.pile];
 
@@ -165,11 +169,116 @@ void main() {
         'team-2',
         reason: 'point de départ : le tour a bien été validé (R4.3)',
       );
+      expect(apres.pile.toSet(), avant.toSet());
       expect(
         apres.pile,
-        [...avant.skip(2), ...avant.take(2)],
-        reason: 'les deux passées sont au fond, les autres ont avancé (R3.3)',
+        hasLength(6),
+        reason: 'aucune carte trouvée : le paquet est entier',
       );
+    });
+  });
+
+  group('R4.7 — le paquet est rebattu a chaque tour', () {
+    test("l'equipe suivante ne reprend pas le paquet dans l'ordre laisse", () {
+      // Sans ça, les premières cartes du tour suivant sont exactement celles
+      // sur lesquelles l'équipe précédente vient de buter, dans l'ordre où
+      // elle a échoué — elle les a vues défiler à l'écran.
+      final state = testGame(cardCount: 12);
+      final apres = playTurn(state, found: 2);
+
+      expect(apres.pile, hasLength(10));
+      expect(
+        apres.pile,
+        isNot(state.pile.sublist(2)),
+        reason: 'le paquet restant doit avoir été rebattu',
+      );
+      expect(
+        apres.pile.toSet(),
+        state.pile.sublist(2).toSet(),
+        reason: 'rebattre ne remet aucune carte trouvée en jeu',
+      );
+    });
+
+    test('le numero de tour entre dans la graine', () {
+      // Vérifié sur la fonction et non sur une partie : d'un tour à l'autre,
+      // le paquet d'entrée a déjà changé, si bien qu'une partie rendrait des
+      // ordres différents même avec une graine figée. Seule l'égalité des
+      // entrées isole ce que le numéro de tour apporte.
+      //
+      // Ce qu'il évite : une graine constante applique la même permutation à
+      // chaque tour, et un paquet dont rien ne sort — un tour sans aucune
+      // trouvée — cycle alors entre un petit nombre de dispositions.
+      final paquet = [for (var i = 0; i < 12; i++) 'c-$i'];
+      List<String> rebattu(int turnIndex) => GameState.reshuffleRemaining(
+        pile: paquet,
+        seed: 7,
+        roundIndex: 1,
+        turnIndex: turnIndex,
+      );
+
+      expect(rebattu(0), isNot(rebattu(1)));
+      expect(rebattu(1), isNot(rebattu(2)));
+      expect(rebattu(2), rebattu(2), reason: 'et reste reproductible');
+    });
+
+    test('le reducteur fait varier la graine avec le tour', () {
+      // Deux états rigoureusement identiques — même paquet, même graine, même
+      // manche — sauf le nombre de tours déjà joués. Si le réducteur ne passe
+      // pas ce nombre au rebattage, les deux rendent le même ordre.
+      //
+      // C'est le seul montage qui attrape la faute : dans une partie normale,
+      // le paquet d'entrée diffère déjà d'un tour à l'autre, ce qui suffit à
+      // produire des ordres différents même avec une graine figée.
+      final base = testGame(cardCount: 12);
+      final apresUnTour = playTurn(base);
+
+      GameState pretAValider(GameState s) => s.copyWith(
+        phase: GamePhase.turnSummary,
+        pile: base.pile,
+        turn: PlayedTurn(round: s.round, teamId: s.activeTeam.id),
+      );
+
+      final sansHistorique = reduce(
+        pretAValider(base),
+        const GameEvent.turnConfirmed(),
+      );
+      final avecHistorique = reduce(
+        pretAValider(apresUnTour),
+        const GameEvent.turnConfirmed(),
+      );
+
+      expect(
+        base.pile,
+        pretAValider(apresUnTour).pile,
+        reason: 'point de départ : les deux partent du même paquet',
+      );
+      expect(sansHistorique.pile, isNot(avecHistorique.pile));
+    });
+
+    test('deux tours de suite ne rendent pas le meme paquet', () {
+      var state = testGame(cardCount: 12);
+      state = playTurn(state);
+      final apresUnTour = [...state.pile];
+      state = playTurn(state);
+
+      expect(state.pile, isNot(apresUnTour));
+      expect(state.pile.toSet(), apresUnTour.toSet());
+    });
+
+    test('le rebattage est determinisme a graine egale', () {
+      List<String> pileApresUnTour(int seed) =>
+          playTurn(testGame(cardCount: 12, seed: seed), found: 2).pile;
+
+      expect(pileApresUnTour(5), pileApresUnTour(5));
+      expect(pileApresUnTour(5), isNot(pileApresUnTour(6)));
+    });
+
+    test('la derniere carte trouvee cloture sans rebattre dans le vide', () {
+      // Le paquet vide n'a rien à rebattre : la manche s'arrête (R4.1).
+      final state = playTurn(testGame(cardCount: 2, roundIndex: 0), found: 2);
+
+      expect(state.pile, isEmpty);
+      expect(state.phase, GamePhase.roundSummary);
     });
   });
 
