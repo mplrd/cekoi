@@ -23,6 +23,11 @@ class AdFrequencyPolicy {
   final Duration window;
 
   /// Écart minimum entre deux interstitiels.
+  ///
+  /// Doit rester inférieur à [window] : l'appelant ne fournit que les
+  /// impressions de la fenêtre, donc un écart plus large que celle-ci ne
+  /// verrait jamais ce qu'il est censé écarter, et se désactiverait sans
+  /// bruit.
   final Duration minimumGap;
 
   /// Vrai si un interstitiel peut être présenté à [now].
@@ -30,18 +35,25 @@ class AdFrequencyPolicy {
   /// [recent] est l'historique des impressions ; ni son ordre ni son fuseau
   /// n'importent, et il peut contenir plus que la fenêtre.
   bool allows({required Iterable<DateTime> recent, required DateTime now}) {
-    final debut = expiredBefore(now);
+    final instant = now.toUtc();
+    final debut = expiredBefore(instant);
+    final absurde = instant.add(window);
     var dansLaFenetre = 0;
 
     for (final impression in recent) {
       final quand = impression.toUtc();
-      final ecart = now.toUtc().difference(quand);
 
-      // Un écart négatif est une impression datée du futur : le joueur a
-      // reculé l'horloge de son téléphone. Elle est plus proche que n'importe
-      // quel délai, donc elle bloque — reculer l'heure ne doit pas ouvrir un
-      // passe-droit.
-      if (ecart < minimumGap) return false;
+      // Une impression datée bien au-delà de la fenêtre ne vient pas d'une
+      // dérive d'horloge, elle vient d'une horloge qui a été avancée puis
+      // remise. La compter serait un verrou définitif : la purge ne tourne
+      // qu'à l'occasion d'un affichage, donc une ligne datée de 2030
+      // bloquerait tout, pour toujours, sur cet appareil. On la jette.
+      if (quand.isAfter(absurde)) continue;
+
+      // Un écart négatif plus modeste est une impression du futur proche : le
+      // joueur a reculé l'horloge. Elle bloque — reculer l'heure ne doit pas
+      // ouvrir un passe-droit.
+      if (instant.difference(quand) < minimumGap) return false;
 
       if (quand.isAfter(debut)) dansLaFenetre++;
     }

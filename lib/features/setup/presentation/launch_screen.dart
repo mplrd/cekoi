@@ -51,44 +51,64 @@ class _LaunchScreenState extends ConsumerState<LaunchScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
 
-    return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                l10n.launchSettleIn,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.ink,
-                ),
-              ),
-              const SizedBox(height: 32),
-              Card(
+    // Le retour est fermé le temps de la traversée — trois secondes au pire.
+    // Sans ça, un retour pendant le chargement ramène au récapitulatif et la
+    // pub s'affiche par-dessus : `MONETISATION.md` interdit nommément tout
+    // interstitiel sur un écran de configuration, et le quota serait consommé
+    // pour une pub que personne n'a demandée.
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        body: SafeArea(
+          // Défilable, comme tous les autres écrans du parcours : sur un
+          // 360 × 640 au texte agrandi d'un tiers — le pire cas de référence
+          // du projet — la colonne centrée débordait de 223 px, et c'est le
+          // rappel de la manche 1 qui se faisait couper. Exactement ce que six
+          // personnes viennent lire à cette seconde-là.
+          child: LayoutBuilder(
+            builder: (context, constraints) => SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
                 child: Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(32),
                   child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        l10n.roundNameFree,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        l10n.roundRuleFree,
+                        l10n.launchSettleIn,
                         textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodyMedium,
+                        style: Theme.of(context).textTheme.headlineMedium
+                            ?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.ink,
+                            ),
+                      ),
+                      const SizedBox(height: 32),
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            children: [
+                              Text(
+                                l10n.roundNameFree,
+                                style: Theme.of(context).textTheme.titleLarge
+                                    ?.copyWith(fontWeight: FontWeight.w700),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                l10n.roundRuleFree,
+                                textAlign: TextAlign.center,
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),

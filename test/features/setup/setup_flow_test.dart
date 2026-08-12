@@ -132,6 +132,7 @@ void main() {
           consentGatewayProvider.overrideWithValue(
             passerelle ?? fakeConsentGateway(),
           ),
+          adSdkStartProvider.overrideWithValue(() async {}),
           showInterstitialProvider.overrideWithValue(
             interstitiel ?? showNoInterstitial,
           ),
@@ -313,7 +314,11 @@ void main() {
         // Le temps mort est reel — le groupe s installe et se passe le
         // telephone. Le texte est une consigne, pas un habillage de pub.
         await installDeck('animaux', easy: 15, medium: 15, hard: 15);
-        await pumpApp(tester, interstitiel: _SlowInterstitial().call);
+        await pumpApp(
+          tester,
+          passerelle: fakeConsentGateway(_accorde),
+          interstitiel: _SlowInterstitial().call,
+        );
 
         await tapText(tester, l10n.homePlay);
         await tapText(tester, l10n.modeFamily);
@@ -328,6 +333,35 @@ void main() {
         expect(find.text(l10n.roundRuleFree), findsOneWidget);
       },
     );
+
+    testWidgets('le retour est ferme pendant le chargement de la pub', (
+      tester,
+    ) async {
+      // Sans cela, un retour pendant les trois secondes ramene au
+      // recapitulatif et la pub s affiche par-dessus un ecran de
+      // configuration : MONETISATION.md l interdit nommement, et le quota
+      // serait consomme pour une pub que personne n a demandee.
+      await installDeck('animaux', easy: 15, medium: 15, hard: 15);
+      await pumpApp(
+        tester,
+        passerelle: fakeConsentGateway(_accorde),
+        interstitiel: _SlowInterstitial().call,
+      );
+
+      await tapText(tester, l10n.homePlay);
+      await tapText(tester, l10n.modeFamily);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionStartGame);
+      expect(find.text(l10n.launchSettleIn), findsOneWidget);
+
+      await tester.state<NavigatorState>(find.byType(Navigator)).maybePop();
+      await tester.pumpAndSettle();
+
+      expect(find.text(l10n.launchSettleIn), findsOneWidget);
+      expect(find.text(l10n.setupSummaryTitle), findsNothing);
+    });
 
     testWidgets('une pub qui explose laisse la partie demarrer', (
       tester,
@@ -896,6 +930,14 @@ class _MuteGateway implements ConsentGateway {
   @override
   Future<ConsentState> changeChoice() => Completer<ConsentState>().future;
 }
+
+/// Un consentement accorde, pour les tests qui veulent atteindre la pub.
+///
+/// Sans lui le portillon s arrete sur « pas de reponse, pas de pub » et rend
+/// la main tout de suite : l ecran de lancement est remplace avant d avoir ete
+/// vu, et un test qui regarde deux frames trop tot passe pour de mauvaises
+/// raisons.
+const _accorde = ConsentState(canRequestAds: true, canChangeChoice: true);
 
 /// Un interstitiel qui met du temps a repondre.
 ///

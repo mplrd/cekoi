@@ -86,13 +86,41 @@ void main() {
   });
 
   group('cas tordus', () {
-    test('un historique dans le futur ne débloque rien', () {
+    test('un futur proche ne débloque rien', () {
       // Le joueur peut reculer l'horloge de son téléphone. Une impression
-      // datée du futur ne doit pas devenir un laissez-passer : elle est dans
-      // la fenêtre, et elle est plus proche que le délai minimum.
+      // datée du futur ne doit pas devenir un laissez-passer : elle est plus
+      // proche que le délai minimum.
       expect(
-        policy.allows(recent: [now.add(const Duration(hours: 2))], now: now),
+        policy.allows(recent: [now.add(const Duration(minutes: 10))], now: now),
         isFalse,
+      );
+    });
+
+    test('un futur absurde est jeté, pas subi', () {
+      // Sans cette sortie, une ligne écrite pendant que l'horloge était en
+      // 2030 verrouillerait l'appareil pour toujours : elle bloque, donc plus
+      // aucune pub ne s'affiche, donc la purge — qui ne tourne qu'à
+      // l'occasion d'un affichage — ne la supprime jamais.
+      expect(
+        policy.allows(recent: [now.add(const Duration(days: 900))], now: now),
+        isTrue,
+      );
+    });
+
+    test('une horloge avancée remet le plafond à zéro, et c est assumé', () {
+      // On ne se défend pas contre une horloge murale : la contourner demande
+      // plus d'efforts que de désinstaller l'application. C'est écrit ici pour
+      // que ce soit un choix et non une découverte.
+      final recentes = [
+        ago(const Duration(minutes: 10)),
+        ago(const Duration(minutes: 20)),
+        ago(const Duration(minutes: 30)),
+      ];
+
+      expect(policy.allows(recent: recentes, now: now), isFalse);
+      expect(
+        policy.allows(recent: recentes, now: now.add(const Duration(hours: 2))),
+        isTrue,
       );
     });
 

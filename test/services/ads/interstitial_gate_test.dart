@@ -9,6 +9,7 @@ class _StubLog implements AdImpressionLog {
   final bool readFails;
 
   final List<DateTime> recorded = [];
+  final List<DateTime> purges = [];
   int reads = 0;
 
   @override
@@ -27,6 +28,7 @@ class _StubLog implements AdImpressionLog {
     required DateTime expiredBefore,
   }) async {
     recorded.add(shownAt);
+    purges.add(expiredBefore);
   }
 }
 
@@ -65,6 +67,15 @@ void main() {
 
     expect(tentatives, 1);
     expect(log.recorded, [now]);
+  });
+
+  test('la purge ne touche pas l impression qu on vient d ecrire', () async {
+    // Purger a l instant courant supprimerait la ligne ecrite juste avant :
+    // l historique serait toujours vide, et une pub tomberait a chaque
+    // lancement de partie. La borne doit etre le bord de la fenetre.
+    await gate().present();
+
+    expect(log.purges.single, now.subtract(const Duration(hours: 1)));
   });
 
   test('sans consentement, rien n est meme tenté', () async {

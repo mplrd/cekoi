@@ -72,12 +72,47 @@ Future<bool> showGoogleInterstitial({required Duration loadTimeout}) async {
 /// Le build sans publicité : rien à montrer.
 Future<bool> showNoInterstitial({required Duration loadTimeout}) async => false;
 
+/// Attend [pending] au plus [timeout], et **jette ce qui arrive en retard**.
+///
+/// `Future.timeout` ne fait que la première moitié : il rend la main, mais
+/// laisse le futur d'origine vivre sa vie. Sans le drapeau ci-dessous, une pub
+/// arrivée après le délai reste référencée par le SDK sans jamais être
+/// détruite — une fuite d'objet plein écran par lancement, qui s'accumule sur
+/// toute la durée de vie du processus. `isCompleted` ne peut pas jouer ce
+/// rôle : le `Completer` source n'est jamais complété par le délai.
+///
+/// Générique et sans mention du SDK, donc vérifiable sans appareil : c'est la
+/// seule logique de tout ce fichier.
+Future<T?> awaitOrDiscard<T extends Object>(
+  Future<T?> pending, {
+  required Duration timeout,
+  required void Function(T) discard,
+}) {
+  var expired = false;
+
+  unawaited(
+    pending
+        .then((value) {
+          if (expired && value != null) discard(value);
+        })
+        .catchError((_) {}),
+  );
+
+  return pending.timeout(
+    timeout,
+    onTimeout: () {
+      expired = true;
+      return null;
+    },
+  );
+}
+
 /// Charge une pub, ou rend `null` au bout de [timeout].
 ///
-/// Une pub qui arrive après le délai est **détruite** : la partie a déjà
-/// démarré, et la garder en réserve la ferait tomber au lancement suivant sans
-/// repasser par le plafond de fréquence.
-Future<InterstitialAd?> _load(Duration timeout) async {
+/// Une pub qui arrive après le délai est détruite : la partie a déjà démarré,
+/// et la garder en réserve la ferait tomber au lancement suivant sans repasser
+/// par le plafond de fréquence.
+Future<InterstitialAd?> _load(Duration timeout) {
   final loaded = Completer<InterstitialAd?>();
 
   void fail() {
@@ -101,5 +136,9 @@ Future<InterstitialAd?> _load(Duration timeout) async {
     ).onError((_, _) => fail()),
   );
 
-  return loaded.future.timeout(timeout, onTimeout: () => null);
+  return awaitOrDiscard(
+    loaded.future,
+    timeout: timeout,
+    discard: (ad) => unawaited(ad.dispose()),
+  );
 }

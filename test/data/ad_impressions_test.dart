@@ -1,10 +1,14 @@
+import 'dart:io';
+
 import 'package:cekoi/data/db/database.dart';
 import 'package:cekoi/data/repositories/ad_impression_repository.dart';
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/deck_origin.dart';
 import 'package:cekoi/domain/entities/min_age.dart';
 import 'package:drift/drift.dart';
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as p;
 
 /// Compare des instants, pas des objets `DateTime`.
 ///
@@ -71,13 +75,30 @@ void main() {
     expect(toutes.single.shownAt, moment(now));
   });
 
-  test('le plafond survit à la fermeture de la base', () async {
+  test('le plafond survit à la fermeture de l application', () async {
     // C'est toute la raison d'être de cette table : tenu en mémoire, le
     // plafond se contournerait en tuant l'application.
-    await repository.record(now, expiredBefore: ago(const Duration(hours: 1)));
+    //
+    // Sur un vrai fichier, et pas sur une base mémoire : rouvrir une base
+    // mémoire, c'est relire la même RAM par la même connexion. Le test ne
+    // pourrait échouer que sur un plantage, et il porterait un nom qui promet
+    // beaucoup plus que ça.
+    final dossier = await Directory.systemTemp.createTemp('cekoi_ads');
+    addTearDown(() => dossier.delete(recursive: true));
+    final fichier = File(p.join(dossier.path, 'cekoi.sqlite'));
 
-    final rouvert = AdImpressionRepository(db);
-    final relues = await rouvert.since(ago(const Duration(hours: 1)));
+    final avant = AppDatabase(NativeDatabase(fichier));
+    await AdImpressionRepository(
+      avant,
+    ).record(now, expiredBefore: ago(const Duration(hours: 1)));
+    await avant.close();
+
+    final apres = AppDatabase(NativeDatabase(fichier));
+    addTearDown(apres.close);
+    final relues = await AdImpressionRepository(
+      apres,
+    ).since(ago(const Duration(hours: 1)));
+
     expect(relues.single, moment(now));
   });
 
