@@ -432,10 +432,8 @@ void main() {
       ('un texte agrandi', Size(360, 800), 1.3),
       // Un petit écran, autre hauteur utile courte.
       ('un petit ecran', Size(360, 640), 1.0),
-      // Pas de cas paysage ici : l'accueil lui-même y déborde de 268 px
-      // (`home_screen.dart`), et rien ne verrouille l'orientation. C'est un
-      // défaut réel, mais entier et étranger à cette boîte — l'ajouter ici
-      // ferait rougir ce test pour une cause qu'il ne décrit pas.
+      // Pas de cas paysage : l'application est verrouillée en portrait. C'est
+      // l'accueil, qui y débordait de 268 px, qui a motivé le verrou.
     ]) {
       testWidgets('R7.1 — la question du vivier tient sur $libelle', (
         tester,
