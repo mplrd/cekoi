@@ -749,5 +749,25 @@
     "placeholders": {
       "name": { "type": "String" }
     }
+  },
+
+  "settingsPrivacy": "Confidentialité",
+  "@settingsPrivacy": {
+    "description": "Titre de la section des réglages qui regroupe le consentement publicitaire et, plus tard, les mentions légales."
+  },
+
+  "settingsAdConsent": "Choix publicitaire",
+  "@settingsAdConsent": {
+    "description": "Entrée des réglages qui rouvre le formulaire de consentement du CMP."
+  },
+
+  "settingsAdConsentHint": "Modifier mon consentement aux publicités personnalisées.",
+  "@settingsAdConsentHint": {
+    "description": "Sous-titre de l'entrée de consentement, dans les réglages."
+  },
+
+  "settingsAdConsentNone": "Aucun choix publicitaire à régler sur cet appareil.",
+  "@settingsAdConsentNone": {
+    "description": "Remplace l'entrée de consentement là où aucun formulaire n'est requis — hors zone réglementée, ou dans un build sans publicité."
   }
 }
