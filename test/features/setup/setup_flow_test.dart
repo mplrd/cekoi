@@ -339,7 +339,7 @@ void main() {
 
       await tapText(tester, l10n.homePlay);
       await tapText(tester, l10n.modeAdult);
-      await tapText(tester, l10n.adultConfirmAccept);
+      await tapText(tester, l10n.adultPoolAll);
 
       // R7.10 : on atterrit directement sur les réglages, l'étape des
       // catégories n'étant pas sur le chemin.
@@ -351,6 +351,9 @@ void main() {
         tester.element(find.byType(CekoiApp)),
       ).read(setupControllerProvider);
       expect(setup.deckIds, containsAll(['animaux', 'sans-filtres']));
+      // Tout le paquet, donc le vivier n'est pas réduit : sans cette
+      // assertion, un choix qui répondrait toujours « rien d'autre » passerait.
+      expect(setup.adultOnly, isFalse);
 
       // Et le parcours annonce quatre étapes, pas cinq.
       expect(find.text(l10n.setupStep(2, 4)), findsOneWidget);
@@ -369,7 +372,7 @@ void main() {
 
       await tapText(tester, l10n.homePlay);
       await tapText(tester, l10n.modeAdult);
-      await tapText(tester, l10n.adultConfirmAccept);
+      await tapText(tester, l10n.adultPoolAll);
       expect(find.text(l10n.setupSettingsTitle), findsOneWidget);
 
       // `pageBack` cherche une infobulle « Back » : l'application est en
@@ -382,6 +385,32 @@ void main() {
       // une étape zéro sur un parcours qui ne le contient pas.
       expect(find.text(l10n.setupStep(2, 5)), findsOneWidget);
     });
+
+    testWidgets(
+      'R7.1 — le choix du vivier se pose derrière Sans filtre, pas à côté',
+      (tester) async {
+        // Le défaut corrigé : « rien d'autre » avait été posé en troisième
+        // tuile, à comparer avec « En famille ». Ce n'est pas un mode au sens
+        // de R7.2 — c'est un réglage de Sans filtre, et il vit derrière lui.
+        await installDeck('animaux');
+        await installDeck('sans-filtres', audience: Audience.adult);
+        await pumpApp(tester);
+
+        await tapText(tester, l10n.homePlay);
+
+        expect(find.text(l10n.modeFamily), findsOneWidget);
+        expect(find.text(l10n.modeAdult), findsOneWidget);
+        expect(find.text(l10n.adultPoolOnly), findsNothing);
+
+        await tapText(tester, l10n.modeAdult);
+
+        // R7.3 : la question d'âge porte les deux viviers, et l'une comme
+        // l'autre des réponses vaut « oui ».
+        expect(find.text(l10n.adultConfirmTitle), findsOneWidget);
+        expect(find.text(l10n.adultPoolAll), findsOneWidget);
+        expect(find.text(l10n.adultPoolOnly), findsOneWidget);
+      },
+    );
 
     testWidgets('R7.1 — « rien d autre » retire les cartes tout public', (
       tester,
@@ -400,8 +429,8 @@ void main() {
       await pumpApp(tester);
 
       await tapText(tester, l10n.homePlay);
-      await tapText(tester, l10n.modeAdultOnly);
-      await tapText(tester, l10n.adultConfirmAccept);
+      await tapText(tester, l10n.modeAdult);
+      await tapText(tester, l10n.adultPoolOnly);
 
       final container = ProviderScope.containerOf(
         tester.element(find.byType(CekoiApp)),
@@ -557,7 +586,7 @@ void main() {
     expect(find.text(l10n.setupModeTitle), findsOneWidget);
 
     await tapText(tester, l10n.modeAdult);
-    await tapText(tester, l10n.adultConfirmAccept);
+    await tapText(tester, l10n.adultPoolAll);
     // R7.10 : accepter mène aux réglages, l'étape des catégories étant sautée
     // dans ce mode.
     expect(find.text(l10n.setupSettingsTitle), findsOneWidget);

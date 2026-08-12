@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:cekoi/app/router.dart';
+import 'package:cekoi/app/theme/app_colors.dart';
+import 'package:cekoi/app/theme/app_theme.dart';
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/features/setup/presentation/setup_controller.dart';
 import 'package:cekoi/features/setup/presentation/setup_steps.dart';
@@ -30,24 +32,15 @@ class ModeScreen extends ConsumerWidget {
             onTap: () => _choose(context, ref, Audience.family),
           ),
           const SizedBox(height: 20),
+          // Deux modes, pas trois. Le choix du vivier (tout le paquet, ou les
+          // seules cartes adultes) se pose **derrière** cette carte : c'est un
+          // réglage de Sans filtre, pas un mode de plus à comparer sur
+          // l'écran d'entrée.
           _ModeCard(
             title: l10n.modeAdult,
             description: l10n.modeAdultDescription,
             icon: Icons.local_bar,
             onTap: () => unawaited(_chooseAdult(context, ref)),
-          ),
-          const SizedBox(height: 20),
-          // Sans filtre **uniquement** : le paquet perd ses cartes tout public
-          // (R7.1). Une carte à part plutôt qu'une case à cocher ailleurs —
-          // c'est un choix de contenu, il se fait au même endroit et au même
-          // moment que les deux autres.
-          _ModeCard(
-            title: l10n.modeAdultOnly,
-            description: l10n.modeAdultOnlyDescription,
-            icon: Icons.local_fire_department,
-            onTap: () => unawaited(
-              _chooseAdult(context, ref, adultOnly: true),
-            ),
           ),
         ],
       ),
@@ -73,36 +66,125 @@ class ModeScreen extends ConsumerWidget {
     unawaited(context.push(AppRoutes.setupDecks));
   }
 
-  /// Le mode adultes passe par une confirmation d'âge simple, non bloquante
-  /// et non stockée : R7.3 interdit d'en faire une donnée personnelle.
-  Future<void> _chooseAdult(
-    BuildContext context,
-    WidgetRef ref, {
-    bool adultOnly = false,
-  }) async {
+  /// Sans filtre : la confirmation d'âge (R7.3) et le choix du vivier (R7.1)
+  /// tiennent dans la même question.
+  ///
+  /// Les deux réponses valent « oui, j'ai 18 ans » — elles ne se distinguent
+  /// que par ce qu'elles mettent dans le paquet. Fusionner les deux évite
+  /// d'enchaîner deux boîtes de dialogue pour une seule décision, et garde la
+  /// confirmation explicite : le corps de la question dit ce qu'on répond en
+  /// choisissant. Rien n'est stocké, R7.3 l'interdit.
+  ///
+  /// Rend `true` pour *rien d'autre*, `false` pour tout le paquet, et `null`
+  /// si la question est abandonnée — d'où le `bool?` plutôt qu'un `bool` :
+  /// « annuler » n'est pas « tout le paquet ».
+  Future<void> _chooseAdult(BuildContext context, WidgetRef ref) async {
     final l10n = AppLocalizations.of(context);
-    final confirmed = await showDialog<bool>(
+    final adultOnly = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(l10n.adultConfirmTitle),
-        content: Text(l10n.adultConfirmBody),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                l10n.adultConfirmBody,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 20),
+              _PoolOption(
+                title: l10n.adultPoolAll,
+                description: l10n.adultPoolAllDescription,
+                onTap: () => Navigator.of(context).pop(false),
+              ),
+              const SizedBox(height: 12),
+              _PoolOption(
+                title: l10n.adultPoolOnly,
+                description: l10n.adultPoolOnlyDescription,
+                onTap: () => Navigator.of(context).pop(true),
+              ),
+            ],
+          ),
+        ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
+            onPressed: () => Navigator.of(context).pop(),
             child: Text(l10n.actionCancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(l10n.adultConfirmAccept),
           ),
         ],
       ),
     );
 
-    if (confirmed ?? false) {
-      if (!context.mounted) return;
-      _choose(context, ref, Audience.adult, adultOnly: adultOnly);
-    }
+    if (adultOnly == null) return;
+    if (!context.mounted) return;
+    _choose(context, ref, Audience.adult, adultOnly: adultOnly);
+  }
+}
+
+/// Une des deux réponses à la question d'âge : ce qu'on met dans le paquet.
+///
+/// Même traitement secondaire que partout ailleurs — fond blanc, liseré
+/// corail —, pour que ces deux-là se lisent comme des actions et non comme du
+/// texte cliquable perdu dans une boîte de dialogue.
+class _PoolOption extends StatelessWidget {
+  const _PoolOption({
+    required this.title,
+    required this.description,
+    required this.onTap,
+  });
+
+  final String title;
+  final String description;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Material(
+      color: AppColors.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(AppTheme.radius)),
+        side: BorderSide(color: AppColors.main, width: 3),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: const BorderRadius.all(
+          Radius.circular(AppTheme.radius),
+        ),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            minHeight: AppTheme.minTouchTarget,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  title,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.ink,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  description,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.ink,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 

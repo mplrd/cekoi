@@ -24,13 +24,17 @@ est de pouvoir enchaîner en moins d'une minute quand on relance une partie iden
 
 ### 1. Choix du mode
 
-Trois grandes cartes : **En famille**, **Sans filtre**, et **Sans filtre et rien d'autre** —
-cette dernière retire les cartes tout public du vivier (R7.1). C'est le même mode au sens de
-R7.2, et les deux passent par la même confirmation d'âge.
+Deux grandes cartes : **En famille** et **Sans filtre**.
 
-Le mode adultes affiche une confirmation d'âge simple (« Vous avez plus de 18 ans ? ») avant
-d'ouvrir la sélection. Le choix n'est pas stocké comme donnée personnelle (R7.3). Le mode
-détermine le vivier de cartes (R7.1) et les valeurs par défaut de la configuration.
+Sans filtre ouvre une confirmation d'âge simple (« Vous avez plus de 18 ans ? ») qui porte en
+même temps le choix du vivier : **tout le paquet**, ou **sans filtre et rien d'autre**, qui
+retire les cartes tout public (R7.1). Les deux réponses valent oui, et renoncer ramène au choix
+du mode. Rien n'est stocké comme donnée personnelle (R7.3).
+
+Ce choix se pose **derrière** la carte Sans filtre, pas à côté d'elle : ce n'est pas un mode de
+plus au sens de R7.2, c'est un réglage du mode adultes, et l'écran d'entrée n'a que deux
+directions à proposer. Le mode détermine le vivier de cartes (R7.1) et les valeurs par défaut
+de la configuration.
 
 ### 2. Choix des catégories
 

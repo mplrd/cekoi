@@ -80,34 +80,39 @@
     "description": "Mode de contenu adulte, qui tire aussi dans le tout public (R7.1). Nommé « Sans filtre » par l'auteure du contenu, qui y tient — c'est le nom sous lequel les catégories ont été écrites. Au singulier."
   },
 
-  "modeAdultDescription": "Tout le paquet : celles qu'on sort devant la famille, et les autres.",
+  "modeAdultDescription": "Pour jouer entre adultes. Le dosage se choisit juste après.",
   "@modeAdultDescription": {
-    "description": "Sous-titre de la carte du mode Sans filtre."
-  },
-
-  "modeAdultOnly": "Sans filtre, et rien d'autre",
-  "@modeAdultOnly": {
-    "description": "Variante de Sans filtre qui ne tire que les cartes adultes (R7.1)."
-  },
-
-  "modeAdultOnlyDescription": "On retire les cartes sages. Aucun échauffement, prévoyez à boire.",
-  "@modeAdultOnlyDescription": {
-    "description": "Sous-titre de la carte Sans filtre uniquement. Le ton est celui du mode."
+    "description": "Sous-titre de la carte du mode Sans filtre. Annonce que le choix du vivier vient derrière (R7.1)."
   },
 
   "adultConfirmTitle": "Vous avez plus de 18 ans ?",
   "@adultConfirmTitle": {
-    "description": "Confirmation d'âge simple avant le mode adultes (R7.3)."
+    "description": "Confirmation d'âge simple avant le mode adultes (R7.3). Sert de titre au choix du vivier : les deux réponses valent oui."
   },
 
-  "adultConfirmBody": "Ce mode ajoute des cartes qui ne conviennent pas aux enfants. Votre réponse n'est pas enregistrée.",
+  "adultConfirmBody": "Ces cartes ne conviennent pas aux enfants. En choisissant ci-dessous, vous répondez oui — et non, ce n'est pas enregistré.",
   "@adultConfirmBody": {
     "description": "Corps de la confirmation d'âge. Précise que rien n'est stocké (R7.3)."
   },
 
-  "adultConfirmAccept": "Oui, continuer",
-  "@adultConfirmAccept": {
-    "description": "Bouton de confirmation d'âge."
+  "adultPoolAll": "Tout le paquet",
+  "@adultPoolAll": {
+    "description": "Vivier complet du mode Sans filtre : tout public et adultes mélangés (R7.1)."
+  },
+
+  "adultPoolAllDescription": "Les cartes sages et les autres, mélangées. On monte en température.",
+  "@adultPoolAllDescription": {
+    "description": "Sous-titre du vivier complet. Le ton est celui du mode."
+  },
+
+  "adultPoolOnly": "Sans filtre, et rien d'autre",
+  "@adultPoolOnly": {
+    "description": "Vivier réduit aux seules cartes adultes (R7.1)."
+  },
+
+  "adultPoolOnlyDescription": "On retire les cartes sages. Aucun échauffement, prévoyez à boire.",
+  "@adultPoolOnlyDescription": {
+    "description": "Sous-titre du vivier réduit. Le ton est celui du mode."
   },
 
   "setupDecksTitle": "Avec quelles cartes ?",
