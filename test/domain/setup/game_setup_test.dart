@@ -110,6 +110,34 @@ void main() {
     });
   });
 
+  group('R7.1 — le vivier réduit appartient au seul mode Sans filtre', () {
+    test('« rien d autre » restreint le vivier en Sans filtre', () {
+      final setup = setupForMode(Audience.adult).withAdultOnly(actif: true);
+
+      expect(setup.adultOnly, isTrue);
+      expect(setup.toConfig().adultOnly, isTrue);
+    });
+
+    test('le drapeau est forcé à faux en Famille, pas seulement ignoré', () {
+      // La nuance a des conséquences : ignorer laisserait un `true` dormir
+      // dans l'état, et il ressortirait en repassant en Sans filtre — un mode
+      // Famille ne peut pas armer le vivier adulte du mode suivant.
+      final setup = setupForMode(Audience.family).withAdultOnly(actif: true);
+
+      expect(setup.adultOnly, isFalse);
+    });
+
+    test('repasser en Famille désarme un vivier déjà réduit', () {
+      // L'écran du mode se retraverse : le chemin Sans filtre → rien d'autre
+      // → retour → Famille doit rendre un paquet tout public.
+      final setup = setupForMode(
+        Audience.adult,
+      ).withAdultOnly(actif: true).withMode(Audience.family);
+
+      expect(setup.adultOnly, isFalse);
+    });
+  });
+
   group("R7.5 — choisir un profil configure tout d'un coup", () {
     test('les catégories, les difficultés et le chrono suivent le profil', () {
       final setup = setupForMode(

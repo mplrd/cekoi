@@ -83,6 +83,12 @@ class ModeScreen extends ConsumerWidget {
     final adultOnly = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        // Sans ça, le contenu est posé dans un `Flexible` à hauteur bornée :
+        // sur un 360 × 800 — la géométrie Android la plus courante —, la
+        // seconde option passe sous le bord et devient intapable. Deux
+        // options empilées et deux paragraphes, ça ne tient plus dans une
+        // boîte de dialogue dès que l'écran est petit ou le texte agrandi.
+        scrollable: true,
         title: Text(l10n.adultConfirmTitle),
         content: SizedBox(
           width: double.maxFinite,

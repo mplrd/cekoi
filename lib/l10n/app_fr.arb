@@ -95,9 +95,9 @@
     "description": "Corps de la confirmation d'âge. Précise que rien n'est stocké (R7.3)."
   },
 
-  "adultPoolAll": "Tout le paquet",
+  "adultPoolAll": "Oui — tout le paquet",
   "@adultPoolAll": {
-    "description": "Vivier complet du mode Sans filtre : tout public et adultes mélangés (R7.1)."
+    "description": "Vivier complet du mode Sans filtre : tout public et adultes mélangés (R7.1). Le « oui » répond à la question d'âge du titre, pour que l'option se lise seule (R7.3)."
   },
 
   "adultPoolAllDescription": "Les cartes sages et les autres, mélangées. On monte en température.",
@@ -105,9 +105,9 @@
     "description": "Sous-titre du vivier complet. Le ton est celui du mode."
   },
 
-  "adultPoolOnly": "Sans filtre, et rien d'autre",
+  "adultPoolOnly": "Oui — sans filtre, et rien d'autre",
   "@adultPoolOnly": {
-    "description": "Vivier réduit aux seules cartes adultes (R7.1)."
+    "description": "Vivier réduit aux seules cartes adultes (R7.1). Le « oui » répond à la question d'âge du titre, pour que l'option se lise seule (R7.3)."
   },
 
   "adultPoolOnlyDescription": "On retire les cartes sages. Aucun échauffement, prévoyez à boire.",

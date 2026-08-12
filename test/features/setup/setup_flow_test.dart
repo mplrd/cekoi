@@ -81,13 +81,23 @@ void main() {
     }
   }
 
-  Future<void> pumpApp(WidgetTester tester) async {
+  /// [taille] permet de repasser à une géométrie réelle quand c'est le
+  /// **tenue à l'écran** qu'on teste et non l'enchaînement : la vue par
+  /// défaut est trop haute pour qu'un débordement puisse s'y produire.
+  Future<void> pumpApp(
+    WidgetTester tester, {
+    Size? taille,
+    double echelleTexte = 1,
+  }) async {
     // Écran volontairement très haut : une `ListView` ne construit pas ses
     // enfants hors champ, et un test qui commence par faire défiler teste
     // surtout sa propre mécanique de défilement.
-    tester.view.physicalSize = const Size(1200, 4000);
+    tester.view.physicalSize = taille ?? const Size(1200, 4000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
+
+    tester.platformDispatcher.textScaleFactorTestValue = echelleTexte;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
 
     await tester.pumpWidget(
       ProviderScope(
@@ -412,6 +422,51 @@ void main() {
       },
     );
 
+    for (final (libelle, taille, echelle) in const [
+      // La géométrie Android la plus répandue, à l'échelle par défaut : la
+      // boîte y débordait de 28 px, et c'est la seconde option qui passait
+      // sous le bord — la moitié de la décision, devenue intapable.
+      ('un ecran courant', Size(360, 800), 1.0),
+      // Le même écran avec le texte agrandi par le système. Rien ne borne
+      // `textScaler` dans l'application, donc le réglage s'applique en entier.
+      ('un texte agrandi', Size(360, 800), 1.3),
+      // Un petit écran, autre hauteur utile courte.
+      ('un petit ecran', Size(360, 640), 1.0),
+      // Pas de cas paysage ici : l'accueil lui-même y déborde de 268 px
+      // (`home_screen.dart`), et rien ne verrouille l'orientation. C'est un
+      // défaut réel, mais entier et étranger à cette boîte — l'ajouter ici
+      // ferait rougir ce test pour une cause qu'il ne décrit pas.
+    ]) {
+      testWidgets('R7.1 — la question du vivier tient sur $libelle', (
+        tester,
+      ) async {
+        await installDeck('animaux');
+        await installDeck('sans-filtres', audience: Audience.adult);
+        await pumpApp(tester, taille: taille, echelleTexte: echelle);
+
+        await tapText(tester, l10n.homePlay);
+        await tapText(tester, l10n.modeAdult);
+
+        // Un débordement de `RenderFlex` remonte comme exception de test.
+        expect(tester.takeException(), isNull);
+
+        // Et la seconde option reste atteignable, quitte à faire défiler la
+        // boîte : c'est ce que « tenir » veut dire ici.
+        final option = find.text(l10n.adultPoolOnly);
+        await tester.ensureVisible(option);
+        await tester.pumpAndSettle();
+        await tester.tap(option);
+        await tester.pumpAndSettle();
+
+        expect(
+          ProviderScope.containerOf(
+            tester.element(find.byType(CekoiApp)),
+          ).read(setupControllerProvider).adultOnly,
+          isTrue,
+        );
+      });
+    }
+
     testWidgets('R7.1 — « rien d autre » retire les cartes tout public', (
       tester,
     ) async {
@@ -584,6 +639,14 @@ void main() {
     // Refuser laisse sur l'écran du mode, sans rien avoir choisi.
     await tapText(tester, l10n.actionCancel);
     expect(find.text(l10n.setupModeTitle), findsOneWidget);
+    // Et sans rien avoir écrit non plus : « sans rien avoir choisi » se
+    // vérifie dans l'état, pas seulement à l'écran.
+    expect(
+      ProviderScope.containerOf(
+        tester.element(find.byType(CekoiApp)),
+      ).read(setupControllerProvider).adultOnly,
+      isFalse,
+    );
 
     await tapText(tester, l10n.modeAdult);
     await tapText(tester, l10n.adultPoolAll);
