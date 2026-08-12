@@ -1,8 +1,13 @@
 name: CI
 
 on:
+  # `feature/lot-*` : un lot trop gros pour une seule PR se découpe en PR
+  # chaînées sur une branche d'intégration, qui ne remonte dans `develop` qu'une
+  # fois entière. Sans cette ligne, aucune de ces PR ne serait vérifiée et tout
+  # le lot arriverait d'un bloc — l'accumulation que docs/ROADMAP.md dit
+  # d'éviter. Le runner macOS, lui, reste filtré par le job iOS.
   pull_request:
-    branches: [develop, main]
+    branches: [develop, main, 'feature/lot-*']
   push:
     branches: [develop, main]
 
