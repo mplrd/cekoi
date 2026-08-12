@@ -222,9 +222,13 @@ class _LaunchButton extends ConsumerWidget {
     }
 
     ref.read(currentGameProvider.notifier).game = game;
+    // Le paquet est tiré **avant** la pub : au retour de l'interstitiel, il
+    // n'y a plus rien à attendre.
+    //
     // `push` et non `go` : la configuration reste sous la partie, pour que le
-    // retour y ramène tant que le premier tour n'a pas commencé.
-    unawaited(context.push(AppRoutes.game));
+    // retour y ramène tant que le premier tour n'a pas commencé. L'écran de
+    // lancement, lui, se retire de la pile en passant la main.
+    unawaited(context.push(AppRoutes.launch));
   }
 }
 

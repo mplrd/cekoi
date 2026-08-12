@@ -4,6 +4,7 @@ import 'package:cekoi/features/home/presentation/home_screen.dart';
 import 'package:cekoi/features/play/presentation/game_screen.dart';
 import 'package:cekoi/features/settings/presentation/app_settings_screen.dart';
 import 'package:cekoi/features/setup/presentation/decks_screen.dart';
+import 'package:cekoi/features/setup/presentation/launch_screen.dart';
 import 'package:cekoi/features/setup/presentation/mode_screen.dart';
 import 'package:cekoi/features/setup/presentation/pool_screen.dart';
 import 'package:cekoi/features/setup/presentation/settings_screen.dart';
@@ -28,6 +29,10 @@ abstract final class AppRoutes {
   static const String setupSettings = '/jouer/reglages';
   static const String setupTeams = '/jouer/equipes';
   static const String setupSummary = '/jouer/recap';
+
+  /// L'écran de lancement, où se joue l'interstitiel. Entre le récapitulatif
+  /// et la partie, et hors de la pile une fois traversé.
+  static const String launch = '/lancement';
   static const String game = '/partie';
   static const String myDecks = '/mes-categories';
 
@@ -80,6 +85,11 @@ GoRouter createAppRouter() => GoRouter(
       path: AppRoutes.setupSummary,
       name: 'setup-summary',
       builder: (context, state) => const SummaryScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.launch,
+      name: 'launch',
+      builder: (context, state) => const LaunchScreen(),
     ),
     GoRoute(
       path: AppRoutes.game,

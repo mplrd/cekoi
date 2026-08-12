@@ -17,6 +17,7 @@ import 'package:cekoi/domain/entities/min_age.dart';
 import 'package:cekoi/features/setup/presentation/deck_catalog.dart';
 import 'package:cekoi/features/setup/presentation/setup_controller.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
+import 'package:cekoi/services/ads/ad_service.dart';
 import 'package:cekoi/services/ads/ads.dart';
 import 'package:cekoi/services/ads/consent.dart';
 import 'package:drift/drift.dart' show Value;
@@ -104,6 +105,10 @@ void main() {
     /// Remplace la passerelle de consentement, pour vérifier ce que devient
     /// le parcours quand le CMP ne répond pas.
     ConsentGateway? passerelle,
+
+    /// Remplace l interstitiel. Par defaut aucune pub : c est l etat d un
+    /// build sans publicite, et celui de la quasi-totalite des parcours.
+    ShowInterstitial? interstitiel,
   }) async {
     // Écran volontairement très haut : une `ListView` ne construit pas ses
     // enfants hors champ, et un test qui commence par faire défiler teste
@@ -126,6 +131,9 @@ void main() {
           screenAwakeProvider.overrideWithValue(fakeScreenAwake()),
           consentGatewayProvider.overrideWithValue(
             passerelle ?? fakeConsentGateway(),
+          ),
+          showInterstitialProvider.overrideWithValue(
+            interstitiel ?? showNoInterstitial,
           ),
           if (catalogueAdulte != null)
             deckCatalogProvider(
@@ -273,6 +281,96 @@ void main() {
     await tapText(tester, l10n.actionStartGame);
 
     expect(launchedGame(tester).deck, hasLength(GameConfig.defaultCardCount));
+  });
+
+  group('l interstitiel ne peut pas retenir une partie', () {
+    testWidgets('sans pub, le lancement traverse et la partie demarre', (
+      tester,
+    ) async {
+      await installDeck('animaux', easy: 15, medium: 15, hard: 15);
+      await pumpApp(tester);
+
+      await tapText(tester, l10n.homePlay);
+      await tapText(tester, l10n.modeFamily);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionStartGame);
+
+      expect(launchedGame(tester).deck, hasLength(GameConfig.defaultCardCount));
+      expect(
+        find.text(l10n.turnIntroTeam(l10n.teamDefaultName(1))),
+        findsOneWidget,
+        reason: 'l ecran de lancement doit passer la main a la partie',
+      );
+    });
+
+    testWidgets(
+      'l ecran de lancement dit quoi faire, et rappelle la manche 1',
+      (
+        tester,
+      ) async {
+        // Le temps mort est reel — le groupe s installe et se passe le
+        // telephone. Le texte est une consigne, pas un habillage de pub.
+        await installDeck('animaux', easy: 15, medium: 15, hard: 15);
+        await pumpApp(tester, interstitiel: _SlowInterstitial().call);
+
+        await tapText(tester, l10n.homePlay);
+        await tapText(tester, l10n.modeFamily);
+        await tapText(tester, l10n.actionContinue);
+        await tapText(tester, l10n.actionContinue);
+        await tapText(tester, l10n.actionContinue);
+        await tester.tap(find.text(l10n.actionStartGame));
+        await tester.pump();
+        await tester.pump();
+
+        expect(find.text(l10n.launchSettleIn), findsOneWidget);
+        expect(find.text(l10n.roundRuleFree), findsOneWidget);
+      },
+    );
+
+    testWidgets('une pub qui explose laisse la partie demarrer', (
+      tester,
+    ) async {
+      await installDeck('animaux', easy: 15, medium: 15, hard: 15);
+      await pumpApp(
+        tester,
+        interstitiel: ({required loadTimeout}) async =>
+            throw StateError('SDK absent'),
+      );
+
+      await tapText(tester, l10n.homePlay);
+      await tapText(tester, l10n.modeFamily);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionStartGame);
+
+      expect(launchedGame(tester).deck, hasLength(GameConfig.defaultCardCount));
+    });
+
+    testWidgets('l ecran de lancement ne reste pas dans la pile', (
+      tester,
+    ) async {
+      // Le retour depuis la partie ramene au recapitulatif tant que le premier
+      // tour n a pas commence : repasser par l ecran de lancement relancerait
+      // une pub, et ferait clignoter un ecran que personne n a demande.
+      await installDeck('animaux', easy: 15, medium: 15, hard: 15);
+      await pumpApp(tester);
+
+      await tapText(tester, l10n.homePlay);
+      await tapText(tester, l10n.modeFamily);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionStartGame);
+
+      tester.state<NavigatorState>(find.byType(Navigator)).pop();
+      await tester.pumpAndSettle();
+
+      expect(find.text(l10n.setupSummaryTitle), findsOneWidget);
+      expect(find.text(l10n.launchSettleIn), findsNothing);
+    });
   });
 
   testWidgets('R8.3 — les équipes se nomment, ou pas', (tester) async {
@@ -797,4 +895,13 @@ class _MuteGateway implements ConsentGateway {
 
   @override
   Future<ConsentState> changeChoice() => Completer<ConsentState>().future;
+}
+
+/// Un interstitiel qui met du temps a repondre.
+///
+/// Sert a observer l ecran de lancement pendant que la pub charge : sans lui,
+/// l ecran est traverse en une frame et rien n est visible.
+class _SlowInterstitial {
+  Future<bool> call({required Duration loadTimeout}) =>
+      Completer<bool>().future;
 }
