@@ -3,8 +3,8 @@
   "name": "Disney et Pixar",
   "audience": "family",
   "minAge": 6,
-  "contentVersion": 1,
-  "isPremium": false,
+  "contentVersion": 2,
+  "isPremium": true,
   "sortOrder": 130,
   "icon": "castle",
   "cards": [
