@@ -4,6 +4,13 @@
         android:name="${applicationName}"
         android:appCategory="game"
         android:icon="@mipmap/ic_launcher">
+        <!-- Identifiant d'application AdMob. La valeur vient de
+             build.gradle.kts : identifiant de test par défaut, le vrai au
+             build de publication. Le SDK le lit au démarrage du processus et
+             plante s'il manque. -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="${admobAppId}" />
         <!-- appCategory="game" n'est pas que de la métadonnée de rangement :
              depuis Android 16, les verrous d'orientation sont ignorés sur les
              écrans d'au moins 600 dp de large, et les jeux en sont exemptés.

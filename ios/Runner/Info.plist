@@ -24,6 +24,13 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<!-- Identifiant d'application AdMob, pendant iOS du meta-data du manifeste
+	     Android. Valeur de test publique de Google : à remplacer par le vrai
+	     identifiant au lot 8, en même temps que les SKAdNetworkItems, qui
+	     relèvent de l'attribution et non du fonctionnement. Non vérifié sur un
+	     appareil : aucun iPhone n'a encore fait tourner cette application. -->
+	<key>GADApplicationIdentifier</key>
+	<string>ca-app-pub-3940256099942544~1458002511</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>
