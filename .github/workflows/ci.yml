@@ -8,6 +8,12 @@ on:
   # d'éviter. Le runner macOS, lui, reste filtré par le job iOS.
   pull_request:
     branches: [develop, main, 'feature/lot-*']
+    # `labeled` : le job iOS se déclenche par une étiquette, et une étiquette
+    # posée après coup n'était dans le contexte d'aucun run — il fallait
+    # repousser un commit pour qu'elle prenne effet, ce qui vidait le
+    # mécanisme de son intérêt. La concurrence annule le run en cours, donc
+    # étiqueter ne fait pas tourner deux fois.
+    types: [opened, synchronize, reopened, labeled]
   push:
     branches: [develop, main]
 
