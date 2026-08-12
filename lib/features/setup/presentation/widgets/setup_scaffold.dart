@@ -41,13 +41,18 @@ class SetupScaffold extends ConsumerWidget {
     final parcours = setupStepsFor(ref.watch(setupControllerProvider).mode);
     // Garde-fou : un écran hors du parcours de son mode ne devrait pas exister
     // — chaque mode a ses cinq étapes et ne traverse que les siennes. Si ça
-    // arrivait quand même, mieux vaut un rang plausible qu'un « Étape 0 sur 6 »
-    // avec tous les points éteints, ce que rendait `indexOf` à -1.
+    // arrivait quand même, on cherche le parcours **qui contient cette étape**
+    // plutôt qu'un repli arbitraire : chaque étape n'appartient qu'à un seul,
+    // donc le rang affiché reste celui de l'écran. Un repli sur le parcours
+    // familial aurait annoncé « Étape 1 sur 5 » sur l'écran du vivier — un
+    // rang que rien ne justifie, et le point plein sur la mauvaise étape.
     final etapes = parcours.contains(step)
         ? parcours
-        : setupStepsFor(Audience.family);
+        : Audience.values
+              .map(setupStepsFor)
+              .firstWhere((e) => e.contains(step), orElse: () => parcours);
     final index = etapes.indexOf(step);
-    final rang = index < 0 ? 1 : index + 1;
+    final rang = index + 1;
     final stepCount = etapes.length;
 
     // Un seul fond, du haut de l'écran au bas : celui du thème.

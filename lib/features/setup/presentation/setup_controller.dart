@@ -6,7 +6,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'setup_controller.g.dart';
 
-/// La configuration en cours, partagée par les cinq écrans.
+/// La configuration en cours, partagée par les écrans de l'étape 1 à la 5.
 ///
 /// Garde-la vivante entre les écrans : revenir en arrière ne doit rien
 /// reperdre, c'est tout l'objet de la barre de progression de `SPEC.md`.

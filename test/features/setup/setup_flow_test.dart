@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cekoi/app/app.dart';
 import 'package:cekoi/app/clock.dart';
 import 'package:cekoi/app/current_game.dart';
@@ -12,6 +14,7 @@ import 'package:cekoi/domain/entities/deck_origin.dart';
 import 'package:cekoi/domain/entities/difficulty.dart';
 import 'package:cekoi/domain/entities/game_config.dart';
 import 'package:cekoi/domain/entities/min_age.dart';
+import 'package:cekoi/features/setup/presentation/deck_catalog.dart';
 import 'package:cekoi/features/setup/presentation/setup_controller.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -88,6 +91,10 @@ void main() {
     WidgetTester tester, {
     Size? taille,
     double echelleTexte = 1,
+
+    /// Remplace le catalogue du mode adultes, pour tester ce que fait l'écran
+    /// du vivier tant qu'il n'a pas répondu.
+    Future<DeckCatalog>? catalogueAdulte,
   }) async {
     // Écran volontairement très haut : une `ListView` ne construit pas ses
     // enfants hors champ, et un test qui commence par faire défiler teste
@@ -108,6 +115,10 @@ void main() {
           deckSeedingProvider.overrideWith((ref) async => const SeedReport()),
           seedSourceProvider.overrideWithValue(() => 42),
           screenAwakeProvider.overrideWithValue(fakeScreenAwake()),
+          if (catalogueAdulte != null)
+            deckCatalogProvider(
+              Audience.adult,
+            ).overrideWith((ref) => catalogueAdulte),
         ],
         child: CekoiApp(router: createAppRouter()),
       ),
@@ -436,6 +447,39 @@ void main() {
         expect(find.text(l10n.setupPoolTitle), findsOneWidget);
         expect(find.text(l10n.adultPoolAll), findsOneWidget);
         expect(find.text(l10n.adultPoolOnly), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      "R7.9 — l'étape du vivier attend le catalogue avant de laisser choisir",
+      (tester) async {
+        // Les deux cartes ne dépendent pas du catalogue, mais la présélection
+        // si : avancer avant qu'il ait répondu partirait avec un paquet vide
+        // et un bouton de lancement grisé sans explication. Sans ce test, le
+        // garde était une promesse de commentaire — remplacer l'attente par la
+        // liste nue laissait toute la suite verte.
+        await installDeck('animaux');
+        await installDeck('sans-filtres', audience: Audience.adult);
+
+        // Un catalogue qui ne répond jamais : l'écran doit rester à sa place.
+        await pumpApp(
+          tester,
+          catalogueAdulte: Completer<DeckCatalog>().future,
+        );
+
+        await tapText(tester, l10n.homePlay);
+        await tapText(tester, l10n.modeAdult);
+
+        // Pas de `pumpAndSettle` à partir d'ici : l'indicateur de chargement
+        // tourne sans fin, et attendre la stabilité ne rendrait jamais la main.
+        await tester.tap(find.text(l10n.adultConfirmAccept));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 400));
+
+        expect(find.text(l10n.setupPoolTitle), findsOneWidget);
+        expect(find.byType(CircularProgressIndicator), findsOneWidget);
+        expect(find.text(l10n.adultPoolAll), findsNothing);
+        expect(find.text(l10n.adultPoolOnly), findsNothing);
       },
     );
 

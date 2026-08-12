@@ -87,7 +87,7 @@
 
   "adultConfirmTitle": "Vous avez plus de 18 ans ?",
   "@adultConfirmTitle": {
-    "description": "Confirmation d'âge simple avant le mode adultes (R7.3). Sert de titre au choix du vivier : les deux réponses valent oui."
+    "description": "Confirmation d'âge simple avant le mode adultes (R7.3). Une porte, rien d'autre : le choix du contenu se fait à l'étape suivante."
   },
 
   "adultConfirmBody": "Ce mode ajoute des cartes qui ne conviennent pas aux enfants. Votre réponse n'est pas enregistrée.",

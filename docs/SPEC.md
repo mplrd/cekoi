@@ -84,6 +84,10 @@ paquet vide.
 Attention au vivier : *rien d'autre* demande 30 cartes adultes là où le mode complet puise
 dans tout le contenu. R6.2 s'applique et le dira avant de lancer.
 
+**Ce mode n'a aucun écran de catégories**, et pas seulement « pas sur le chemin » : il n'y a
+nulle part où en décocher une, custom comprise. C'est assumé (R7.10) — un mode Sans filtre
+joue avec tout ce qu'il a.
+
 ### 3. Réglages de partie
 
 Durée du tour et nombre de cartes — voir le tableau de R6. Chaque réglage est **un curseur**,

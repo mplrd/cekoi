@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cekoi/app/router.dart';
+import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/features/setup/presentation/deck_catalog.dart';
 import 'package:cekoi/features/setup/presentation/setup_controller.dart';
 import 'package:cekoi/features/setup/presentation/setup_steps.dart';
@@ -28,10 +29,14 @@ class PoolScreen extends ConsumerStatefulWidget {
 }
 
 class _PoolScreenState extends ConsumerState<PoolScreen> {
-  /// Vrai dès que la présélection a eu lieu, pour ne la faire qu'à la première
-  /// arrivée : revenir sur l'écran ne doit pas défaire une sélection corrigée
-  /// entre-temps.
-  bool _preselectionne = false;
+  /// Le mode dont la présélection a déjà eu lieu (R7.9).
+  ///
+  /// Le mode et non un simple booléen, comme sur l'écran des catégories : un
+  /// booléen ne tiendrait que parce que `withMode` vide `deckIds` en changeant
+  /// de mode. Le jour où quelqu'un décide de conserver la sélection d'un mode
+  /// à l'autre — ce n'est pas absurde —, la présélection s'arrêterait en
+  /// silence et le joueur repartirait avec le paquet de l'autre mode.
+  Audience? _preselectionne;
 
   @override
   Widget build(BuildContext context) {
@@ -42,8 +47,10 @@ class _PoolScreenState extends ConsumerState<PoolScreen> {
     // R7.9 : le mode prend toutes les catégories. Le catalogue arrive après le
     // premier rendu, et écrire dans l'état pendant une construction est
     // interdit — d'où le report d'une frame.
-    if (catalog case AsyncData(:final value) when !_preselectionne) {
-      _preselectionne = true;
+    if (catalog case AsyncData(
+      :final value,
+    ) when _preselectionne != setup.mode) {
+      _preselectionne = setup.mode;
       final ids = [for (final deck in value.decks) deck.id];
       if (setup.deckIds.isEmpty && ids.isNotEmpty) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
