@@ -4,6 +4,7 @@ import 'package:cekoi/features/home/presentation/home_screen.dart';
 import 'package:cekoi/features/play/presentation/game_screen.dart';
 import 'package:cekoi/features/setup/presentation/decks_screen.dart';
 import 'package:cekoi/features/setup/presentation/mode_screen.dart';
+import 'package:cekoi/features/setup/presentation/pool_screen.dart';
 import 'package:cekoi/features/setup/presentation/settings_screen.dart';
 import 'package:cekoi/features/setup/presentation/summary_screen.dart';
 import 'package:cekoi/features/setup/presentation/teams_screen.dart';
@@ -15,12 +16,14 @@ import 'package:go_router/go_router.dart';
 /// rejoindra une partie par lien, et rétro-ajouter des routes nommées coûte
 /// plus cher que de les tenir dès le départ.
 ///
-/// Les cinq étapes de la configuration s'empilent : le retour de `SPEC.md`
-/// est le retour système, sans code de navigation à écrire.
+/// Les étapes de la configuration s'empilent : le retour de `SPEC.md` est le
+/// retour système, sans code de navigation à écrire. Six routes pour cinq
+/// étapes — la deuxième a deux écrans, un par mode (R7.10).
 abstract final class AppRoutes {
   static const String home = '/';
   static const String setupMode = '/jouer/mode';
   static const String setupDecks = '/jouer/categories';
+  static const String setupPool = '/jouer/vivier';
   static const String setupSettings = '/jouer/reglages';
   static const String setupTeams = '/jouer/equipes';
   static const String setupSummary = '/jouer/recap';
@@ -52,6 +55,11 @@ GoRouter createAppRouter() => GoRouter(
       path: AppRoutes.setupDecks,
       name: 'setup-decks',
       builder: (context, state) => const DecksScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.setupPool,
+      name: 'setup-pool',
+      builder: (context, state) => const PoolScreen(),
     ),
     GoRoute(
       path: AppRoutes.setupSettings,

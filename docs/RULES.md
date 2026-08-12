@@ -227,9 +227,12 @@ tirage prend uniformément dans le vivier autorisé.
 **R7.8** — Si un profil ne réunit pas les 12 cartes minimum (R6.2), il est affiché mais
 désactivé, avec la raison indiquée. Il ne disparaît pas silencieusement de la liste.
 
-**R7.9** — **Par défaut, on joue avec tout.** En arrivant sur l'étape des catégories, toutes
-celles du mode sont sélectionnées. Un profil sert alors à *restreindre* — par âge ou par
-difficulté — et non à constituer une sélection depuis rien.
+**R7.9** — **Par défaut, on joue avec tout.** En arrivant à l'étape 2, toutes les catégories du
+mode sont sélectionnées. Un profil sert alors à *restreindre* — par âge ou par difficulté — et
+non à constituer une sélection depuis rien.
+
+L'étape 2 n'est pas le même écran des deux côtés (R7.10) : c'est celui du mode en cours qui
+porte la présélection, les catégories en Famille et le vivier en Sans filtre.
 
 Retour d'usage d'août 2026 : le mode Sans filtre n'a aucun profil, donc l'étape s'ouvrait sur
 une sélection vide et il fallait cocher les catégories une par une avant de pouvoir continuer.
@@ -240,14 +243,27 @@ La présélection n'a lieu **qu'à la première arrivée** dans un mode donné :
 catégorie est une décision, et la voir revenir seule serait pire que le problème d'origine
 (R7.6).
 
-**R7.10** — **Le mode Sans filtre saute l'étape des catégories.** Il prend tout (R7.1) et
-n'a aucun profil : l'étape s'ouvrait sur une liste entièrement cochée, sans profil à choisir
-ni rien à décider — un écran à traverser pour rien. Le parcours y compte donc quatre étapes
-au lieu de cinq, et le numéro affiché suit.
+**R7.10** — **Chaque mode a sa deuxième étape, et c'est un choix de contenu.** En Famille ce
+sont les catégories et leurs profils (R7.5). En Sans filtre, c'est l'**étendue du vivier** :
+*tout le paquet*, ou *sans filtre et rien d'autre* (R7.1).
 
-L'écran reste **joignable par le retour** depuis les réglages : qui veut retirer une
-catégorie le peut encore, il ne l'a simplement plus sur le chemin. En mode Famille, où les
-profils portent une vraie décision (R7.5), l'étape reste dans le parcours.
+Les catégories n'ont pas leur place dans le mode Sans filtre : il les prend toutes (R7.1) et
+n'a aucun profil, l'étape s'y ouvrait sur une liste entièrement cochée — un écran à traverser
+pour rien. Mais le choix du vivier, lui, est une vraie décision, et il en mérite un : c'est
+une décision de contenu de même nature que celle des catégories, elle se prend donc au même
+rang, sur un écran de la même forme, et pas dans une boîte de dialogue accrochée à l'étape
+précédente.
+
+Le parcours compte donc **cinq étapes des deux côtés**, avec la même numérotation. Un mode ne
+traverse jamais l'étape de l'autre : la présélection de R7.9 est portée par l'écran de
+l'étape 2 du mode en cours, quel qu'il soit.
+
+**Conséquence assumée : en Sans filtre, l'écran des catégories n'est plus atteignable du
+tout** — ni sur le chemin, ni par le retour, comme c'était le cas avant que ce mode ait sa
+propre étape 2. Ce mode joue avec tout ce qu'il a, y compris les catégories custom créées en
+adulte, et il n'existe aucun endroit pour en retirer une. C'est le prix de deux parcours
+symétriques. Si un retour d'usage demande de pouvoir décocher en Sans filtre, la réponse est
+d'ajouter un accès depuis l'étape du vivier — pas de replacer les catégories sur le chemin.
 
 ## 8. Équipes
 

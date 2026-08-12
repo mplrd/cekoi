@@ -1,4 +1,5 @@
 import 'package:cekoi/app/theme/app_colors.dart';
+import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/features/setup/presentation/setup_controller.dart';
 import 'package:cekoi/features/setup/presentation/setup_steps.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
@@ -11,9 +12,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// chaque écran : `SPEC.md` demande de pouvoir revenir à chaque niveau, et
 /// cinq implémentations finiraient par diverger.
 ///
-/// Le rang et le total se calculent depuis le mode en cours : le parcours
-/// compte cinq étapes en Famille, quatre en Sans filtre (R7.10). Aucun écran
-/// ne connaît son numéro — il déclare quelle étape il est.
+/// Le rang et le total se calculent depuis le mode en cours : cinq étapes des
+/// deux côtés, mais pas les mêmes — la deuxième est les catégories en Famille,
+/// l'étendue du vivier en Sans filtre (R7.10). Aucun écran ne connaît son
+/// numéro : il déclare quelle étape il est.
 class SetupScaffold extends ConsumerWidget {
   const SetupScaffold({
     required this.step,
@@ -37,12 +39,20 @@ class SetupScaffold extends ConsumerWidget {
     final theme = Theme.of(context);
 
     final parcours = setupStepsFor(ref.watch(setupControllerProvider).mode);
-    // Un écran hors du parcours du mode — les catégories en Sans filtre, où
-    // l'on ne revient que par le retour (R7.10) — se compte dans le parcours
-    // **complet**. Sans ça, `indexOf` rendait -1 et l'en-tête affichait
-    // « Étape 0 sur 4 », avec les quatre points éteints.
-    final etapes = parcours.contains(step) ? parcours : SetupStep.values;
-    final rang = etapes.indexOf(step) + 1;
+    // Garde-fou : un écran hors du parcours de son mode ne devrait pas exister
+    // — chaque mode a ses cinq étapes et ne traverse que les siennes. Si ça
+    // arrivait quand même, on cherche le parcours **qui contient cette étape**
+    // plutôt qu'un repli arbitraire : chaque étape n'appartient qu'à un seul,
+    // donc le rang affiché reste celui de l'écran. Un repli sur le parcours
+    // familial aurait annoncé « Étape 1 sur 5 » sur l'écran du vivier — un
+    // rang que rien ne justifie, et le point plein sur la mauvaise étape.
+    final etapes = parcours.contains(step)
+        ? parcours
+        : Audience.values
+              .map(setupStepsFor)
+              .firstWhere((e) => e.contains(step), orElse: () => parcours);
+    final index = etapes.indexOf(step);
+    final rang = index + 1;
     final stepCount = etapes.length;
 
     // Un seul fond, du haut de l'écran au bas : celui du thème.
