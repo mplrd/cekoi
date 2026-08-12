@@ -11,6 +11,14 @@
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="${admobAppId}" />
+        <!-- Sans cette ligne, le SDK démarre la mesure d'application et envoie
+             des événements au niveau utilisateur dès le démarrage du
+             processus, sans attendre MobileAds.initialize() ni la réponse au
+             consentement. Toute la mécanique Dart du consentement serait
+             tenue, et percée ici. -->
+        <meta-data
+            android:name="com.google.android.gms.ads.DELAY_APP_MEASUREMENT_INIT"
+            android:value="true" />
         <!-- appCategory="game" n'est pas que de la métadonnée de rangement :
              depuis Android 16, les verrous d'orientation sont ignorés sur les
              écrans d'au moins 600 dp de large, et les jeux en sont exemptés.

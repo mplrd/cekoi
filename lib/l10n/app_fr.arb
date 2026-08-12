@@ -766,6 +766,11 @@
     "description": "Sous-titre de l'entrée de consentement, dans les réglages."
   },
 
+  "settingsAdConsentLoading": "Choix publicitaire en cours de chargement.",
+  "@settingsAdConsentLoading": {
+    "description": "Annonce vocale pendant que le CMP répond. La ligne n'a pas de texte visible, sans quoi un lecteur d'écran n'annoncerait rien du tout."
+  },
+
   "settingsAdConsentNone": "Aucun choix publicitaire à régler sur cet appareil.",
   "@settingsAdConsentNone": {
     "description": "Remplace l'entrée de consentement là où aucun formulaire n'est requis — hors zone réglementée, ou dans un build sans publicité."

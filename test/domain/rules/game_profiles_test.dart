@@ -232,6 +232,14 @@ void main() {
       expect(retenues.map((d) => d.id), ['libre']);
     });
 
+    test("la présélection d'arrivée l'écarte aussi (R7.9)", () {
+      // L'autre chemin, celui qui ne passe par aucun profil : « on joue avec
+      // tout » veut dire tout ce que le joueur possède. Sans cette exclusion,
+      // la case arrive cochée et grisée à la fois, et les cartes verrouillées
+      // entrent dans le paquet sans qu'on puisse les en retirer.
+      expect(selectableDecks(avecPremium).map((d) => d.id), ['libre']);
+    });
+
     test('elle ne compte pas non plus dans le volume annoncé (R7.8)', () {
       // Sinon un profil s'annonce jouable grâce à des cartes que le tirage ne
       // prendra pas, et la partie démarre plus courte que promis.

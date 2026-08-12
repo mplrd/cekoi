@@ -31,8 +31,18 @@
 	     appareil : aucun iPhone n'a encore fait tourner cette application. -->
 	<key>GADApplicationIdentifier</key>
 	<string>ca-app-pub-3940256099942544~1458002511</string>
+	<!-- Pendant iOS de DELAY_APP_MEASUREMENT_INIT : sans lui, la mesure
+	     d'application démarre au lancement du processus, avant toute réponse
+	     au consentement. -->
+	<key>GADDelayAppMeasurementInit</key>
+	<true/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<!-- Dès qu'un message App Tracking Transparency est configuré dans la
+	     console AdMob, le CMP enchaîne sur l'invite système. Sans cette clé,
+	     iOS termine l'application au lieu de l'afficher. -->
+	<key>NSUserTrackingUsageDescription</key>
+	<string>Cette autorisation permet de proposer des publicités adaptées. Le jeu fonctionne exactement de la même façon si vous la refusez.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

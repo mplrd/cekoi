@@ -25,7 +25,12 @@ class CekoiApp extends ConsumerWidget {
       // requête de pub (`MONETISATION.md`). Lu et non attendu : l'accueil
       // s'affiche pendant que le CMP travaille, et une panne du CMP n'empêche
       // pas de jouer.
-      ..watch(adConsentProvider);
+      //
+      // Le notifier et non la valeur : il suffit à maintenir le provider en
+      // vie, et il est stable. Écouter la valeur reconstruirait tout le
+      // `MaterialApp` à chaque changement d'état du consentement — deux fois
+      // au lancement, et à chaque passage par les réglages.
+      ..watch(adConsentProvider.notifier);
 
     return MaterialApp.router(
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,

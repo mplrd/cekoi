@@ -96,18 +96,30 @@ class _ConsentTile extends StatelessWidget {
   }
 }
 
+/// L'attente pendant que le CMP répond.
+///
+/// La ligne n'a pas de texte visible — il n'y a rien à dire de plus qu'un
+/// indicateur d'activité — mais elle en a un pour les lecteurs d'écran, sans
+/// quoi ils n'annonceraient rien. Cet état reste affiché tout le temps que le
+/// formulaire natif occupe l'écran.
 class _Waiting extends StatelessWidget {
   const _Waiting();
 
   @override
   Widget build(BuildContext context) {
-    return const Card(
-      child: ListTile(
-        leading: SizedBox.square(
-          dimension: 24,
-          child: CircularProgressIndicator(strokeWidth: 2),
+    final l10n = AppLocalizations.of(context);
+
+    return Semantics(
+      label: l10n.settingsAdConsentLoading,
+      liveRegion: true,
+      child: const Card(
+        child: ListTile(
+          leading: SizedBox.square(
+            dimension: 24,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          title: SizedBox.shrink(),
         ),
-        title: SizedBox.shrink(),
       ),
     );
   }

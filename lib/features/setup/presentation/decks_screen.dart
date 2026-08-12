@@ -70,7 +70,7 @@ class _DecksScreenState extends ConsumerState<DecksScreen> {
     // une construction est interdit : d'où le report d'une frame.
     if (loaded != null && _preselectionne != setup.mode) {
       _preselectionne = setup.mode;
-      final ids = [for (final deck in loaded.decks) deck.id];
+      final ids = [for (final deck in selectableDecks(loaded.decks)) deck.id];
       if (setup.deckIds.isEmpty && ids.isNotEmpty) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
