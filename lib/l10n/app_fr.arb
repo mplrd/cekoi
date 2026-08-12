@@ -90,14 +90,24 @@
     "description": "Confirmation d'âge simple avant le mode adultes (R7.3). Sert de titre au choix du vivier : les deux réponses valent oui."
   },
 
-  "adultConfirmBody": "Ces cartes ne conviennent pas aux enfants. En choisissant ci-dessous, vous répondez oui — et non, ce n'est pas enregistré.",
+  "adultConfirmBody": "Ce mode ajoute des cartes qui ne conviennent pas aux enfants. Votre réponse n'est pas enregistrée.",
   "@adultConfirmBody": {
     "description": "Corps de la confirmation d'âge. Précise que rien n'est stocké (R7.3)."
   },
 
-  "adultPoolAll": "Oui — tout le paquet",
+  "adultConfirmAccept": "Oui, continuer",
+  "@adultConfirmAccept": {
+    "description": "Bouton de confirmation d'âge."
+  },
+
+  "setupPoolTitle": "Jusqu'où on va ?",
+  "@setupPoolTitle": {
+    "description": "Titre de l'étape 2 du mode Sans filtre : le choix du vivier. Prend la place qu'occupent les catégories en Famille (R7.10)."
+  },
+
+  "adultPoolAll": "Tout le paquet",
   "@adultPoolAll": {
-    "description": "Vivier complet du mode Sans filtre : tout public et adultes mélangés (R7.1). Le « oui » répond à la question d'âge du titre, pour que l'option se lise seule (R7.3)."
+    "description": "Vivier complet du mode Sans filtre : tout public et adultes mélangés (R7.1)."
   },
 
   "adultPoolAllDescription": "Les cartes sages et les autres, mélangées. On monte en température.",
@@ -105,9 +115,9 @@
     "description": "Sous-titre du vivier complet. Le ton est celui du mode."
   },
 
-  "adultPoolOnly": "Oui — sans filtre, et rien d'autre",
+  "adultPoolOnly": "Sans filtre, et rien d'autre",
   "@adultPoolOnly": {
-    "description": "Vivier réduit aux seules cartes adultes (R7.1). Le « oui » répond à la question d'âge du titre, pour que l'option se lise seule (R7.3)."
+    "description": "Vivier réduit aux seules cartes adultes (R7.1)."
   },
 
   "adultPoolOnlyDescription": "On retire les cartes sages. Aucun échauffement, prévoyez à boire.",

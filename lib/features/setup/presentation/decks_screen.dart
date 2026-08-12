@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:cekoi/app/router.dart';
 import 'package:cekoi/domain/engine/draw.dart';
 import 'package:cekoi/domain/entities/audience.dart';
@@ -73,27 +71,10 @@ class _DecksScreenState extends ConsumerState<DecksScreen> {
     if (loaded != null && _preselectionne != setup.mode) {
       _preselectionne = setup.mode;
       final ids = [for (final deck in loaded.decks) deck.id];
-      final presele = setup.deckIds.isEmpty && ids.isNotEmpty;
-      // Quand le mode saute cette étape (R7.10), l'écran s'efface **une fois
-      // son travail fait** : le catalogue chargé et tout coché. Il reste dans
-      // la pile, donc joignable par le retour depuis les réglages — c'est
-      // précisément ce que R7.10 promet, et ce qu'une navigation qui l'aurait
-      // court-circuité n'aurait pas pu tenir.
-      //
-      // La décision est ici et non sur l'écran du mode parce que lui seul sait
-      // quand le catalogue a répondu, et lui seul peut montrer une erreur si
-      // la base répond mal.
-      final efface = !setupStepsFor(setup.mode).contains(SetupStep.decks);
-
-      if (presele || efface) {
+      if (setup.deckIds.isEmpty && ids.isNotEmpty) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
-          if (presele) {
-            ref.read(setupControllerProvider.notifier).selectAllDecks(ids);
-          }
-          // Seulement à l'arrivée : revenir sur l'écran ne doit pas le faire
-          // repartir en avant, sinon le retour serait impossible à tenir.
-          if (efface) unawaited(context.push(AppRoutes.setupSettings));
+          ref.read(setupControllerProvider.notifier).selectAllDecks(ids);
         });
       }
     }

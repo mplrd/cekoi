@@ -333,9 +333,10 @@ void main() {
       // l'étape s'ouvrait sur une sélection vide et il fallait cocher les
       // catégories une par une avant de pouvoir continuer.
       //
-      // Depuis R7.10 elle est carrément sautée — mais la sélection doit être
-      // faite quand même, sinon on arriverait aux réglages avec un paquet vide
-      // et un bouton de lancement grisé sans explication.
+      // Depuis R7.10 l'étape 2 de ce mode est le choix du vivier — mais la
+      // sélection des catégories doit être faite quand même, sinon on
+      // arriverait aux réglages avec un paquet vide et un bouton de lancement
+      // grisé sans explication. C'est l'écran du vivier qui la porte.
       await installDeck('animaux', easy: 10, medium: 10, hard: 10);
       await installDeck(
         'sans-filtres',
@@ -349,10 +350,14 @@ void main() {
 
       await tapText(tester, l10n.homePlay);
       await tapText(tester, l10n.modeAdult);
-      await tapText(tester, l10n.adultPoolAll);
+      await tapText(tester, l10n.adultConfirmAccept);
 
-      // R7.10 : on atterrit directement sur les réglages, l'étape des
-      // catégories n'étant pas sur le chemin.
+      // R7.10 : l'étape 2 de ce mode est le choix du vivier, au même rang que
+      // les catégories en Famille — cinq étapes des deux côtés.
+      expect(find.text(l10n.setupPoolTitle), findsOneWidget);
+      expect(find.text(l10n.setupStep(2, 5)), findsOneWidget);
+
+      await tapText(tester, l10n.adultPoolAll);
       expect(find.text(l10n.setupSettingsTitle), findsOneWidget);
 
       // R7.1 : ce mode tire aussi dans le tout public, donc les deux
@@ -364,24 +369,20 @@ void main() {
       // Tout le paquet, donc le vivier n'est pas réduit : sans cette
       // assertion, un choix qui répondrait toujours « rien d'autre » passerait.
       expect(setup.adultOnly, isFalse);
-
-      // Et le parcours annonce quatre étapes, pas cinq.
-      expect(find.text(l10n.setupStep(2, 4)), findsOneWidget);
     });
 
-    testWidgets('R7.10 — le retour depuis les réglages ramène aux catégories', (
+    testWidgets('R7.10 — le retour depuis les réglages ramène au vivier', (
       tester,
     ) async {
-      // La promesse de R7.10 : l'étape est sautée à l'aller, pas supprimée.
-      // Sans ce test, une navigation qui n'empile jamais l'écran passait —
-      // et la sélection faite à sa place n'était plus corrigeable nulle part,
-      // notamment pour une catégorie créée après un premier passage.
+      // L'étape 2 est une étape comme une autre : on doit pouvoir y revenir
+      // pour changer d'avis, exactement comme sur les catégories en Famille.
       await installDeck('animaux');
       await installDeck('sans-filtres', audience: Audience.adult);
       await pumpApp(tester);
 
       await tapText(tester, l10n.homePlay);
       await tapText(tester, l10n.modeAdult);
+      await tapText(tester, l10n.adultConfirmAccept);
       await tapText(tester, l10n.adultPoolAll);
       expect(find.text(l10n.setupSettingsTitle), findsOneWidget);
 
@@ -390,42 +391,59 @@ void main() {
       await tester.tap(find.byType(BackButton));
       await tester.pumpAndSettle();
 
-      expect(find.text(l10n.setupDecksTitle), findsOneWidget);
-      // Et l'écran s'y compte dans le parcours complet, plutôt que d'annoncer
-      // une étape zéro sur un parcours qui ne le contient pas.
+      expect(find.text(l10n.setupPoolTitle), findsOneWidget);
       expect(find.text(l10n.setupStep(2, 5)), findsOneWidget);
+
+      // Et revenir n'a pas défait la présélection de R7.9.
+      expect(
+        ProviderScope.containerOf(
+          tester.element(find.byType(CekoiApp)),
+        ).read(setupControllerProvider).deckIds,
+        containsAll(['animaux', 'sans-filtres']),
+      );
     });
 
     testWidgets(
-      'R7.1 — le choix du vivier se pose derrière Sans filtre, pas à côté',
+      "R7.10 — le vivier est une étape, pas une variante de l'écran des modes",
       (tester) async {
-        // Le défaut corrigé : « rien d'autre » avait été posé en troisième
-        // tuile, à comparer avec « En famille ». Ce n'est pas un mode au sens
-        // de R7.2 — c'est un réglage de Sans filtre, et il vit derrière lui.
+        // Deux défauts corrigés l'un après l'autre, que ce test verrouille
+        // ensemble : « rien d'autre » avait d'abord été posé en troisième
+        // tuile de mode, puis dans une boîte de dialogue accrochée à la
+        // confirmation d'âge. C'est une décision de contenu — elle a son écran
+        // d'étape, comme les catégories en Famille.
         await installDeck('animaux');
         await installDeck('sans-filtres', audience: Audience.adult);
         await pumpApp(tester);
 
         await tapText(tester, l10n.homePlay);
 
+        // L'écran des modes n'a que deux directions, et ne dit rien du vivier.
         expect(find.text(l10n.modeFamily), findsOneWidget);
         expect(find.text(l10n.modeAdult), findsOneWidget);
+        expect(find.text(l10n.adultPoolAll), findsNothing);
         expect(find.text(l10n.adultPoolOnly), findsNothing);
 
         await tapText(tester, l10n.modeAdult);
 
-        // R7.3 : la question d'âge porte les deux viviers, et l'une comme
-        // l'autre des réponses vaut « oui ».
+        // R7.3 : la confirmation d'âge ne fait que ça — elle ne porte aucun
+        // choix de contenu.
         expect(find.text(l10n.adultConfirmTitle), findsOneWidget);
+        expect(find.text(l10n.adultPoolOnly), findsNothing);
+
+        await tapText(tester, l10n.adultConfirmAccept);
+
+        // Et le choix arrive après, sur son propre écran d'étape.
+        expect(find.text(l10n.setupPoolTitle), findsOneWidget);
         expect(find.text(l10n.adultPoolAll), findsOneWidget);
         expect(find.text(l10n.adultPoolOnly), findsOneWidget);
       },
     );
 
     for (final (libelle, taille, echelle) in const [
-      // La géométrie Android la plus répandue, à l'échelle par défaut : la
-      // boîte y débordait de 28 px, et c'est la seconde option qui passait
-      // sous le bord — la moitié de la décision, devenue intapable.
+      // La géométrie Android la plus répandue, à l'échelle par défaut. La
+      // version en boîte de dialogue y débordait de 28 px, et c'est la seconde
+      // option qui passait sous le bord — la moitié de la décision, devenue
+      // intapable. L'écran d'étape défile, mais ça se vérifie.
       ('un ecran courant', Size(360, 800), 1.0),
       // Le même écran avec le texte agrandi par le système. Rien ne borne
       // `textScaler` dans l'application, donc le réglage s'applique en entier.
@@ -435,7 +453,7 @@ void main() {
       // Pas de cas paysage : l'application est verrouillée en portrait. C'est
       // l'accueil, qui y débordait de 268 px, qui a motivé le verrou.
     ]) {
-      testWidgets('R7.1 — la question du vivier tient sur $libelle', (
+      testWidgets("R7.10 — l'étape du vivier tient sur $libelle", (
         tester,
       ) async {
         await installDeck('animaux');
@@ -444,12 +462,13 @@ void main() {
 
         await tapText(tester, l10n.homePlay);
         await tapText(tester, l10n.modeAdult);
+        await tapText(tester, l10n.adultConfirmAccept);
 
         // Un débordement de `RenderFlex` remonte comme exception de test.
         expect(tester.takeException(), isNull);
 
-        // Et la seconde option reste atteignable, quitte à faire défiler la
-        // boîte : c'est ce que « tenir » veut dire ici.
+        // Et la seconde option reste atteignable, quitte à faire défiler :
+        // c'est ce que « tenir » veut dire ici.
         final option = find.text(l10n.adultPoolOnly);
         await tester.ensureVisible(option);
         await tester.pumpAndSettle();
@@ -483,6 +502,7 @@ void main() {
 
       await tapText(tester, l10n.homePlay);
       await tapText(tester, l10n.modeAdult);
+      await tapText(tester, l10n.adultConfirmAccept);
       await tapText(tester, l10n.adultPoolOnly);
 
       final container = ProviderScope.containerOf(
@@ -647,9 +667,8 @@ void main() {
     );
 
     await tapText(tester, l10n.modeAdult);
-    await tapText(tester, l10n.adultPoolAll);
-    // R7.10 : accepter mène aux réglages, l'étape des catégories étant sautée
-    // dans ce mode.
-    expect(find.text(l10n.setupSettingsTitle), findsOneWidget);
+    await tapText(tester, l10n.adultConfirmAccept);
+    // R7.10 : accepter mène à l'étape 2 de ce mode, le choix du vivier.
+    expect(find.text(l10n.setupPoolTitle), findsOneWidget);
   });
 }

@@ -28,25 +28,24 @@ table**, un téléphone qu'on se passe, avec du bruit et de l'agitation. Concrè
 
 ## Parcours de configuration
 
-Cinq étapes en mode Famille, **quatre en Sans filtre** — qui saute le choix des catégories
-(R7.10) —, avec une barre de progression et un retour possible à chaque niveau. L'objectif
-est de pouvoir enchaîner en moins d'une minute quand on relance une partie identique.
+**Cinq étapes des deux côtés**, avec une barre de progression et un retour possible à chaque
+niveau. Seule la deuxième change de nature selon le mode (R7.10). L'objectif est de pouvoir
+enchaîner en moins d'une minute quand on relance une partie identique.
 
 ### 1. Choix du mode
 
 Deux grandes cartes : **En famille** et **Sans filtre**.
 
-Sans filtre ouvre une confirmation d'âge simple (« Vous avez plus de 18 ans ? ») qui porte en
-même temps le choix du vivier : **tout le paquet**, ou **sans filtre et rien d'autre**, qui
-retire les cartes tout public (R7.1). Les deux réponses valent oui, et renoncer ramène au choix
-du mode. Rien n'est stocké comme donnée personnelle (R7.3).
+Sans filtre ouvre une confirmation d'âge simple (« Vous avez plus de 18 ans ? »), et rien
+d'autre : on continue, ou on renonce et on reste sur le choix du mode. Le choix n'est pas
+stocké comme donnée personnelle (R7.3). Le mode détermine le vivier de cartes (R7.1) et les
+valeurs par défaut de la configuration.
 
-Ce choix se pose **derrière** la carte Sans filtre, pas à côté d'elle : ce n'est pas un mode de
-plus au sens de R7.2, c'est un réglage du mode adultes, et l'écran d'entrée n'a que deux
-directions à proposer. Le mode détermine le vivier de cartes (R7.1) et les valeurs par défaut
-de la configuration.
+### 2. Choix du contenu
 
-### 2. Choix des catégories
+La deuxième étape est le choix de contenu du mode. Même rang, même ossature, deux écrans.
+
+#### 2a. En famille — les catégories
 
 **L'écran s'ouvre sur les profils, pas sur la grille.** Cocher des catégories une par une est
 la corvée typique du début de partie, alors que dans la majorité des cas le groupe sait juste
@@ -67,6 +66,23 @@ total sélectionné et avertit si on passe sous le minimum de 12 cartes (R6.2).
 Les catégories premium affichent un cadenas et un bouton « Débloquer » qui lance une pub
 récompensée. Les catégories custom de l'utilisateur apparaissent dans la même grille, avec un
 marquage discret, en fin de liste.
+
+#### 2b. Sans filtre — l'étendue du vivier
+
+Les catégories n'ont rien à décider dans ce mode : il les prend toutes et n'a aucun profil
+(R7.1, R7.10). L'écran pose donc l'autre question, celle qui compte ici — **jusqu'où on va** —
+sous la même forme, deux grandes cartes :
+
+- **Tout le paquet** — les cartes tout public et les cartes adultes mélangées.
+- **Sans filtre, et rien d'autre** — le tout public est retiré du vivier.
+
+Un tap choisit et avance, comme sur l'écran du mode. C'est cet écran qui porte la
+présélection de R7.9 pour son mode : il coche toutes les catégories dès que le catalogue a
+répondu, et n'affiche ses deux cartes qu'à ce moment-là — avancer plus tôt partirait avec un
+paquet vide.
+
+Attention au vivier : *rien d'autre* demande 30 cartes adultes là où le mode complet puise
+dans tout le contenu. R6.2 s'applique et le dira avant de lancer.
 
 ### 3. Réglages de partie
 

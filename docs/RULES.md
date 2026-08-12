@@ -240,14 +240,20 @@ La présélection n'a lieu **qu'à la première arrivée** dans un mode donné :
 catégorie est une décision, et la voir revenir seule serait pire que le problème d'origine
 (R7.6).
 
-**R7.10** — **Le mode Sans filtre saute l'étape des catégories.** Il prend tout (R7.1) et
-n'a aucun profil : l'étape s'ouvrait sur une liste entièrement cochée, sans profil à choisir
-ni rien à décider — un écran à traverser pour rien. Le parcours y compte donc quatre étapes
-au lieu de cinq, et le numéro affiché suit.
+**R7.10** — **Chaque mode a sa deuxième étape, et c'est un choix de contenu.** En Famille ce
+sont les catégories et leurs profils (R7.5). En Sans filtre, c'est l'**étendue du vivier** :
+*tout le paquet*, ou *sans filtre et rien d'autre* (R7.1).
 
-L'écran reste **joignable par le retour** depuis les réglages : qui veut retirer une
-catégorie le peut encore, il ne l'a simplement plus sur le chemin. En mode Famille, où les
-profils portent une vraie décision (R7.5), l'étape reste dans le parcours.
+Les catégories n'ont pas leur place dans le mode Sans filtre : il les prend toutes (R7.1) et
+n'a aucun profil, l'étape s'y ouvrait sur une liste entièrement cochée — un écran à traverser
+pour rien. Mais le choix du vivier, lui, est une vraie décision, et il en mérite un : c'est
+une décision de contenu de même nature que celle des catégories, elle se prend donc au même
+rang, sur un écran de la même forme, et pas dans une boîte de dialogue accrochée à l'étape
+précédente.
+
+Le parcours compte donc **cinq étapes des deux côtés**, avec la même numérotation. Un mode ne
+traverse jamais l'étape de l'autre : la présélection de R7.9 est portée par l'écran de
+l'étape 2 du mode en cours, quel qu'il soit.
 
 ## 8. Équipes
 
