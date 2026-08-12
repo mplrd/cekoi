@@ -17,6 +17,9 @@ import 'package:cekoi/domain/entities/min_age.dart';
 import 'package:cekoi/features/setup/presentation/deck_catalog.dart';
 import 'package:cekoi/features/setup/presentation/setup_controller.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
+import 'package:cekoi/services/ads/ads.dart';
+import 'package:cekoi/services/ads/consent.dart';
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -48,6 +51,7 @@ void main() {
     int hard = 10,
     Audience audience = Audience.family,
     MinAge minAge = MinAge.six,
+    bool premium = false,
   }) async {
     await db
         .into(db.decks)
@@ -58,6 +62,7 @@ void main() {
             audience: audience,
             minAge: minAge.years,
             origin: DeckOrigin.official,
+            isPremium: Value(premium),
           ),
         );
 
@@ -95,6 +100,10 @@ void main() {
     /// Remplace le catalogue du mode adultes, pour tester ce que fait l'écran
     /// du vivier tant qu'il n'a pas répondu.
     Future<DeckCatalog>? catalogueAdulte,
+
+    /// Remplace la passerelle de consentement, pour vérifier ce que devient
+    /// le parcours quand le CMP ne répond pas.
+    ConsentGateway? passerelle,
   }) async {
     // Écran volontairement très haut : une `ListView` ne construit pas ses
     // enfants hors champ, et un test qui commence par faire défiler teste
@@ -115,6 +124,9 @@ void main() {
           deckSeedingProvider.overrideWith((ref) async => const SeedReport()),
           seedSourceProvider.overrideWithValue(() => 42),
           screenAwakeProvider.overrideWithValue(fakeScreenAwake()),
+          consentGatewayProvider.overrideWithValue(
+            passerelle ?? fakeConsentGateway(),
+          ),
           if (catalogueAdulte != null)
             deckCatalogProvider(
               Audience.adult,
@@ -205,6 +217,62 @@ void main() {
       findsOneWidget,
     );
     expect(find.text(l10n.roundNameFree), findsOneWidget);
+  });
+
+  testWidgets('une catégorie premium n entre pas dans la présélection (R7.9)', (
+    tester,
+  ) async {
+    // Le cadenas de l'écran de sélection est écrit depuis R7.1, mais la
+    // présélection de R7.9 prenait le catalogue entier : la case arrivait
+    // cochée ET grisée, et les cartes verrouillées entraient dans le paquet
+    // sans que personne puisse les retirer.
+    await installDeck('animaux', easy: 15, medium: 15, hard: 15);
+    await installDeck('disney', easy: 15, medium: 15, hard: 15, premium: true);
+    await pumpApp(tester);
+
+    await tapText(tester, l10n.homePlay);
+    await tapText(tester, l10n.modeFamily);
+
+    final selection = ProviderScope.containerOf(
+      tester.element(find.byType(CekoiApp)),
+    ).read(setupControllerProvider).deckIds;
+
+    expect(
+      selection,
+      isNot(contains('disney')),
+      reason: 'une catégorie non débloquée ne peut pas être cochée d office',
+    );
+    expect(selection, contains('animaux'));
+
+    await tapText(tester, l10n.actionContinue);
+    await tapText(tester, l10n.actionContinue);
+    await tapText(tester, l10n.actionContinue);
+    await tapText(tester, l10n.actionStartGame);
+
+    expect(
+      launchedGame(tester).deck.every((c) => !c.id.startsWith('disney')),
+      isTrue,
+      reason: 'aucune carte premium ne doit atterrir dans le paquet tiré',
+    );
+  });
+
+  testWidgets('le parcours aboutit même si le CMP ne répond jamais', (
+    tester,
+  ) async {
+    // La garantie centrale de MONETISATION.md : aucune fonctionnalité de jeu
+    // ne dépend du succès d un appel publicitaire. Elle était tenue par
+    // accident — rien n attendait la réponse — et par aucune intention.
+    await installDeck('animaux', easy: 15, medium: 15, hard: 15);
+    await pumpApp(tester, passerelle: const _MuteGateway());
+
+    await tapText(tester, l10n.homePlay);
+    await tapText(tester, l10n.modeFamily);
+    await tapText(tester, l10n.actionContinue);
+    await tapText(tester, l10n.actionContinue);
+    await tapText(tester, l10n.actionContinue);
+    await tapText(tester, l10n.actionStartGame);
+
+    expect(launchedGame(tester).deck, hasLength(GameConfig.defaultCardCount));
   });
 
   testWidgets('R8.3 — les équipes se nomment, ou pas', (tester) async {
@@ -715,4 +783,18 @@ void main() {
     // R7.10 : accepter mène à l'étape 2 de ce mode, le choix du vivier.
     expect(find.text(l10n.setupPoolTitle), findsOneWidget);
   });
+}
+
+/// Une passerelle qui ne répond jamais.
+///
+/// Ni réponse ni erreur : le cas réel d une `MissingPluginException` qui
+/// s échappe du plugin sans appeler aucun écouteur.
+class _MuteGateway implements ConsentGateway {
+  const _MuteGateway();
+
+  @override
+  Future<ConsentState> gather() => Completer<ConsentState>().future;
+
+  @override
+  Future<ConsentState> changeChoice() => Completer<ConsentState>().future;
 }

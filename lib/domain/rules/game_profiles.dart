@@ -121,6 +121,23 @@ List<Deck> decksForProfile(GameProfile profile, List<Deck> decks) => [
       deck,
 ];
 
+/// Les catégories que la présélection de R7.9 a le droit de cocher.
+///
+/// « On joue avec tout » veut dire tout ce que le joueur possède. Une
+/// catégorie premium n'en fait pas partie : l'écran de sélection grise sa
+/// case, donc la cocher d'office donnerait des cartes non débloquées, dans une
+/// sélection qu'on ne peut pas défaire — case cochée, case grisée, et le
+/// sous-titre « À débloquer » sous une catégorie déjà dans la partie.
+///
+/// Même exclusion et même raison que [decksForProfile], mais l'autre chemin :
+/// celui-ci est la présélection d'arrivée sur l'étape 2, qui ne passe par
+/// aucun profil. Quand le déblocage existera, les deux consulteront la
+/// possession au même endroit.
+List<Deck> selectableDecks(List<Deck> decks) => [
+  for (final deck in decks)
+    if (!deck.isPremium) deck,
+];
+
 /// Évalue un profil sur le contenu réellement installé (R7.8).
 ///
 /// Le décompte passe par [eligibleCards], celui-là même que le tirage

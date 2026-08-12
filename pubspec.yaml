@@ -30,6 +30,11 @@ dependencies:
 
   go_router: ^17.4.0
 
+  # Publicité, et le CMP Google UMP qu'il embarque — c'est lui qui évite
+  # d'intégrer un CMP tiers pour le consentement européen. Exige minSdk 24 et
+  # compileSdk 36, qui sont les défauts de Flutter : rien à forcer côté Gradle.
+  google_mobile_ads: ^9.1.0
+
   # Version épinglée par flutter_localizations, ne pas desserrer.
   intl: 0.20.2
   json_annotation: ^4.12.0

@@ -231,6 +231,12 @@ désactivé, avec la raison indiquée. Il ne disparaît pas silencieusement de l
 mode sont sélectionnées. Un profil sert alors à *restreindre* — par âge ou par difficulté — et
 non à constituer une sélection depuis rien.
 
+*Tout* veut dire tout ce que le joueur possède : **les catégories premium non débloquées sont
+exclues de la présélection.** L'écran grise leur case, donc les cocher d'office donnerait des
+cartes non débloquées dans une sélection impossible à défaire — case cochée, case grisée, et le
+sous-titre « À débloquer » sous une catégorie déjà entrée dans la partie. Même exclusion que
+R7.1 côté profils, par l'autre chemin. Une catégorie débloquée redevient présélectionnable.
+
 L'étape 2 n'est pas le même écran des deux côtés (R7.10) : c'est celui du mode en cours qui
 porte la présélection, les catégories en Famille et le vivier en Sans filtre.
 
