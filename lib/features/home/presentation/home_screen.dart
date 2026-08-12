@@ -126,31 +126,50 @@ class _Menu extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Spacer(),
-        // Le logo annonce les trois manches — la bulle qui parle, le « 1 » du
-        // mot unique, le personnage qui mime. C'est la version détourée : le
-        // dessin se pose directement sur le fond de l'écran, sans le carré
-        // corail qu'il traînait, qui se serait vu sur ce pastel.
-        Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: 280, maxWidth: 280),
-            child: Image.asset(
-              'assets/branding/logo_mark.png',
-              semanticLabel: l10n.appTitle,
+        // Le bloc d'identité prend tout ce que les entrées laissent, et se
+        // centre dedans. Deux `Spacer` encadraient le logo : ils le mettaient
+        // en concurrence pour l'espace libre, et une taille fixe de 280 px
+        // faisait déborder la colonne de 64 px sur un 360 × 640 avec une
+        // partie reprenable — la hauteur exacte du bouton qui passait sous le
+        // bord. Ici le logo est le seul à pouvoir céder, et il ne cède que
+        // quand il n'y a plus le choix : à taille normale, il garde ses 280.
+        Expanded(
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Le logo annonce les trois manches — la bulle qui parle, le
+                // « 1 » du mot unique, le personnage qui mime. C'est la
+                // version détourée : le dessin se pose directement sur le fond
+                // de l'écran, sans le carré corail qu'il traînait, qui se
+                // serait vu sur ce pastel.
+                Flexible(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxHeight: 280,
+                      maxWidth: 280,
+                    ),
+                    child: Image.asset(
+                      'assets/branding/logo_mark.png',
+                      fit: BoxFit.contain,
+                      semanticLabel: l10n.appTitle,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  l10n.appTitle,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.ink,
+                    letterSpacing: -1,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
-        const SizedBox(height: 8),
-        Text(
-          l10n.appTitle,
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.displayMedium?.copyWith(
-            fontWeight: FontWeight.w800,
-            color: AppColors.ink,
-            letterSpacing: -1,
-          ),
-        ),
-        const Spacer(),
         if (resumable != null) ...[
           _HomeAction(
             label: l10n.homeResumeGame,
