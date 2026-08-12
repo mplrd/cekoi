@@ -15,6 +15,16 @@ table**, un téléphone qu'on se passe, avec du bruit et de l'agitation. Concrè
 - Une partie dure 30 à 40 minutes avec de longues périodes sans toucher l'écran →
   `wakelock` actif pendant toute la partie.
 - Il y a souvent des enfants. Aucun geste ne doit être irréversible sans confirmation.
+- **L'application ne tourne pas : portrait à l'endroit, uniquement.** Un téléphone qu'on se
+  passe de main en main n'est jamais tenu à l'horizontale, et le retourné ferait pivoter
+  l'écran au moment précis où la carte change de main. Le verrou est déclaratif des deux
+  côtés (`android:screenOrientation`, `UISupportedInterfaceOrientations`) et doublé dans
+  `main()`. Côté Android il suppose `appCategory="game"` : depuis Android 16, les verrous
+  d'orientation sont ignorés au-delà de 600 dp de large, sauf pour les jeux.
+
+  Conséquence pour les écrans : **on ne conçoit que pour le portrait**, mais la hauteur utile
+  reste variable — un 360 × 640 existe, et le texte agrandi par le système s'applique en
+  entier. Un écran doit tenir, ou défiler.
 
 ## Parcours de configuration
 
