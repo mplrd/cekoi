@@ -178,9 +178,11 @@ s'interdit les cartes tout public.
 
 Ce mode se décline en deux : **Sans filtre** prend tout, **Sans filtre et rien d'autre** retire
 les cartes tout public et ne laisse que celles réservées aux grands. C'est le même mode au sens
-de R7.2 et de la confirmation d'âge de R7.3 — seul le vivier change. La variante n'existe pas
-en Famille, qui n'a de toute façon pas accès aux cartes adultes : le drapeau y est forcé à
-faux plutôt qu'ignoré, pour qu'il ne ressorte pas en repassant en Sans filtre.
+de R7.2 et de la confirmation d'âge de R7.3 — seul le vivier change. Le choix se pose donc
+**derrière** Sans filtre, dans cette confirmation, et jamais comme un troisième mode à comparer
+avec Famille. La variante n'existe pas en Famille, qui n'a de toute façon pas accès aux cartes
+adultes : le drapeau y est forcé à faux plutôt qu'ignoré, pour qu'il ne ressorte pas en
+repassant en Sans filtre.
 
 Attention au vivier : à 30 cartes par défaut (R6.1), *rien d'autre* demande 30 cartes adultes,
 là où le mode complet puise dans tout le contenu. R6.2 s'applique et le dira avant de lancer.
@@ -189,6 +191,10 @@ là où le mode complet puise dans tout le contenu. R6.2 s'applique et le dira a
 
 **R7.3** — Le mode Sans filtre est accessible derrière une confirmation d'âge simple, non
 bloquante et non stockée en tant que donnée personnelle.
+
+Cette confirmation porte le choix de vivier de R7.1 : ses deux réponses valent oui, elles ne
+diffèrent que par ce qu'elles mettent dans le paquet. Y renoncer ramène au choix du mode —
+annuler n'est pas « tout le paquet ».
 
 ### Profils de partie
 

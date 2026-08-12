@@ -295,7 +295,7 @@ void main() {
     await shoot(tester, '13-carte-custom');
   });
 
-  testWidgets('le mode sans filtres saute les catégories', (tester) async {
+  testWidgets('le mode sans filtre saute les catégories', (tester) async {
     await installCatalogue();
     await installDeck(
       'sexe-et-tabou',
@@ -306,10 +306,15 @@ void main() {
 
     await tapText(tester, l10n.homePlay);
     await tapText(tester, l10n.modeAdult);
-    await tapText(tester, l10n.adultConfirmAccept);
+    // R7.1 + R7.3 : le choix du vivier se pose derrière Sans filtre, dans la
+    // question d'âge. C'est une surface visuelle à part entière — deux
+    // options tapables dans une boîte de dialogue —, donc elle passe au banc.
+    await shoot(tester, '02b-sans-filtre-choix-vivier');
+
+    await tapText(tester, l10n.adultPoolAll);
     // R7.10 : l'étape des catégories est sautée, on tombe sur les réglages —
     // et le parcours annonce quatre étapes.
-    await shoot(tester, '03b-sans-filtres-va-aux-reglages');
+    await shoot(tester, '03b-sans-filtre-va-aux-reglages');
   });
 
   /// Une partie posée directement dans la phase voulue : traverser tout le
