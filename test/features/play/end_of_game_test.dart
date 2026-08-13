@@ -12,6 +12,8 @@ import 'package:cekoi/domain/entities/difficulty.dart';
 import 'package:cekoi/domain/entities/min_age.dart';
 import 'package:cekoi/features/play/presentation/game_screen.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
+import 'package:cekoi/services/ads/ads.dart';
+import 'package:cekoi/services/ads/consent.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -37,6 +39,9 @@ PlayedTurn _turn({
 );
 
 void main() {
+  /// Compte les interstitiels demandés pendant un test.
+  var interstitiels = 0;
+  setUp(() => interstitiels = 0);
   late AppLocalizations l10n;
   late ProviderContainer container;
   late AppDatabase db;
@@ -91,6 +96,21 @@ void main() {
           appDatabaseProvider.overrideWithValue(db),
           seedSourceProvider.overrideWithValue(() => 7),
           screenAwakeProvider.overrideWithValue(fakeScreenAwake()),
+          // Consentement accordé, exprès : sans lui le portillon s'arrête
+          // avant la pub, et le test ne prouverait plus rien — il resterait
+          // vert même si rejouer déclenchait un interstitiel.
+          consentGatewayProvider.overrideWithValue(
+            fakeConsentGateway(
+              const ConsentState(canRequestAds: true, canChangeChoice: true),
+            ),
+          ),
+          adSdkStartProvider.overrideWithValue(() async {}),
+          showInterstitialProvider.overrideWithValue(({
+            required loadTimeout,
+          }) async {
+            interstitiels++;
+            return true;
+          }),
         ],
         child: const MaterialApp(
           locale: Locale('fr'),
@@ -308,6 +328,27 @@ void main() {
         reason: "L'équipe battue n'est pas annoncée gagnante",
       );
       expect(find.text(l10n.scoreTotal), findsOneWidget);
+      await stopGame(tester);
+    });
+
+    testWidgets('rejouer ne redéclenche pas de pub', (tester) async {
+      // MONETISATION.md le dit explicitement, et la structure le garantit :
+      // rejouer ne repasse pas par l'écran de lancement, seul emplacement
+      // interstitiel autorisé. Une pub ici tomberait alors que le groupe est
+      // déjà installé et vient d'en voir une il y a quarante minutes.
+      await installPool(24);
+      await pumpScreen(tester, finishedGame());
+
+      // Le consentement doit avoir répondu avant de rejouer. Sinon le
+      // portillon s'arrête sur « pas de réponse, pas de pub » et le test
+      // resterait vert même si rejouer déclenchait un interstitiel — il
+      // prouverait que le CMP n'a pas fini, pas que la règle est tenue.
+      await container.read(adConsentProvider.future);
+
+      await tester.tap(find.text(l10n.actionReplaySameSettings));
+      await tester.pumpAndSettle();
+
+      expect(interstitiels, 0);
       await stopGame(tester);
     });
 

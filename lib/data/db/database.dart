@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:cekoi/data/db/tables/ad_impressions.dart';
 import 'package:cekoi/data/db/tables/cards.dart';
 import 'package:cekoi/data/db/tables/decks.dart';
 import 'package:cekoi/data/db/tables/saved_games.dart';
@@ -14,7 +15,7 @@ import 'package:path_provider/path_provider.dart';
 
 part 'database.g.dart';
 
-@DriftDatabase(tables: [Decks, Cards, SavedGames])
+@DriftDatabase(tables: [Decks, Cards, SavedGames, AdImpressions])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
@@ -22,7 +23,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.memory() : super(NativeDatabase.memory());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -44,6 +45,15 @@ class AppDatabase extends _$AppDatabase {
       // déplacées, pas régénérées — le seeding ne recrée que l'officiel.
       if (from < 3) {
         await m.alterTable(TableMigration(cards));
+      }
+
+      // v4 — le plafond de fréquence de l'interstitiel (lot 7). Table seule
+      // ajoutée, rien de touché ailleurs : une base existante garde ses
+      // parties sauvegardées et ses cartes custom, et repart simplement d'un
+      // historique publicitaire vide — ce qui est le bon défaut, personne
+      // n'ayant encore vu de pub.
+      if (from < 4) {
+        await m.createTable(adImpressions);
       }
     },
     beforeOpen: (details) async {
