@@ -21,13 +21,29 @@ class AppPreferencesController extends _$AppPreferencesController {
   Future<void> setHaptics({required bool enabled}) =>
       _update((p) => p.copyWith(hapticsEnabled: enabled));
 
-  /// Écrit d'abord, puis publie.
+  /// Attend la lecture, écrit, puis publie.
   ///
-  /// L'ordre compte : publier avant d'écrire ferait basculer l'interrupteur à
-  /// l'écran alors que la base peut refuser, et le réglage reviendrait au
-  /// lancement suivant sans que personne comprenne pourquoi.
+  /// **Attendre d'abord** : tant que la lecture en base n'a pas répondu, les
+  /// interrupteurs affichent les valeurs par défaut, tout activé. Composer sur
+  /// ce défaut ferait qu'un joueur ouvrant les réglages pendant l'ouverture de
+  /// la base, coupant la vibration, réactiverait un son qu'il avait coupé la
+  /// veille — silencieusement. La fenêtre est étroite, la base étant ouverte
+  /// paresseusement, mais elle existe.
+  ///
+  /// Et publier en dernier : publier avant d'écrire ferait basculer
+  /// l'interrupteur à l'écran alors que la base peut refuser, et le réglage
+  /// reviendrait au lancement suivant sans que personne comprenne pourquoi.
   Future<void> _update(AppPreferences Function(AppPreferences) change) async {
-    final suivant = change(state.value ?? AppPreferences.defaults);
+    AppPreferences courant;
+    try {
+      courant = await future;
+    } on Object {
+      // Base illisible : on part du défaut, faute de mieux. Ce que le joueur
+      // vient de demander vaut mieux que rien.
+      courant = AppPreferences.defaults;
+    }
+
+    final suivant = change(courant);
 
     await ref.read(preferencesRepositoryProvider).write(suivant);
     state = AsyncValue<AppPreferences>.data(suivant);

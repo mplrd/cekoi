@@ -38,8 +38,10 @@ class CekoiApp extends ConsumerWidget {
       ..watch(storeListenerProvider)
       // Charge les réglages au lancement : la lecture est asynchrone, et un
       // premier accès au milieu d'un tour répondrait par les valeurs par
-      // défaut.
-      ..watch(appPreferencesControllerProvider);
+      // défaut. Le notifier et non la valeur, pour la même raison que
+      // ci-dessus — sinon chaque bascule d'interrupteur reconstruirait tout
+      // le `MaterialApp`.
+      ..watch(appPreferencesControllerProvider.notifier);
 
     return MaterialApp.router(
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,

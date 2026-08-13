@@ -276,9 +276,9 @@ void main() {
   });
 
   testWidgets('les réglages de l application', (tester) async {
-    // Le dernier écran arrivé, et le seul dont l'apparence dépend de ce que le
-    // joueur possède : offre d'achat visible, et pas encore d'entrée de
-    // consentement puisque la passerelle de test n'en propose aucune.
+    // Le seul écran dont l'apparence dépend de ce que le joueur possède :
+    // l'offre d'achat s'efface une fois payée. Le banc l'accorde consentement
+    // et formulaire disponibles, donc la carte de choix publicitaire est là.
     await installCatalogue();
     await pumpApp(tester);
 

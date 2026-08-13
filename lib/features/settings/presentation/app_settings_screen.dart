@@ -14,11 +14,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// À ne pas confondre avec l'écran de réglages de la configuration de partie,
 /// qui est l'étape 3 du parcours et ne concerne qu'une partie.
 ///
-/// Il n'accueille pour l'instant que le consentement publicitaire, parce que
-/// c'est lui qui est légalement obligé d'être joignable à tout moment. Les
-/// sons, le retour haptique, la langue, la restauration d'achat et les
-/// mentions légales de `SPEC.md` viendront s'y ajouter — chacun quand il
-/// existera vraiment, plutôt qu'en ligne grisée qui ne fait rien.
+/// Trois sections : ce qui se passe en partie, ce qu'on peut acheter, et le
+/// consentement publicitaire — le seul qui soit légalement obligé d'être
+/// joignable à tout moment.
+///
+/// Manquent encore, faute d'exister : le choix de la langue, tant qu'il n'y a
+/// qu'une locale, et les mentions légales et la politique de confidentialité,
+/// qui attendent des URL hébergées. Chacun arrivera quand il fera vraiment
+/// quelque chose, plutôt qu'en ligne grisée.
 class AppSettingsScreen extends ConsumerWidget {
   const AppSettingsScreen({super.key});
 

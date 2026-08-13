@@ -33,9 +33,10 @@ void main() {
     expect(relus.hapticsEnabled, isTrue);
   });
 
-  test('le réglage survit à la fermeture de la base', () async {
-    // Toute la raison d'être de cette table : couper le son doit rester coupé
-    // au lancement suivant, sinon le réglage ne sert à rien.
+  test('le réglage est relu de la base, pas d un champ en mémoire', () async {
+    // Un dépôt qui mémoriserait la valeur au lieu de l'écrire passerait tous
+    // les tests précédents. La persistance au redémarrage, elle, ne se prouve
+    // pas ici : une base en mémoire ne se rouvre pas.
     await repository.write(
       const AppPreferences(soundEnabled: false, hapticsEnabled: false),
     );
