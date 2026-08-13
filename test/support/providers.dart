@@ -1,4 +1,5 @@
 import 'package:cekoi/app/screen_awake.dart';
+import 'package:cekoi/data/repositories/preferences_repository.dart';
 import 'package:cekoi/services/ads/consent.dart';
 import 'package:cekoi/services/purchases/purchase_service.dart';
 
@@ -59,3 +60,20 @@ class _FakeStore implements PurchaseService {
   Future<PurchaseOutcome> restore(String productId) async =>
       PurchaseOutcome.nothing;
 }
+
+/// Des réglages figés, sans base ni attente.
+///
+/// On surcharge la **valeur** et non le contrôleur : un contrôleur, même
+/// bouchonné, garde un `build` asynchrone, donc une transition Riverpod qui se
+/// résout après la fin du test et laisse un `Timer` du planificateur en
+/// attente. L'assertion de fin de test échoue alors sur un défaut sans rapport
+/// avec ce qu'on vérifiait.
+///
+/// À poser avec `currentPreferencesProvider.overrideWithValue`.
+AppPreferences fakePreferences({
+  bool soundEnabled = true,
+  bool hapticsEnabled = true,
+}) => AppPreferences(
+  soundEnabled: soundEnabled,
+  hapticsEnabled: hapticsEnabled,
+);

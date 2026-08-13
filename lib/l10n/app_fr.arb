@@ -827,6 +827,31 @@
     }
   },
 
+  "settingsGame": "En partie",
+  "@settingsGame": {
+    "description": "Titre de la section des réglages qui regroupe ce qui se passe pendant une partie."
+  },
+
+  "settingsSound": "Bip des dernières secondes",
+  "@settingsSound": {
+    "description": "Interrupteur du son joué pendant les dix dernières secondes d'un tour."
+  },
+
+  "settingsSoundHint": "Le son du système, qui suit le volume et le mode silencieux.",
+  "@settingsSoundHint": {
+    "description": "Précise que ce n'est pas un son de l'application joué à plein régime."
+  },
+
+  "settingsHaptics": "Vibration des dernières secondes",
+  "@settingsHaptics": {
+    "description": "Interrupteur du retour haptique qui accompagne le bip."
+  },
+
+  "settingsHapticsHint": "Utile quand le son est coupé, ou quand la table est bruyante.",
+  "@settingsHapticsHint": {
+    "description": "Explique pourquoi les deux réglages sont séparés."
+  },
+
   "settingsPrivacy": "Confidentialité",
   "@settingsPrivacy": {
     "description": "Titre de la section des réglages qui regroupe le consentement publicitaire et, plus tard, les mentions légales."

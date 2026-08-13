@@ -4,6 +4,7 @@ import 'package:cekoi/data/db/tables/ad_impressions.dart';
 import 'package:cekoi/data/db/tables/cards.dart';
 import 'package:cekoi/data/db/tables/decks.dart';
 import 'package:cekoi/data/db/tables/entitlements.dart';
+import 'package:cekoi/data/db/tables/preferences.dart';
 import 'package:cekoi/data/db/tables/saved_games.dart';
 // Utilisés par database.g.dart pour les colonnes textEnum : le fichier généré
 // est un `part` de celui-ci et ne porte pas ses propres imports.
@@ -16,7 +17,9 @@ import 'package:path_provider/path_provider.dart';
 
 part 'database.g.dart';
 
-@DriftDatabase(tables: [Decks, Cards, SavedGames, AdImpressions, Entitlements])
+@DriftDatabase(
+  tables: [Decks, Cards, SavedGames, AdImpressions, Entitlements, Preferences],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
@@ -24,7 +27,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.memory() : super(NativeDatabase.memory());
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -64,6 +67,14 @@ class AppDatabase extends _$AppDatabase {
       // est manuelle, exprès (voir `app/ownership.dart`).
       if (from < 5) {
         await m.createTable(entitlements);
+      }
+
+      // v6 — les réglages de l'appareil (`SPEC.md`). Table seule. Une base
+      // existante n'a pas de ligne : la lecture retombe sur les valeurs par
+      // défaut, tout activé, ce qui est exactement l'état d'avant la
+      // migration.
+      if (from < 6) {
+        await m.createTable(preferences);
       }
     },
     beforeOpen: (details) async {

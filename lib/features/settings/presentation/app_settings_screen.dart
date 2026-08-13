@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cekoi/app/ownership.dart';
+import 'package:cekoi/app/preferences.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:cekoi/services/ads/ads.dart';
 import 'package:cekoi/services/ads/consent.dart';
@@ -27,6 +28,7 @@ class AppSettingsScreen extends ConsumerWidget {
     final consent = ref.watch(adConsentProvider);
     final ownership = ref.watch(currentOwnershipProvider);
     final busy = ref.watch(fullVersionProvider).isLoading;
+    final reglages = ref.watch(currentPreferencesProvider);
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.homeSettings)),
@@ -34,6 +36,38 @@ class AppSettingsScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
           children: [
+            _SectionTitle(label: l10n.settingsGame),
+            const SizedBox(height: 12),
+            Card(
+              clipBehavior: Clip.antiAlias,
+              child: Column(
+                children: [
+                  SwitchListTile(
+                    value: reglages.soundEnabled,
+                    onChanged: (actif) => unawaited(
+                      ref
+                          .read(appPreferencesControllerProvider.notifier)
+                          .setSound(enabled: actif),
+                    ),
+                    secondary: const Icon(Icons.volume_up_outlined),
+                    title: Text(l10n.settingsSound),
+                    subtitle: Text(l10n.settingsSoundHint),
+                  ),
+                  SwitchListTile(
+                    value: reglages.hapticsEnabled,
+                    onChanged: (actif) => unawaited(
+                      ref
+                          .read(appPreferencesControllerProvider.notifier)
+                          .setHaptics(enabled: actif),
+                    ),
+                    secondary: const Icon(Icons.vibration),
+                    title: Text(l10n.settingsHaptics),
+                    subtitle: Text(l10n.settingsHapticsHint),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 28),
             _SectionTitle(label: l10n.settingsFullVersion),
             const SizedBox(height: 12),
             if (ownership.hasFullVersion)

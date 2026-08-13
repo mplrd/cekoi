@@ -1,6 +1,7 @@
 import 'package:cekoi/app/clock.dart';
 import 'package:cekoi/app/current_game.dart';
 import 'package:cekoi/app/game_persistence.dart';
+import 'package:cekoi/app/preferences.dart';
 import 'package:cekoi/app/screen_awake.dart';
 import 'package:cekoi/data/db/database.dart';
 import 'package:cekoi/data/providers.dart';
@@ -65,6 +66,7 @@ void main() {
         appDatabaseProvider.overrideWithValue(db),
         nowProvider.overrideWithValue(() => wallClock),
         screenAwakeProvider.overrideWithValue(fakeScreenAwake()),
+        currentPreferencesProvider.overrideWithValue(fakePreferences()),
       ],
     );
     addTearDown(container.dispose);

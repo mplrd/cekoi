@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:cekoi/app/clock.dart';
 import 'package:cekoi/app/current_game.dart';
+import 'package:cekoi/app/preferences.dart';
 import 'package:cekoi/app/router.dart';
 import 'package:cekoi/app/screen_awake.dart';
+import 'package:cekoi/data/repositories/preferences_repository.dart';
 import 'package:cekoi/domain/engine/game_phase.dart';
 import 'package:cekoi/domain/engine/game_state.dart';
 import 'package:cekoi/domain/engine/turn.dart';
@@ -86,6 +88,10 @@ void main() {
     WidgetTester tester, {
     GameState? game,
     bool surUnePile = false,
+
+    /// Réglages de l'appareil. `null` laisse les valeurs par défaut, tout
+    /// activé — l'état de quelqu'un qui n'a jamais rien touché.
+    AppPreferences? reglages,
   }) async {
     clock = FakeClock();
     tester.view.physicalSize = const Size(1000, 2000);
@@ -97,6 +103,9 @@ void main() {
         overrides: [
           monotonicClockProvider.overrideWithValue(clock.read),
           screenAwakeProvider.overrideWithValue(fakeScreenAwake()),
+          currentPreferencesProvider.overrideWithValue(
+            reglages ?? AppPreferences.defaults,
+          ),
         ],
         // Routeur minimal plutôt qu'un simple `home` : quitter la partie
         // ramène à l'accueil, et sans routeur dans le contexte l'écran lève
@@ -522,6 +531,73 @@ void main() {
       expect(
         platformCalls.where((m) => m == 'HapticFeedback.vibrate'),
         hasLength(3),
+      );
+      await stopGame(tester);
+    });
+
+    testWidgets('son coupé, la vibration reste', (tester) async {
+      // Le réglage ne vaut que s'il coupe vraiment quelque chose : sans cette
+      // vérification, les deux interrupteurs seraient décoratifs.
+      await pumpScreen(
+        tester,
+        game: testGame(turnDuration: const Duration(seconds: 12)),
+        reglages: const AppPreferences(soundEnabled: false),
+      );
+      await startTurn(tester);
+
+      await clock.advance(tester, const Duration(seconds: 2));
+      platformCalls.clear();
+      await clock.advance(tester, const Duration(seconds: 3));
+
+      expect(platformCalls.where((m) => m == 'SystemSound.play'), isEmpty);
+      expect(
+        platformCalls.where((m) => m == 'HapticFeedback.vibrate'),
+        hasLength(3),
+        reason: 'les deux réglages sont indépendants',
+      );
+      await stopGame(tester);
+    });
+
+    testWidgets('vibration coupée, le son reste', (tester) async {
+      await pumpScreen(
+        tester,
+        game: testGame(turnDuration: const Duration(seconds: 12)),
+        reglages: const AppPreferences(hapticsEnabled: false),
+      );
+      await startTurn(tester);
+
+      await clock.advance(tester, const Duration(seconds: 2));
+      platformCalls.clear();
+      await clock.advance(tester, const Duration(seconds: 3));
+
+      expect(platformCalls.where((m) => m == 'SystemSound.play'), hasLength(3));
+      expect(
+        platformCalls.where((m) => m == 'HapticFeedback.vibrate'),
+        isEmpty,
+      );
+      await stopGame(tester);
+    });
+
+    testWidgets('les deux coupés, le tour se joue en silence', (tester) async {
+      await pumpScreen(
+        tester,
+        game: testGame(turnDuration: const Duration(seconds: 12)),
+        reglages: const AppPreferences(
+          soundEnabled: false,
+          hapticsEnabled: false,
+        ),
+      );
+      await startTurn(tester);
+
+      await clock.advance(tester, const Duration(seconds: 2));
+      platformCalls.clear();
+      await clock.advance(tester, const Duration(seconds: 3));
+
+      expect(
+        platformCalls.where(
+          (m) => m == 'SystemSound.play' || m == 'HapticFeedback.vibrate',
+        ),
+        isEmpty,
       );
       await stopGame(tester);
     });
