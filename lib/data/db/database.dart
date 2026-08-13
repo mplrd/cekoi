@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:cekoi/data/db/tables/ad_impressions.dart';
 import 'package:cekoi/data/db/tables/cards.dart';
 import 'package:cekoi/data/db/tables/decks.dart';
+import 'package:cekoi/data/db/tables/entitlements.dart';
 import 'package:cekoi/data/db/tables/saved_games.dart';
 // Utilisés par database.g.dart pour les colonnes textEnum : le fichier généré
 // est un `part` de celui-ci et ne porte pas ses propres imports.
@@ -15,7 +16,7 @@ import 'package:path_provider/path_provider.dart';
 
 part 'database.g.dart';
 
-@DriftDatabase(tables: [Decks, Cards, SavedGames, AdImpressions])
+@DriftDatabase(tables: [Decks, Cards, SavedGames, AdImpressions, Entitlements])
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
@@ -23,7 +24,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.memory() : super(NativeDatabase.memory());
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -54,6 +55,14 @@ class AppDatabase extends _$AppDatabase {
       // n'ayant encore vu de pub.
       if (from < 4) {
         await m.createTable(adImpressions);
+      }
+
+      // v5 — ce que le joueur possède (lot 7). Table seule, rien d'autre
+      // touché. Une base existante repart d'une possession vide : c'est le bon
+      // défaut pour un déblocage par récompense, et pour un achat la
+      // restauration au démarrage la reconstruit depuis le magasin.
+      if (from < 5) {
+        await m.createTable(entitlements);
       }
     },
     beforeOpen: (details) async {
