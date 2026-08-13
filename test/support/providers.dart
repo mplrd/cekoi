@@ -1,5 +1,6 @@
 import 'package:cekoi/app/screen_awake.dart';
 import 'package:cekoi/services/ads/consent.dart';
+import 'package:cekoi/services/purchases/purchase_service.dart';
 
 /// Un maintien d'écran inoffensif, pour les tests widget.
 ///
@@ -36,4 +37,25 @@ class _FakeConsentGateway implements ConsentGateway {
 
   @override
   Future<ConsentState> changeChoice() async => state;
+}
+
+/// Un magasin inoffensif, pour les tests widget.
+///
+/// Même raison que [fakeConsentGateway] : la racine de l'application écoute le
+/// magasin en permanence, et le vrai passe par un canal de plateforme absent
+/// du binding de test.
+PurchaseService fakePurchaseService() => const _FakeStore();
+
+class _FakeStore implements PurchaseService {
+  const _FakeStore();
+
+  @override
+  Stream<String> get acquisitions => const Stream<String>.empty();
+
+  @override
+  Future<PurchaseOutcome> buy(String productId) async => PurchaseOutcome.failed;
+
+  @override
+  Future<PurchaseOutcome> restore(String productId) async =>
+      PurchaseOutcome.nothing;
 }

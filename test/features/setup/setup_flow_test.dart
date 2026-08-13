@@ -8,6 +8,7 @@ import 'package:cekoi/app/screen_awake.dart';
 import 'package:cekoi/data/db/database.dart';
 import 'package:cekoi/data/db/seed/deck_seeder.dart';
 import 'package:cekoi/data/providers.dart';
+import 'package:cekoi/data/repositories/entitlement_repository.dart';
 import 'package:cekoi/domain/engine/game_state.dart';
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/deck_origin.dart';
@@ -20,6 +21,7 @@ import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:cekoi/services/ads/ad_service.dart';
 import 'package:cekoi/services/ads/ads.dart';
 import 'package:cekoi/services/ads/consent.dart';
+import 'package:cekoi/services/purchases/purchases.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -133,6 +135,7 @@ void main() {
             passerelle ?? fakeConsentGateway(),
           ),
           adSdkStartProvider.overrideWithValue(() async {}),
+          purchaseServiceProvider.overrideWithValue(fakePurchaseService()),
           showInterstitialProvider.overrideWithValue(
             interstitiel ?? showNoInterstitial,
           ),
@@ -404,6 +407,127 @@ void main() {
 
       expect(find.text(l10n.setupSummaryTitle), findsOneWidget);
       expect(find.text(l10n.launchSettleIn), findsNothing);
+    });
+  });
+
+  group('la version complete eteint la publicite', () {
+    testWidgets('un achat en base supprime l interstitiel de lancement', (
+      tester,
+    ) async {
+      // MONETISATION.md : posseder la version complete doit masquer TOUS les
+      // points d entree publicitaires. C est la moitie de ce qu on vend, et
+      // c est la seule qui se verifie sans magasin.
+      await installDeck('animaux', easy: 15, medium: 15, hard: 15);
+      await EntitlementRepository(db).grantFullVersion(DateTime.utc(2026, 8));
+
+      var interstitiels = 0;
+      await pumpApp(
+        tester,
+        passerelle: fakeConsentGateway(_accorde),
+        interstitiel: ({required loadTimeout}) async {
+          interstitiels++;
+          return true;
+        },
+      );
+
+      await tapText(tester, l10n.homePlay);
+      await tapText(tester, l10n.modeFamily);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionStartGame);
+
+      expect(interstitiels, 0);
+      expect(launchedGame(tester).deck, hasLength(GameConfig.defaultCardCount));
+    });
+
+    testWidgets('sans achat, la pub est bien demandee', (tester) async {
+      // Le temoin du test precedent : sans lui, une erreur de cablage rendrait
+      // le compteur nul pour de mauvaises raisons.
+      await installDeck('animaux', easy: 15, medium: 15, hard: 15);
+
+      var interstitiels = 0;
+      await pumpApp(
+        tester,
+        passerelle: fakeConsentGateway(_accorde),
+        interstitiel: ({required loadTimeout}) async {
+          interstitiels++;
+          return true;
+        },
+      );
+
+      await tapText(tester, l10n.homePlay);
+      await tapText(tester, l10n.modeFamily);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionStartGame);
+
+      expect(interstitiels, 1);
+    });
+  });
+
+  group('une categorie premium se debloque', () {
+    testWidgets('elle porte un bouton plutot qu un cadenas muet', (
+      tester,
+    ) async {
+      await installDeck('animaux', easy: 15, medium: 15, hard: 15);
+      await installDeck('disney', premium: true);
+      await pumpApp(tester);
+
+      await tapText(tester, l10n.homePlay);
+      await tapText(tester, l10n.modeFamily);
+      await tapText(tester, l10n.setupCustomize);
+
+      expect(find.text(l10n.deckUnlockAction), findsOneWidget);
+    });
+
+    testWidgets('la version complete la rend selectionnable, sans bouton', (
+      tester,
+    ) async {
+      await installDeck('animaux', easy: 15, medium: 15, hard: 15);
+      await installDeck('disney', premium: true);
+      await EntitlementRepository(db).grantFullVersion(DateTime.utc(2026, 8));
+      await pumpApp(tester);
+
+      await tapText(tester, l10n.homePlay);
+      await tapText(tester, l10n.modeFamily);
+      await tapText(tester, l10n.setupCustomize);
+
+      expect(
+        find.text(l10n.deckUnlockAction),
+        findsNothing,
+        reason:
+            'proposer de debloquer a qui a paye est le defaut que '
+            'MONETISATION.md nomme explicitement',
+      );
+
+      final selection = ProviderScope.containerOf(
+        tester.element(find.byType(CekoiApp)),
+      ).read(setupControllerProvider).deckIds;
+
+      expect(
+        selection,
+        contains('disney'),
+        reason: 'debloquee, elle rentre dans la preselection de R7.9',
+      );
+    });
+
+    testWidgets('une recompense en base l ouvre, sans rien acheter', (
+      tester,
+    ) async {
+      await installDeck('animaux', easy: 15, medium: 15, hard: 15);
+      await installDeck('disney', premium: true);
+      await EntitlementRepository(
+        db,
+      ).grantDeck('disney', DateTime.utc(2026, 8));
+      await pumpApp(tester);
+
+      await tapText(tester, l10n.homePlay);
+      await tapText(tester, l10n.modeFamily);
+      await tapText(tester, l10n.setupCustomize);
+
+      expect(find.text(l10n.deckUnlockAction), findsNothing);
     });
   });
 

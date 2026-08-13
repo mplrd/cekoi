@@ -1,4 +1,5 @@
 import 'package:cekoi/app/game_persistence.dart';
+import 'package:cekoi/app/ownership.dart';
 import 'package:cekoi/data/providers.dart';
 import 'package:cekoi/data/repositories/ad_impression_repository.dart';
 import 'package:cekoi/services/ads/ads.dart';
@@ -15,10 +16,20 @@ part 'launch_ad.g.dart';
 /// fait vivre `gamePersistenceProvider` ici.
 @Riverpod(keepAlive: true)
 InterstitialGate interstitialGate(Ref ref) => InterstitialGate(
-  // Le consentement peut ne pas avoir répondu — le CMP travaille pendant que
-  // le joueur configure. Pas de réponse veut dire pas de pub : on ne retient
-  // pas un lancement de partie pour attendre un formulaire.
-  canRequestAds: ref.watch(adConsentProvider).value?.canRequestAds ?? false,
+  // Deux conditions, et il faut les deux. Le consentement peut ne pas avoir
+  // répondu — le CMP travaille pendant que le joueur configure — et pas de
+  // réponse veut dire pas de pub : on ne retient pas un lancement de partie
+  // pour attendre un formulaire. Et posséder la version complète éteint
+  // l'interstitiel : c'est la moitié de ce qu'on vend.
+  //
+  // La possession doit avoir **répondu** : `Ownership.none` par défaut est le
+  // bon choix pour « qu'est-ce qui est jouable » — ne rien donner — et le
+  // mauvais pour « peut-on montrer une pub », puisqu'il en montrerait une à
+  // qui a payé. Le parcours actuel garantit qu'elle est lue avant d'arriver
+  // ici ; ce n'est pas une raison pour que le code en dépende.
+  canRequestAds:
+      (ref.watch(adConsentProvider).value?.canRequestAds ?? false) &&
+      (ref.watch(ownershipProvider).value?.showsAds ?? false),
   show: ref.watch(showInterstitialProvider),
   log: _RepositoryLog(ref.watch(adImpressionRepositoryProvider)),
   now: ref.watch(nowProvider),

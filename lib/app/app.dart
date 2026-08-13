@@ -1,4 +1,5 @@
 import 'package:cekoi/app/game_persistence.dart';
+import 'package:cekoi/app/ownership.dart';
 import 'package:cekoi/app/router.dart';
 import 'package:cekoi/app/theme/app_theme.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
@@ -30,7 +31,10 @@ class CekoiApp extends ConsumerWidget {
       // vie, et il est stable. Écouter la valeur reconstruirait tout le
       // `MaterialApp` à chaque changement d'état du consentement — deux fois
       // au lancement, et à chaque passage par les réglages.
-      ..watch(adConsentProvider.notifier);
+      ..watch(adConsentProvider.notifier)
+      // Écoute le magasin pour toute la durée de vie de l'application : un
+      // paiement différé se conclut longtemps après l'écran qui l'a lancé.
+      ..watch(storeListenerProvider);
 
     return MaterialApp.router(
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,

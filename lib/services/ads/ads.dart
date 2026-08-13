@@ -1,6 +1,7 @@
 import 'package:cekoi/services/ads/ad_sdk.dart';
 import 'package:cekoi/services/ads/ad_service.dart';
 import 'package:cekoi/services/ads/consent.dart';
+import 'package:cekoi/services/ads/rewarded_service.dart';
 import 'package:cekoi/services/ads/ump_consent_gateway.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -28,6 +29,10 @@ AdSdkStart adSdkStart(Ref ref) => adsEnabled ? startGoogleAdSdk : startNoAdSdk;
 @Riverpod(keepAlive: true)
 ShowInterstitial showInterstitial(Ref ref) =>
     adsEnabled ? showGoogleInterstitial : showNoInterstitial;
+
+@Riverpod(keepAlive: true)
+ShowRewarded showRewarded(Ref ref) =>
+    adsEnabled ? showGoogleRewarded : showNoRewarded;
 
 /// Le consentement de l'appareil, et le démarrage du SDK qui en dépend.
 ///

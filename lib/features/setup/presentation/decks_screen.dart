@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:cekoi/app/ownership.dart';
 import 'package:cekoi/app/router.dart';
 import 'package:cekoi/domain/engine/draw.dart';
 import 'package:cekoi/domain/entities/audience.dart';
@@ -12,6 +15,7 @@ import 'package:cekoi/features/setup/presentation/setup_steps.dart';
 import 'package:cekoi/features/setup/presentation/widgets/deck_icon.dart';
 import 'package:cekoi/features/setup/presentation/widgets/setup_scaffold.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
+import 'package:cekoi/services/purchases/purchase_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -66,11 +70,25 @@ class _DecksScreenState extends ConsumerState<DecksScreen> {
       _ => null,
     };
 
+    final possession = ref.watch(ownershipProvider);
+
     // Le catalogue arrive après le premier rendu, et modifier l'état pendant
     // une construction est interdit : d'où le report d'une frame.
-    if (loaded != null && _preselectionne != setup.mode) {
+    // La possession fait partie des conditions : présélectionner avant de
+    // savoir ce que le joueur a débloqué cocherait tout sauf ses catégories
+    // premium, et R7.9 ne repasserait jamais. On attend qu'elle ait répondu —
+    // c'est une lecture locale, elle arrive en une frame.
+    if (loaded != null &&
+        possession.hasValue &&
+        _preselectionne != setup.mode) {
       _preselectionne = setup.mode;
-      final ids = [for (final deck in selectableDecks(loaded.decks)) deck.id];
+      final ids = [
+        for (final deck in selectableDecks(
+          loaded.decks,
+          ownership: possession.requireValue,
+        ))
+          deck.id,
+      ];
       if (setup.deckIds.isEmpty && ids.isNotEmpty) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
@@ -222,6 +240,14 @@ class _CustomizeSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
+    final ownership = ref.watch(currentOwnershipProvider);
+    // Une vidéo met jusqu'à dix secondes à se charger, et une feuille de
+    // paiement bien plus. Sans cette lecture, le bouton reste actif tout ce
+    // temps sans rien indiquer : deux taps, deux vidéos demandées au SDK pour
+    // une seule catégorie, ou deux feuilles de paiement concurrentes.
+    final occupe =
+        ref.watch(deckUnlockProvider).isLoading ||
+        ref.watch(fullVersionProvider).isLoading;
 
     return ExpansionTile(
       title: Text(l10n.setupCustomize),
@@ -235,12 +261,116 @@ class _CustomizeSection extends ConsumerWidget {
             deck: deck,
             cardCount: catalog.cardCountsByDeck[deck.id] ?? 0,
             isSelected: setup.deckIds.contains(deck.id),
-            onChanged: deck.isPremium
-                ? null
-                : (_) => ref
+            // Verrouillée tant qu'elle n'est ni achetée ni débloquée. Une fois
+            // ouverte, elle se coche comme n'importe quelle autre — c'est tout
+            // ce que la possession change ici.
+            onChanged: ownership.allows(deck)
+                ? (_) => ref
                       .read(setupControllerProvider.notifier)
-                      .toggleDeck(deck.id),
+                      .toggleDeck(deck.id)
+                : null,
+            onUnlock: ownership.canUnlock(deck)
+                ? (occupe
+                      ? () {}
+                      : () => unawaited(_unlock(context, ref, deck)))
+                : null,
+            busy: occupe,
           ),
+      ],
+    );
+  }
+
+  /// Propose les deux chemins, puis exécute celui qu'on a choisi.
+  ///
+  /// Les deux, et pas seulement la vidéo : quelqu'un qui verrouille trois
+  /// catégories d'affilée est en train de dire qu'il préférerait payer une
+  /// fois. Ne lui montrer que la vidéo, c'est lui vendre l'agacement.
+  Future<void> _unlock(BuildContext context, WidgetRef ref, Deck deck) async {
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+
+    final choix = await showDialog<_UnlockChoice>(
+      context: context,
+      builder: (context) => _UnlockDialog(deck: deck),
+    );
+    if (choix == null) return;
+
+    switch (choix) {
+      case _UnlockChoice.watchAd:
+        final ouverte = await ref
+            .read(deckUnlockProvider.notifier)
+            .unlock(deck.id);
+
+        // Elle entre dans la sélection : c'est exactement ce que le joueur
+        // vient de demander en regardant la vidéo. R7.9 ne repasse pas — elle
+        // ne joue qu'à la première arrivée — et le laisser lancer la partie
+        // sans la catégorie qu'il vient de débloquer serait absurde.
+        final deja = ref
+            .read(setupControllerProvider)
+            .deckIds
+            .contains(deck.id);
+        if (ouverte && !deja) {
+          ref.read(setupControllerProvider.notifier).toggleDeck(deck.id);
+        }
+
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              ouverte ? l10n.deckUnlocked(deck.name) : l10n.deckUnlockFailed,
+            ),
+          ),
+        );
+
+      case _UnlockChoice.buy:
+        final outcome = await ref.read(fullVersionProvider.notifier).buy();
+        if (outcome == PurchaseOutcome.failed) {
+          messenger.showSnackBar(
+            SnackBar(content: Text(l10n.purchaseFailed)),
+          );
+        }
+    }
+  }
+}
+
+/// Les deux façons d'ouvrir une catégorie premium.
+enum _UnlockChoice { watchAd, buy }
+
+class _UnlockDialog extends StatelessWidget {
+  const _UnlockDialog({required this.deck});
+
+  final Deck deck;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
+    return AlertDialog(
+      title: Text(l10n.deckUnlockTitle(deck.name)),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.play_circle_outline),
+            title: Text(l10n.deckUnlockWatchAd),
+            subtitle: Text(l10n.deckUnlockWatchAdHint),
+            onTap: () => Navigator.of(context).pop(_UnlockChoice.watchAd),
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.workspace_premium_outlined),
+            title: Text(l10n.settingsFullVersion),
+            subtitle: Text(l10n.deckUnlockBuyHint),
+            onTap: () => Navigator.of(context).pop(_UnlockChoice.buy),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l10n.actionCancel),
+        ),
       ],
     );
   }
@@ -252,12 +382,20 @@ class _DeckTile extends StatelessWidget {
     required this.cardCount,
     required this.isSelected,
     required this.onChanged,
+    this.onUnlock,
+    this.busy = false,
   });
 
   final Deck deck;
   final int cardCount;
   final bool isSelected;
   final ValueChanged<bool?>? onChanged;
+
+  /// Non nul quand la catégorie est premium et pas encore ouverte.
+  final VoidCallback? onUnlock;
+
+  /// Un déblocage ou un achat est déjà en cours, ailleurs dans l'écran.
+  final bool busy;
 
   @override
   Widget build(BuildContext context) {
@@ -272,18 +410,25 @@ class _DeckTile extends StatelessWidget {
       subtitle: Text(
         [
           l10n.cardCount(cardCount),
-          // Le déblocage par pub arrive au lot monétisation ; d'ici là la
-          // catégorie est visible et inaccessible, pas cachée.
-          if (deck.isPremium) l10n.deckPremium,
+          if (onUnlock != null) l10n.deckPremium,
           if (deck.origin == DeckOrigin.custom) l10n.deckCustom,
         ].join(' · '),
       ),
       // L'icône de la catégorie plutôt que la case seule : une liste de vingt
       // et une lignes de texte se parcourt mal, et chaque catégorie porte déjà
-      // la sienne dans son JSON. Le cadenas d'une catégorie premium prend sa
-      // place — c'est l'information qui prime à ce moment-là.
-      secondary: deck.isPremium
-          ? const Icon(Icons.lock_outline)
+      // la sienne dans son JSON. Le cadenas d'une catégorie verrouillée prend
+      // sa place — c'est l'information qui prime à ce moment-là, et il cède
+      // au bouton dès qu'il y a quelque chose à faire.
+      secondary: onUnlock != null
+          ? (busy
+                ? const SizedBox.square(
+                    dimension: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : TextButton(
+                    onPressed: onUnlock,
+                    child: Text(l10n.deckUnlockAction),
+                  ))
           : Icon(
               deckIcon(deck.icon),
               color: isSelected

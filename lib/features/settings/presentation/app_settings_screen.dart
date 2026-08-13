@@ -1,8 +1,10 @@
 import 'dart:async';
 
+import 'package:cekoi/app/ownership.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:cekoi/services/ads/ads.dart';
 import 'package:cekoi/services/ads/consent.dart';
+import 'package:cekoi/services/purchases/purchase_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -23,6 +25,8 @@ class AppSettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final consent = ref.watch(adConsentProvider);
+    final ownership = ref.watch(currentOwnershipProvider);
+    final busy = ref.watch(fullVersionProvider).isLoading;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.homeSettings)),
@@ -30,6 +34,24 @@ class AppSettingsScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
           children: [
+            _SectionTitle(label: l10n.settingsFullVersion),
+            const SizedBox(height: 12),
+            if (ownership.hasFullVersion)
+              _Owned(message: l10n.settingsFullVersionOwned)
+            else
+              _FullVersionOffer(
+                busy: busy,
+                onBuy: () => unawaited(_buy(context, ref)),
+              ),
+            const SizedBox(height: 12),
+            // La restauration reste visible même une fois l'achat acquis : un
+            // joueur qui doute a besoin de la trouver, et Apple exige qu'elle
+            // soit accessible, pas qu'elle soit conditionnelle.
+            _RestoreTile(
+              busy: busy,
+              onTap: () => unawaited(_restore(context, ref)),
+            ),
+            const SizedBox(height: 28),
             _SectionTitle(label: l10n.settingsPrivacy),
             const SizedBox(height: 12),
             // Le CMP peut encore travailler quand on ouvre l'écran, et il peut
@@ -48,6 +70,122 @@ class AppSettingsScreen extends ConsumerWidget {
             },
           ],
         ),
+      ),
+    );
+  }
+
+  Future<void> _buy(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+
+    final outcome = await ref.read(fullVersionProvider.notifier).buy();
+
+    // Une annulation n'est pas une erreur : le joueur a fermé la feuille de
+    // paiement, il le sait, le lui dire serait le sermonner.
+    if (outcome == PurchaseOutcome.failed) {
+      messenger.showSnackBar(SnackBar(content: Text(l10n.purchaseFailed)));
+    }
+  }
+
+  Future<void> _restore(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+
+    final outcome = await ref.read(fullVersionProvider.notifier).restore();
+
+    // Ici, au contraire, le silence serait cruel : le joueur vient de demander
+    // qu'on retrouve un achat. Ne rien afficher lui laisserait croire que le
+    // bouton est cassé.
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          switch (outcome) {
+            PurchaseOutcome.owned => l10n.settingsFullVersionOwned,
+            // `cancelled` n'arrive pas sur ce chemin — aucune feuille de
+            // paiement ne s'ouvre — mais le dire ici évite un `_` qui
+            // avalerait un cas futur en silence.
+            PurchaseOutcome.cancelled ||
+            PurchaseOutcome.nothing => l10n.settingsRestoreNothing,
+            PurchaseOutcome.failed => l10n.purchaseFailed,
+          },
+        ),
+      ),
+    );
+  }
+}
+
+/// L'offre, tant que l'achat n'est pas fait.
+///
+/// Une seule promesse — « plus de pub **et** toutes les catégories » — et non
+/// deux offres séparées : payer pour retirer les pubs puis devoir regarder des
+/// vidéos pour accéder aux catégories, c'est le sentiment d'avoir payé pour
+/// rien.
+class _FullVersionOffer extends StatelessWidget {
+  const _FullVersionOffer({required this.busy, required this.onBuy});
+
+  final bool busy;
+  final VoidCallback onBuy;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: ListTile(
+        onTap: busy ? null : onBuy,
+        enabled: !busy,
+        leading: const Icon(Icons.workspace_premium_outlined),
+        // Le titre de section dit déjà « Version complète » : la ligne porte
+        // la promesse, pas une deuxième fois le nom.
+        title: Text(l10n.settingsFullVersionPitch),
+        // Aucun prix affiché ici : il vient du magasin, qui connaît la devise
+        // et la taxe du joueur. La feuille de paiement le montrera.
+        trailing: busy
+            ? const SizedBox.square(
+                dimension: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.chevron_right),
+      ),
+    );
+  }
+}
+
+class _Owned extends StatelessWidget {
+  const _Owned({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: ListTile(
+        leading: const Icon(Icons.check_circle_outline),
+        title: Text(message),
+      ),
+    );
+  }
+}
+
+class _RestoreTile extends StatelessWidget {
+  const _RestoreTile({required this.busy, required this.onTap});
+
+  final bool busy;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: ListTile(
+        onTap: busy ? null : onTap,
+        enabled: !busy,
+        leading: const Icon(Icons.restore),
+        title: Text(l10n.settingsRestore),
       ),
     );
   }

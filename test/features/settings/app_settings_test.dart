@@ -1,4 +1,6 @@
 import 'package:cekoi/app/router.dart';
+import 'package:cekoi/data/db/database.dart';
+import 'package:cekoi/data/providers.dart';
 import 'package:cekoi/features/settings/presentation/app_settings_screen.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:cekoi/services/ads/ads.dart';
@@ -27,10 +29,14 @@ class _StubGateway implements ConsentGateway {
 
 void main() {
   late AppLocalizations l10n;
+  late AppDatabase db;
 
   setUpAll(() async {
     l10n = await AppLocalizations.delegate.load(const Locale('fr'));
   });
+
+  setUp(() => db = AppDatabase.memory());
+  tearDown(() => db.close());
 
   Future<_StubGateway> pumpSettings(
     WidgetTester tester,
@@ -39,6 +45,10 @@ void main() {
     final gateway = _StubGateway(consent);
     final container = ProviderContainer(
       overrides: [
+        // L'écran lit désormais la possession, donc la base : sans base en
+        // mémoire, il ouvre celle de l'appareil et le test se bloque sur un
+        // canal de plateforme absent.
+        appDatabaseProvider.overrideWithValue(db),
         consentGatewayProvider.overrideWithValue(gateway),
         adSdkStartProvider.overrideWithValue(() async {}),
       ],
