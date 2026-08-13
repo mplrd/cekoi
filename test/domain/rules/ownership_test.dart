@@ -70,25 +70,37 @@ void main() {
     });
   });
 
-  test('un déblocage s ajoute sans effacer les précédents', () {
-    const depart = Ownership(unlockedDeckIds: {'disney'});
+  group('égalité de valeur', () {
+    // Elle circule dans des providers : sans égalité, chaque reconstruction
+    // reconstruirait tous les écrans qui l observent. Et sans **inégalité**,
+    // Riverpod cesserait de notifier après un déblocage — c'est la panne que
+    // cette égalité est censée éviter.
+    test('deux possessions identiques sont égales', () {
+      expect(
+        const Ownership(hasFullVersion: true, unlockedDeckIds: {'a', 'b'}),
+        const Ownership(hasFullVersion: true, unlockedDeckIds: {'b', 'a'}),
+      );
+    });
 
-    final apres = depart.withUnlocked('histoire');
+    test('une catégorie de plus rend deux possessions différentes', () {
+      expect(
+        const Ownership(unlockedDeckIds: {'a'}),
+        isNot(const Ownership(unlockedDeckIds: {'a', 'b'})),
+      );
+    });
 
-    expect(apres.unlockedDeckIds, {'disney', 'histoire'});
-    expect(
-      depart.unlockedDeckIds,
-      {'disney'},
-      reason: 'la possession est une valeur, elle ne se modifie pas en place',
-    );
-  });
+    test('une catégorie différente aussi', () {
+      expect(
+        const Ownership(unlockedDeckIds: {'a'}),
+        isNot(const Ownership(unlockedDeckIds: {'b'})),
+      );
+    });
 
-  test('deux possessions identiques sont égales', () {
-    // Elle circule dans des providers : sans égalité de valeur, chaque
-    // reconstruction reconstruirait tous les écrans qui l observent.
-    expect(
-      const Ownership(hasFullVersion: true, unlockedDeckIds: {'a', 'b'}),
-      const Ownership(hasFullVersion: true, unlockedDeckIds: {'b', 'a'}),
-    );
+    test('l achat distingue deux possessions par ailleurs identiques', () {
+      expect(
+        const Ownership(unlockedDeckIds: {'a'}),
+        isNot(const Ownership(hasFullVersion: true, unlockedDeckIds: {'a'})),
+      );
+    });
   });
 }

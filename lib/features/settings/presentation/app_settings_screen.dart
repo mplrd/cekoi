@@ -101,7 +101,11 @@ class AppSettingsScreen extends ConsumerWidget {
         content: Text(
           switch (outcome) {
             PurchaseOutcome.owned => l10n.settingsFullVersionOwned,
-            PurchaseOutcome.cancelled => l10n.settingsRestoreNothing,
+            // `cancelled` n'arrive pas sur ce chemin — aucune feuille de
+            // paiement ne s'ouvre — mais le dire ici évite un `_` qui
+            // avalerait un cas futur en silence.
+            PurchaseOutcome.cancelled ||
+            PurchaseOutcome.nothing => l10n.settingsRestoreNothing,
             PurchaseOutcome.failed => l10n.purchaseFailed,
           },
         ),

@@ -50,12 +50,6 @@ class Ownership {
   /// bruit, au pire une proposition de payer deux fois.
   bool canUnlock(Deck deck) => deck.isPremium && !allows(deck);
 
-  /// La même possession, une catégorie de plus.
-  Ownership withUnlocked(String deckId) => Ownership(
-    hasFullVersion: hasFullVersion,
-    unlockedDeckIds: {...unlockedDeckIds, deckId},
-  );
-
   // Égalité de valeur écrite à la main plutôt qu'avec `SetEquality` : le
   // domaine ne déclare pas `collection` en dépendance directe, et deux lignes
   // ne valent pas d'en ajouter une.

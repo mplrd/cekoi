@@ -21,6 +21,7 @@ import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:cekoi/services/ads/ad_service.dart';
 import 'package:cekoi/services/ads/ads.dart';
 import 'package:cekoi/services/ads/consent.dart';
+import 'package:cekoi/services/purchases/purchases.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -134,6 +135,7 @@ void main() {
             passerelle ?? fakeConsentGateway(),
           ),
           adSdkStartProvider.overrideWithValue(() async {}),
+          purchaseServiceProvider.overrideWithValue(fakePurchaseService()),
           showInterstitialProvider.overrideWithValue(
             interstitiel ?? showNoInterstitial,
           ),

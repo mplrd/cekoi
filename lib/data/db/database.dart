@@ -58,9 +58,10 @@ class AppDatabase extends _$AppDatabase {
       }
 
       // v5 — ce que le joueur possède (lot 7). Table seule, rien d'autre
-      // touché. Une base existante repart d'une possession vide : c'est le bon
-      // défaut pour un déblocage par récompense, et pour un achat la
-      // restauration au démarrage la reconstruit depuis le magasin.
+      // touché. Une base existante repart d'une possession vide, et c'est le
+      // bon défaut : rien ne se donne gratuitement. Une récompense se regagne,
+      // et un achat se retrouve par « Restaurer mes achats » — la restauration
+      // est manuelle, exprès (voir `app/ownership.dart`).
       if (from < 5) {
         await m.createTable(entitlements);
       }

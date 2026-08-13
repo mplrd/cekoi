@@ -23,10 +23,7 @@ class _StubStore implements PurchaseService {
   int restaurations = 0;
 
   @override
-  Future<bool> isAvailable() async => true;
-
-  @override
-  Future<List<StoreProduct>> products(Set<String> ids) async => const [];
+  Stream<String> get acquisitions => const Stream<String>.empty();
 
   @override
   Future<PurchaseOutcome> buy(String productId) async {
@@ -154,7 +151,7 @@ void main() {
   });
 
   testWidgets('une restauration sans achat le dit clairement', (tester) async {
-    await pumpSettings(tester, outcome: PurchaseOutcome.cancelled);
+    await pumpSettings(tester, outcome: PurchaseOutcome.nothing);
 
     await tester.tap(find.text(l10n.settingsRestore));
     await tester.pumpAndSettle();

@@ -52,20 +52,6 @@ void main() {
     },
   );
 
-  test('restaurer oublie les achats, jamais les récompenses', () async {
-    // Une catégorie débloquée par une pub n'est connue d'aucun magasin : la
-    // restauration ne doit pas la faire disparaître, sans quoi le joueur
-    // perdrait quelque chose en cherchant à récupérer autre chose.
-    await repository.grantFullVersion(now);
-    await repository.grantDeck('disney', now);
-
-    await repository.forgetPurchases();
-
-    final possession = await repository.read();
-    expect(possession.hasFullVersion, isFalse);
-    expect(possession.unlockedDeckIds, {'disney'});
-  });
-
   group('migration de la v4 vers la v5', () {
     /// Même piège que les migrations précédentes : la base de test naît au
     /// schéma courant, donc migrer par-dessus ne prouverait rien.

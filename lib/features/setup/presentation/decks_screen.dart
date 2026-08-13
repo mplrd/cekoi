@@ -241,6 +241,13 @@ class _CustomizeSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final ownership = ref.watch(currentOwnershipProvider);
+    // Une vidéo met jusqu'à dix secondes à se charger, et une feuille de
+    // paiement bien plus. Sans cette lecture, le bouton reste actif tout ce
+    // temps sans rien indiquer : deux taps, deux vidéos demandées au SDK pour
+    // une seule catégorie, ou deux feuilles de paiement concurrentes.
+    final occupe =
+        ref.watch(deckUnlockProvider).isLoading ||
+        ref.watch(fullVersionProvider).isLoading;
 
     return ExpansionTile(
       title: Text(l10n.setupCustomize),
@@ -263,8 +270,11 @@ class _CustomizeSection extends ConsumerWidget {
                       .toggleDeck(deck.id)
                 : null,
             onUnlock: ownership.canUnlock(deck)
-                ? () => unawaited(_unlock(context, ref, deck))
+                ? (occupe
+                      ? () {}
+                      : () => unawaited(_unlock(context, ref, deck)))
                 : null,
+            busy: occupe,
           ),
       ],
     );
@@ -290,6 +300,18 @@ class _CustomizeSection extends ConsumerWidget {
         final ouverte = await ref
             .read(deckUnlockProvider.notifier)
             .unlock(deck.id);
+
+        // Elle entre dans la sélection : c'est exactement ce que le joueur
+        // vient de demander en regardant la vidéo. R7.9 ne repasse pas — elle
+        // ne joue qu'à la première arrivée — et le laisser lancer la partie
+        // sans la catégorie qu'il vient de débloquer serait absurde.
+        final deja = ref
+            .read(setupControllerProvider)
+            .deckIds
+            .contains(deck.id);
+        if (ouverte && !deja) {
+          ref.read(setupControllerProvider.notifier).toggleDeck(deck.id);
+        }
 
         messenger.showSnackBar(
           SnackBar(
@@ -361,6 +383,7 @@ class _DeckTile extends StatelessWidget {
     required this.isSelected,
     required this.onChanged,
     this.onUnlock,
+    this.busy = false,
   });
 
   final Deck deck;
@@ -370,6 +393,9 @@ class _DeckTile extends StatelessWidget {
 
   /// Non nul quand la catégorie est premium et pas encore ouverte.
   final VoidCallback? onUnlock;
+
+  /// Un déblocage ou un achat est déjà en cours, ailleurs dans l'écran.
+  final bool busy;
 
   @override
   Widget build(BuildContext context) {
@@ -394,7 +420,15 @@ class _DeckTile extends StatelessWidget {
       // sa place — c'est l'information qui prime à ce moment-là, et il cède
       // au bouton dès qu'il y a quelque chose à faire.
       secondary: onUnlock != null
-          ? TextButton(onPressed: onUnlock, child: Text(l10n.deckUnlockAction))
+          ? (busy
+                ? const SizedBox.square(
+                    dimension: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : TextButton(
+                    onPressed: onUnlock,
+                    child: Text(l10n.deckUnlockAction),
+                  ))
           : Icon(
               deckIcon(deck.icon),
               color: isSelected

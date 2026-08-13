@@ -38,6 +38,33 @@ Future<Ownership> ownership(Ref ref) =>
 Ownership currentOwnership(Ref ref) =>
     ref.watch(ownershipProvider).value ?? Ownership.none;
 
+/// Écoute le magasin en permanence, et enregistre ce qu'il accorde.
+///
+/// Sans cet abonnement, tout ce que le magasin signale hors d'un achat en
+/// cours est perdu : un paiement différé qui se conclut dix minutes plus tard,
+/// un achat finalisé pendant que l'application était fermée. Sur iOS, c'est
+/// aussi lui qui fait de l'application un observateur de la file de
+/// transactions — sans quoi elle rejoue les transactions non finalisées à
+/// chaque lancement, indéfiniment.
+///
+/// Il est lu par la racine de l'application, comme la sauvegarde de partie :
+/// il n'expose rien, il doit seulement exister.
+@Riverpod(keepAlive: true)
+void storeListener(Ref ref) {
+  final abonnement = ref.watch(purchaseServiceProvider).acquisitions.listen((
+    productId,
+  ) async {
+    if (productId != fullVersionProductId) return;
+
+    await ref
+        .read(entitlementRepositoryProvider)
+        .grantFullVersion(ref.read(nowProvider)());
+    ref.invalidate(ownershipProvider);
+  });
+
+  ref.onDispose(abonnement.cancel);
+}
+
 /// Relit la possession, et attend qu'elle soit à jour.
 ///
 /// Attendre, et pas seulement invalider : l'appelant rend la main à un écran
@@ -73,23 +100,27 @@ class FullVersion extends _$FullVersion {
   ) async {
     state = const AsyncValue<void>.loading();
 
-    final PurchaseOutcome outcome;
     try {
-      outcome = await action(ref.read(purchaseServiceProvider));
+      final outcome = await action(ref.read(purchaseServiceProvider));
+
+      if (outcome == PurchaseOutcome.owned) {
+        await ref
+            .read(entitlementRepositoryProvider)
+            .grantFullVersion(ref.read(nowProvider)());
+        await _reread(ref);
+      }
+
+      return outcome;
     } on Object {
-      state = const AsyncValue<void>.data(null);
+      // L'écriture aussi est dans la garde, et pas seulement l'appel au
+      // magasin : un paiement encaissé dont l'enregistrement échoue laissait
+      // l'écran sur son indicateur d'attente pour toujours, sans message et
+      // sans même le bouton de restauration pour s'en sortir.
       return PurchaseOutcome.failed;
+    } finally {
+      // Dans tous les cas. C'est ce `finally` qui manquait.
+      state = const AsyncValue<void>.data(null);
     }
-
-    if (outcome == PurchaseOutcome.owned) {
-      await ref
-          .read(entitlementRepositoryProvider)
-          .grantFullVersion(ref.read(nowProvider)());
-      await _reread(ref);
-    }
-
-    state = const AsyncValue<void>.data(null);
-    return outcome;
   }
 }
 

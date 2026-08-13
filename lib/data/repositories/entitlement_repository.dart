@@ -24,17 +24,6 @@ class EntitlementRepository {
   Future<void> grantDeck(String deckId, DateTime at) =>
       _grant(EntitlementKind.reward, deckId, at);
 
-  /// Efface tout. Sert à la restauration, et aux tests.
-  ///
-  /// Ne touche **que** les achats : une catégorie débloquée par une pub n'est
-  /// connue d'aucun magasin, et la restauration ne doit pas la faire
-  /// disparaître.
-  Future<void> forgetPurchases() =>
-      (_db.delete(_db.entitlements)..where(
-            (row) => row.kind.equals(EntitlementKind.purchase),
-          ))
-          .go();
-
   Future<void> _grant(String kind, String reference, DateTime at) => _db
       .into(_db.entitlements)
       .insertOnConflictUpdate(
