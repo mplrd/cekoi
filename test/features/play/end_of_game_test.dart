@@ -1,5 +1,6 @@
 import 'package:cekoi/app/clock.dart';
 import 'package:cekoi/app/current_game.dart';
+import 'package:cekoi/app/preferences.dart';
 import 'package:cekoi/app/screen_awake.dart';
 import 'package:cekoi/data/db/database.dart';
 import 'package:cekoi/data/providers.dart';
@@ -96,6 +97,7 @@ void main() {
           appDatabaseProvider.overrideWithValue(db),
           seedSourceProvider.overrideWithValue(() => 7),
           screenAwakeProvider.overrideWithValue(fakeScreenAwake()),
+          currentPreferencesProvider.overrideWithValue(fakePreferences()),
           // Consentement accordé, exprès : sans lui le portillon s'arrête
           // avant la pub, et le test ne prouverait plus rien — il resterait
           // vert même si rejouer déclenchait un interstitiel.

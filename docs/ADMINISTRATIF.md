@@ -5,7 +5,7 @@ arbitrages à rendre. Cette liste existe parce que ces éléments se comptent en
 semaines de calendrier, pas en heures de développement : les découvrir au moment du lot 8, une
 fois l'application prête, c'est attendre à vide.
 
-Tenue à jour au fil des lots. Dernière revue : 13 août 2026.
+Tenue à jour au fil des lots. Dernière revue : 13 août 2026, après le lot 7.
 
 ## À lancer maintenant
 
@@ -52,6 +52,32 @@ personnelle sur la fiche publique, sauf domiciliation.
 
 - [ ] Arbitrer particulier ou société **avant** de créer le profil de paiement AdMob.
 
+## Ce qui bloque la validation iOS
+
+**Un iPhone ne suffit pas, et c'est le point le plus mal compris du projet.** Installer une
+application iOS sur un appareil passe obligatoirement par Xcode, donc par macOS — même pour un
+test personnel, même avec un profil gratuit. La machine de développement est sous Windows.
+
+Il n'existe donc que deux portes d'entrée :
+
+1. emprunter une machine macOS ;
+2. **TestFlight**, alimenté par le runner macOS de la CI.
+
+La seconde est la stratégie retenue depuis le lot 1, et elle a un coût d'amorçage qui n'est pas
+encore payé. Aujourd'hui le job `ios-build` produit un build **non signé** : il prouve que le
+projet compile, pods compris, et rien de plus.
+
+- [ ] Compte Apple Developer — prérequis de tout le reste ci-dessous.
+- [ ] Certificat de distribution et profil de provisionnement.
+- [ ] Fiche de l'application dans App Store Connect.
+- [ ] Signature câblée dans la CI, avec les secrets GitHub correspondants.
+- [ ] Premier build poussé sur TestFlight.
+
+Tant que ces cinq lignes ne sont pas cochées, **l'iPhone ne peut rien valider**. Et ce qui
+attend cette validation n'est pas mince : la gestion du cycle de vie pendant le chrono (R3.7),
+le comportement audio et haptique, et désormais deux SDK natifs — publicité et achat in-app —
+dont aucune ligne n'a jamais été exécutée sur iOS.
+
 ## Sans code, mais nécessaire à la publication
 
 - [ ] **Politique de confidentialité hébergée publiquement.** Obligatoire sur les deux stores,
@@ -68,12 +94,35 @@ personnelle sur la fiche publique, sauf domiciliation.
 - [ ] **Note de contenu publicitaire AdMob plafonnée à `PG`.** Se règle dans la console ; le
       code la demande déjà à chaque requête.
 - [ ] **Clé de signature Android** et son stockage sûr. Perdre la clé d'une application publiée
-      empêche toute mise à jour ultérieure.
+      empêche toute mise à jour ultérieure. `android/app/build.gradle.kts` signe encore avec la
+      clé de debug : rien n'est publiable en l'état, et c'est volontairement resté ainsi jusqu'à
+      ce que la vraie clé existe.
+- [ ] **Politique de confidentialité et mentions légales : il faut les URL.** `SPEC.md` prévoit
+      les deux entrées dans l'écran de réglages. Elles ne sont pas posées, parce qu'une entrée
+      qui n'ouvre rien est pire que pas d'entrée du tout. Dès que les pages sont hébergées, le
+      câblage est d'une demi-heure.
 - [ ] **Créer le SKU `cekoi_version_complete`** dans les deux consoles, en produit **non
       consommable** (Play : produit intégré unique ; Apple : *Non-Consumable*). Le prix se
       règle par palier dans la console, jamais dans le code. Tant qu'il n'existe pas, le
       passage en caisse ne peut pas être testé en vrai — le reste du parcours d'achat tourne
       sur des doublures.
+
+## Dette de développement assumée
+
+Ni bloquant ni administratif, mais à ne pas redécouvrir dans six mois :
+
+- **Aucun accès au déblocage en mode Sans filtre.** R7.10 rend l'écran des catégories
+  inatteignable dans ce mode par construction. Une catégorie adulte marquée premium y serait
+  donc invisible **et** impossible à ouvrir. Latent tant que seule `disneypixar`, qui est
+  familiale, est premium — donc directement dépendant de l'arbitrage ci-dessous. `RULES.md`
+  indique déjà la sortie : un accès depuis l'étape du vivier, pas un retour des catégories sur
+  le chemin.
+- **Chaque déblocage recharge tout le catalogue**, qui dépend de la possession : l'écran passe
+  par un indicateur d'attente le temps de relire les cartes du mode. Acceptable sur une action
+  volontaire et rare, à revoir si ça se voit sur un vrai téléphone.
+- **Pas de choix de langue dans les réglages**, alors que `SPEC.md` le prévoit. L'application
+  n'a qu'une seule locale : un sélecteur à une entrée serait un menu qui ne fait rien.
+  L'infrastructure ARB est en place, l'entrée arrivera avec la deuxième langue.
 
 ## Arbitrages produit en attente
 

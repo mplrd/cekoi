@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Modify this file to customize your launch splash screen -->
+<!-- L'écran de lancement natif, affiché avant que Flutter ait rendu sa
+     première frame. Le fond est celui de l'application, et le logo est le
+     même que celui de l'accueil : le démarrage doit ressembler à l'entrée
+     dans le jeu, pas à un flash blanc suivi d'autre chose. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@android:color/white" />
-
-    <!-- You can insert your own image assets here -->
-    <!-- <item>
+    <item android:drawable="@color/launch_background" />
+    <item>
         <bitmap
             android:gravity="center"
-            android:src="@mipmap/launch_image" />
-    </item> -->
+            android:src="@drawable/launch_logo" />
+    </item>
 </layer-list>

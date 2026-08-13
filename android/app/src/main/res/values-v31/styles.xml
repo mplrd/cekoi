@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Depuis Android 12 (API 31), le systeme impose son propre ecran de
+     demarrage et ignore `windowBackground` des qu il ne s agit pas d une
+     couleur unie. Notre `layer-list` n en est pas une : sans ce fichier, tout
+     le travail de branding de `launch_background.xml` reste sans effet sur
+     les telephones actuels, et le flash blanc revient.
+
+     `windowSplashScreenAnimatedIcon` reprend le premier plan de l icone
+     adaptative, qui est justement dessine pour etre masque en cercle par le
+     systeme. -->
+<resources>
+    <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="android:windowSplashScreenBackground">@color/launch_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+    </style>
+    <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="android:windowBackground">@color/launch_background</item>
+    </style>
+</resources>

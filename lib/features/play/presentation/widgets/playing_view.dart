@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cekoi/app/current_game.dart';
+import 'package:cekoi/app/preferences.dart';
 import 'package:cekoi/app/theme/app_colors.dart';
 import 'package:cekoi/domain/engine/game_state.dart';
 import 'package:cekoi/domain/rules/round.dart';
@@ -35,14 +36,27 @@ class PlayingView extends ConsumerWidget {
     // Le son est celui du système plutôt qu'un fichier : il suit le volume et
     // le mode silencieux de l'appareil, ce qu'un asset joué à plein régime au
     // milieu d'un repas ne ferait pas. Un son dessiné pourra le remplacer.
+    // Lu dans le `build` et non dans l'écouteur : la lecture en base est
+    // asynchrone, et un provider instancié au moment du premier bip répondrait
+    // par ses valeurs par défaut — le son coupé sonnerait une fois quand même.
+    //
+    // Deux réglages distincts et non un seul : couper le son sans perdre la
+    // vibration est justement ce qu'on veut au restaurant, et l'inverse aussi
+    // — la vibration seule agace celui qui tient le téléphone.
+    final reglages = ref.watch(currentPreferencesProvider);
+
     ref.listen(
       currentGameProvider.select(
         (g) => (g?.remaining ?? Duration.zero).inSeconds,
       ),
       (avant, apres) {
         if (avant == apres || apres <= 0) return;
-        if (apres < TurnTimerRing.urgentBelow.inSeconds) {
+        if (apres >= TurnTimerRing.urgentBelow.inSeconds) return;
+
+        if (reglages.hapticsEnabled) {
           unawaited(HapticFeedback.lightImpact());
+        }
+        if (reglages.soundEnabled) {
           unawaited(SystemSound.play(SystemSoundType.click));
         }
       },

@@ -22,11 +22,13 @@
 /// lance quand on veut regarder.
 library;
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:cekoi/app/app.dart';
 import 'package:cekoi/app/clock.dart';
 import 'package:cekoi/app/current_game.dart';
+import 'package:cekoi/app/preferences.dart';
 import 'package:cekoi/app/router.dart';
 import 'package:cekoi/app/screen_awake.dart';
 import 'package:cekoi/app/theme/app_theme.dart';
@@ -44,7 +46,9 @@ import 'package:cekoi/domain/entities/min_age.dart';
 import 'package:cekoi/domain/entities/team.dart';
 import 'package:cekoi/features/play/presentation/game_screen.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
+import 'package:cekoi/services/ads/ad_service.dart';
 import 'package:cekoi/services/ads/ads.dart';
+import 'package:cekoi/services/ads/consent.dart';
 import 'package:cekoi/services/purchases/purchases.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -195,7 +199,13 @@ void main() {
     }
   }
 
-  Future<void> pumpApp(WidgetTester tester) async {
+  Future<void> pumpApp(
+    WidgetTester tester, {
+
+    /// Un interstitiel qui prend son temps, pour que l'écran de lancement
+    /// reste visible assez longtemps pour être photographié.
+    ShowInterstitial? interstitiel,
+  }) async {
     tester.view.physicalSize = taille * 2;
     tester.view.devicePixelRatio = 2;
     addTearDown(tester.view.reset);
@@ -207,8 +217,19 @@ void main() {
           deckSeedingProvider.overrideWith((ref) async => const SeedReport()),
           seedSourceProvider.overrideWithValue(() => 42),
           screenAwakeProvider.overrideWithValue(fakeScreenAwake()),
-          consentGatewayProvider.overrideWithValue(fakeConsentGateway()),
+          consentGatewayProvider.overrideWithValue(
+            fakeConsentGateway(
+              const ConsentState(canRequestAds: true, canChangeChoice: true),
+            ),
+          ),
+          // Sans cette doublure, accorder le consentement fait démarrer le
+          // vrai SDK publicitaire, qui attend une réponse native qui ne vient
+          // jamais : l'écran reste sur son indicateur et le banc expire.
+          adSdkStartProvider.overrideWithValue(() async {}),
+          currentPreferencesProvider.overrideWithValue(fakePreferences()),
           purchaseServiceProvider.overrideWithValue(fakePurchaseService()),
+          if (interstitiel != null)
+            showInterstitialProvider.overrideWithValue(interstitiel),
         ],
         child: CekoiApp(router: createAppRouter()),
       ),
@@ -252,6 +273,36 @@ void main() {
 
     await tapText(tester, l10n.actionContinue);
     await shoot(tester, '06-recapitulatif');
+  });
+
+  testWidgets('les réglages de l application', (tester) async {
+    // Le seul écran dont l'apparence dépend de ce que le joueur possède :
+    // l'offre d'achat s'efface une fois payée. Le banc l'accorde consentement
+    // et formulaire disponibles, donc la carte de choix publicitaire est là.
+    await installCatalogue();
+    await pumpApp(tester);
+
+    await tapText(tester, l10n.homeSettings);
+    await shoot(tester, '15-reglages');
+  });
+
+  testWidgets('l écran de lancement de partie', (tester) async {
+    // Ce que la table lit pendant que la pub charge. Il n'apparaît que
+    // pendant ce chargement : sans un interstitiel qui prend son temps, le
+    // banc le traverserait sans rien capturer.
+    await installCatalogue();
+    await pumpApp(
+      tester,
+      interstitiel: ({required loadTimeout}) => Completer<bool>().future,
+    );
+
+    await tapText(tester, l10n.homePlay);
+    await tapText(tester, l10n.modeFamily);
+    await tapText(tester, l10n.actionContinue);
+    await tapText(tester, l10n.actionContinue);
+    await tapText(tester, l10n.actionContinue);
+    await tapText(tester, l10n.actionStartGame);
+    await shoot(tester, '16-lancement');
   });
 
   testWidgets('mes catégories', (tester) async {

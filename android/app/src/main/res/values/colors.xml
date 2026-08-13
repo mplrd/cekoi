@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#FA7567</color>
+
+    <!-- Le corail pastélisé de `AppColors.ground`, à l'identique. C'est le
+         fond de tous les écrans : si l'écran de lancement en diffère, le
+         démarrage se voit comme un clignotement, et c'est la première chose
+         que le joueur remarque. -->
+    <color name="launch_background">#FDC8C2</color>
 </resources>

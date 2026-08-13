@@ -4,6 +4,7 @@ import 'package:cekoi/data/repositories/ad_impression_repository.dart';
 import 'package:cekoi/data/repositories/deck_repository.dart';
 import 'package:cekoi/data/repositories/entitlement_repository.dart';
 import 'package:cekoi/data/repositories/game_repository.dart';
+import 'package:cekoi/data/repositories/preferences_repository.dart';
 import 'package:flutter/services.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -32,6 +33,10 @@ AdImpressionRepository adImpressionRepository(Ref ref) =>
 @Riverpod(keepAlive: true)
 EntitlementRepository entitlementRepository(Ref ref) =>
     EntitlementRepository(ref.watch(appDatabaseProvider));
+
+@Riverpod(keepAlive: true)
+PreferencesRepository preferencesRepository(Ref ref) =>
+    PreferencesRepository(ref.watch(appDatabaseProvider));
 
 /// Remplit la base à partir de `assets/decks/` au démarrage.
 ///

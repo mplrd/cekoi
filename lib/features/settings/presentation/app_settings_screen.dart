@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cekoi/app/ownership.dart';
+import 'package:cekoi/app/preferences.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:cekoi/services/ads/ads.dart';
 import 'package:cekoi/services/ads/consent.dart';
@@ -13,11 +14,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// À ne pas confondre avec l'écran de réglages de la configuration de partie,
 /// qui est l'étape 3 du parcours et ne concerne qu'une partie.
 ///
-/// Il n'accueille pour l'instant que le consentement publicitaire, parce que
-/// c'est lui qui est légalement obligé d'être joignable à tout moment. Les
-/// sons, le retour haptique, la langue, la restauration d'achat et les
-/// mentions légales de `SPEC.md` viendront s'y ajouter — chacun quand il
-/// existera vraiment, plutôt qu'en ligne grisée qui ne fait rien.
+/// Trois sections : ce qui se passe en partie, ce qu'on peut acheter, et le
+/// consentement publicitaire — le seul qui soit légalement obligé d'être
+/// joignable à tout moment.
+///
+/// Manquent encore, faute d'exister : le choix de la langue, tant qu'il n'y a
+/// qu'une locale, et les mentions légales et la politique de confidentialité,
+/// qui attendent des URL hébergées. Chacun arrivera quand il fera vraiment
+/// quelque chose, plutôt qu'en ligne grisée.
 class AppSettingsScreen extends ConsumerWidget {
   const AppSettingsScreen({super.key});
 
@@ -27,6 +31,7 @@ class AppSettingsScreen extends ConsumerWidget {
     final consent = ref.watch(adConsentProvider);
     final ownership = ref.watch(currentOwnershipProvider);
     final busy = ref.watch(fullVersionProvider).isLoading;
+    final reglages = ref.watch(currentPreferencesProvider);
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.homeSettings)),
@@ -34,6 +39,38 @@ class AppSettingsScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
           children: [
+            _SectionTitle(label: l10n.settingsGame),
+            const SizedBox(height: 12),
+            Card(
+              clipBehavior: Clip.antiAlias,
+              child: Column(
+                children: [
+                  SwitchListTile(
+                    value: reglages.soundEnabled,
+                    onChanged: (actif) => unawaited(
+                      ref
+                          .read(appPreferencesControllerProvider.notifier)
+                          .setSound(enabled: actif),
+                    ),
+                    secondary: const Icon(Icons.volume_up_outlined),
+                    title: Text(l10n.settingsSound),
+                    subtitle: Text(l10n.settingsSoundHint),
+                  ),
+                  SwitchListTile(
+                    value: reglages.hapticsEnabled,
+                    onChanged: (actif) => unawaited(
+                      ref
+                          .read(appPreferencesControllerProvider.notifier)
+                          .setHaptics(enabled: actif),
+                    ),
+                    secondary: const Icon(Icons.vibration),
+                    title: Text(l10n.settingsHaptics),
+                    subtitle: Text(l10n.settingsHapticsHint),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 28),
             _SectionTitle(label: l10n.settingsFullVersion),
             const SizedBox(height: 12),
             if (ownership.hasFullVersion)

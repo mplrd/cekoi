@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cekoi/app/app.dart';
 import 'package:cekoi/app/clock.dart';
 import 'package:cekoi/app/current_game.dart';
+import 'package:cekoi/app/preferences.dart';
 import 'package:cekoi/app/router.dart';
 import 'package:cekoi/app/screen_awake.dart';
 import 'package:cekoi/data/db/database.dart';
@@ -131,6 +132,7 @@ void main() {
           deckSeedingProvider.overrideWith((ref) async => const SeedReport()),
           seedSourceProvider.overrideWithValue(() => 42),
           screenAwakeProvider.overrideWithValue(fakeScreenAwake()),
+          currentPreferencesProvider.overrideWithValue(fakePreferences()),
           consentGatewayProvider.overrideWithValue(
             passerelle ?? fakeConsentGateway(),
           ),

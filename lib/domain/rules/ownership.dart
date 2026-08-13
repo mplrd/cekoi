@@ -1,7 +1,5 @@
 import 'package:cekoi/domain/entities/deck.dart';
-// Pour `@immutable`, que `freezed_annotation` réexporte depuis `meta` : le
-// domaine s'en tient à ses dépendances déclarées.
-import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:meta/meta.dart';
 
 /// Ce que le joueur possède (`MONETISATION.md`).
 ///
