@@ -8,6 +8,7 @@ import 'package:cekoi/app/screen_awake.dart';
 import 'package:cekoi/data/db/database.dart';
 import 'package:cekoi/data/db/seed/deck_seeder.dart';
 import 'package:cekoi/data/providers.dart';
+import 'package:cekoi/data/repositories/entitlement_repository.dart';
 import 'package:cekoi/domain/engine/game_state.dart';
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/deck_origin.dart';
@@ -17,6 +18,11 @@ import 'package:cekoi/domain/entities/min_age.dart';
 import 'package:cekoi/features/setup/presentation/deck_catalog.dart';
 import 'package:cekoi/features/setup/presentation/setup_controller.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
+import 'package:cekoi/services/ads/ad_service.dart';
+import 'package:cekoi/services/ads/ads.dart';
+import 'package:cekoi/services/ads/consent.dart';
+import 'package:cekoi/services/purchases/purchases.dart';
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -48,6 +54,7 @@ void main() {
     int hard = 10,
     Audience audience = Audience.family,
     MinAge minAge = MinAge.six,
+    bool premium = false,
   }) async {
     await db
         .into(db.decks)
@@ -58,6 +65,7 @@ void main() {
             audience: audience,
             minAge: minAge.years,
             origin: DeckOrigin.official,
+            isPremium: Value(premium),
           ),
         );
 
@@ -95,6 +103,14 @@ void main() {
     /// Remplace le catalogue du mode adultes, pour tester ce que fait l'écran
     /// du vivier tant qu'il n'a pas répondu.
     Future<DeckCatalog>? catalogueAdulte,
+
+    /// Remplace la passerelle de consentement, pour vérifier ce que devient
+    /// le parcours quand le CMP ne répond pas.
+    ConsentGateway? passerelle,
+
+    /// Remplace l interstitiel. Par defaut aucune pub : c est l etat d un
+    /// build sans publicite, et celui de la quasi-totalite des parcours.
+    ShowInterstitial? interstitiel,
   }) async {
     // Écran volontairement très haut : une `ListView` ne construit pas ses
     // enfants hors champ, et un test qui commence par faire défiler teste
@@ -115,6 +131,14 @@ void main() {
           deckSeedingProvider.overrideWith((ref) async => const SeedReport()),
           seedSourceProvider.overrideWithValue(() => 42),
           screenAwakeProvider.overrideWithValue(fakeScreenAwake()),
+          consentGatewayProvider.overrideWithValue(
+            passerelle ?? fakeConsentGateway(),
+          ),
+          adSdkStartProvider.overrideWithValue(() async {}),
+          purchaseServiceProvider.overrideWithValue(fakePurchaseService()),
+          showInterstitialProvider.overrideWithValue(
+            interstitiel ?? showNoInterstitial,
+          ),
           if (catalogueAdulte != null)
             deckCatalogProvider(
               Audience.adult,
@@ -205,6 +229,306 @@ void main() {
       findsOneWidget,
     );
     expect(find.text(l10n.roundNameFree), findsOneWidget);
+  });
+
+  testWidgets('une catégorie premium n entre pas dans la présélection (R7.9)', (
+    tester,
+  ) async {
+    // Le cadenas de l'écran de sélection est écrit depuis R7.1, mais la
+    // présélection de R7.9 prenait le catalogue entier : la case arrivait
+    // cochée ET grisée, et les cartes verrouillées entraient dans le paquet
+    // sans que personne puisse les retirer.
+    await installDeck('animaux', easy: 15, medium: 15, hard: 15);
+    await installDeck('disney', easy: 15, medium: 15, hard: 15, premium: true);
+    await pumpApp(tester);
+
+    await tapText(tester, l10n.homePlay);
+    await tapText(tester, l10n.modeFamily);
+
+    final selection = ProviderScope.containerOf(
+      tester.element(find.byType(CekoiApp)),
+    ).read(setupControllerProvider).deckIds;
+
+    expect(
+      selection,
+      isNot(contains('disney')),
+      reason: 'une catégorie non débloquée ne peut pas être cochée d office',
+    );
+    expect(selection, contains('animaux'));
+
+    await tapText(tester, l10n.actionContinue);
+    await tapText(tester, l10n.actionContinue);
+    await tapText(tester, l10n.actionContinue);
+    await tapText(tester, l10n.actionStartGame);
+
+    expect(
+      launchedGame(tester).deck.every((c) => !c.id.startsWith('disney')),
+      isTrue,
+      reason: 'aucune carte premium ne doit atterrir dans le paquet tiré',
+    );
+  });
+
+  testWidgets('le parcours aboutit même si le CMP ne répond jamais', (
+    tester,
+  ) async {
+    // La garantie centrale de MONETISATION.md : aucune fonctionnalité de jeu
+    // ne dépend du succès d un appel publicitaire. Elle était tenue par
+    // accident — rien n attendait la réponse — et par aucune intention.
+    await installDeck('animaux', easy: 15, medium: 15, hard: 15);
+    await pumpApp(tester, passerelle: const _MuteGateway());
+
+    await tapText(tester, l10n.homePlay);
+    await tapText(tester, l10n.modeFamily);
+    await tapText(tester, l10n.actionContinue);
+    await tapText(tester, l10n.actionContinue);
+    await tapText(tester, l10n.actionContinue);
+    await tapText(tester, l10n.actionStartGame);
+
+    expect(launchedGame(tester).deck, hasLength(GameConfig.defaultCardCount));
+  });
+
+  group('l interstitiel ne peut pas retenir une partie', () {
+    testWidgets('sans pub, le lancement traverse et la partie demarre', (
+      tester,
+    ) async {
+      await installDeck('animaux', easy: 15, medium: 15, hard: 15);
+      await pumpApp(tester);
+
+      await tapText(tester, l10n.homePlay);
+      await tapText(tester, l10n.modeFamily);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionStartGame);
+
+      expect(launchedGame(tester).deck, hasLength(GameConfig.defaultCardCount));
+      expect(
+        find.text(l10n.turnIntroTeam(l10n.teamDefaultName(1))),
+        findsOneWidget,
+        reason: 'l ecran de lancement doit passer la main a la partie',
+      );
+    });
+
+    testWidgets(
+      'l ecran de lancement dit quoi faire, et rappelle la manche 1',
+      (
+        tester,
+      ) async {
+        // Le temps mort est reel — le groupe s installe et se passe le
+        // telephone. Le texte est une consigne, pas un habillage de pub.
+        await installDeck('animaux', easy: 15, medium: 15, hard: 15);
+        await pumpApp(
+          tester,
+          passerelle: fakeConsentGateway(_accorde),
+          interstitiel: _SlowInterstitial().call,
+        );
+
+        await tapText(tester, l10n.homePlay);
+        await tapText(tester, l10n.modeFamily);
+        await tapText(tester, l10n.actionContinue);
+        await tapText(tester, l10n.actionContinue);
+        await tapText(tester, l10n.actionContinue);
+        await tester.tap(find.text(l10n.actionStartGame));
+        await tester.pump();
+        await tester.pump();
+
+        expect(find.text(l10n.launchSettleIn), findsOneWidget);
+        expect(find.text(l10n.roundRuleFree), findsOneWidget);
+      },
+    );
+
+    testWidgets('le retour est ferme pendant le chargement de la pub', (
+      tester,
+    ) async {
+      // Sans cela, un retour pendant les trois secondes ramene au
+      // recapitulatif et la pub s affiche par-dessus un ecran de
+      // configuration : MONETISATION.md l interdit nommement, et le quota
+      // serait consomme pour une pub que personne n a demandee.
+      await installDeck('animaux', easy: 15, medium: 15, hard: 15);
+      await pumpApp(
+        tester,
+        passerelle: fakeConsentGateway(_accorde),
+        interstitiel: _SlowInterstitial().call,
+      );
+
+      await tapText(tester, l10n.homePlay);
+      await tapText(tester, l10n.modeFamily);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionStartGame);
+      expect(find.text(l10n.launchSettleIn), findsOneWidget);
+
+      await tester.state<NavigatorState>(find.byType(Navigator)).maybePop();
+      await tester.pumpAndSettle();
+
+      expect(find.text(l10n.launchSettleIn), findsOneWidget);
+      expect(find.text(l10n.setupSummaryTitle), findsNothing);
+    });
+
+    testWidgets('une pub qui explose laisse la partie demarrer', (
+      tester,
+    ) async {
+      await installDeck('animaux', easy: 15, medium: 15, hard: 15);
+      await pumpApp(
+        tester,
+        interstitiel: ({required loadTimeout}) async =>
+            throw StateError('SDK absent'),
+      );
+
+      await tapText(tester, l10n.homePlay);
+      await tapText(tester, l10n.modeFamily);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionStartGame);
+
+      expect(launchedGame(tester).deck, hasLength(GameConfig.defaultCardCount));
+    });
+
+    testWidgets('l ecran de lancement ne reste pas dans la pile', (
+      tester,
+    ) async {
+      // Le retour depuis la partie ramene au recapitulatif tant que le premier
+      // tour n a pas commence : repasser par l ecran de lancement relancerait
+      // une pub, et ferait clignoter un ecran que personne n a demande.
+      await installDeck('animaux', easy: 15, medium: 15, hard: 15);
+      await pumpApp(tester);
+
+      await tapText(tester, l10n.homePlay);
+      await tapText(tester, l10n.modeFamily);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionStartGame);
+
+      tester.state<NavigatorState>(find.byType(Navigator)).pop();
+      await tester.pumpAndSettle();
+
+      expect(find.text(l10n.setupSummaryTitle), findsOneWidget);
+      expect(find.text(l10n.launchSettleIn), findsNothing);
+    });
+  });
+
+  group('la version complete eteint la publicite', () {
+    testWidgets('un achat en base supprime l interstitiel de lancement', (
+      tester,
+    ) async {
+      // MONETISATION.md : posseder la version complete doit masquer TOUS les
+      // points d entree publicitaires. C est la moitie de ce qu on vend, et
+      // c est la seule qui se verifie sans magasin.
+      await installDeck('animaux', easy: 15, medium: 15, hard: 15);
+      await EntitlementRepository(db).grantFullVersion(DateTime.utc(2026, 8));
+
+      var interstitiels = 0;
+      await pumpApp(
+        tester,
+        passerelle: fakeConsentGateway(_accorde),
+        interstitiel: ({required loadTimeout}) async {
+          interstitiels++;
+          return true;
+        },
+      );
+
+      await tapText(tester, l10n.homePlay);
+      await tapText(tester, l10n.modeFamily);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionStartGame);
+
+      expect(interstitiels, 0);
+      expect(launchedGame(tester).deck, hasLength(GameConfig.defaultCardCount));
+    });
+
+    testWidgets('sans achat, la pub est bien demandee', (tester) async {
+      // Le temoin du test precedent : sans lui, une erreur de cablage rendrait
+      // le compteur nul pour de mauvaises raisons.
+      await installDeck('animaux', easy: 15, medium: 15, hard: 15);
+
+      var interstitiels = 0;
+      await pumpApp(
+        tester,
+        passerelle: fakeConsentGateway(_accorde),
+        interstitiel: ({required loadTimeout}) async {
+          interstitiels++;
+          return true;
+        },
+      );
+
+      await tapText(tester, l10n.homePlay);
+      await tapText(tester, l10n.modeFamily);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionStartGame);
+
+      expect(interstitiels, 1);
+    });
+  });
+
+  group('une categorie premium se debloque', () {
+    testWidgets('elle porte un bouton plutot qu un cadenas muet', (
+      tester,
+    ) async {
+      await installDeck('animaux', easy: 15, medium: 15, hard: 15);
+      await installDeck('disney', premium: true);
+      await pumpApp(tester);
+
+      await tapText(tester, l10n.homePlay);
+      await tapText(tester, l10n.modeFamily);
+      await tapText(tester, l10n.setupCustomize);
+
+      expect(find.text(l10n.deckUnlockAction), findsOneWidget);
+    });
+
+    testWidgets('la version complete la rend selectionnable, sans bouton', (
+      tester,
+    ) async {
+      await installDeck('animaux', easy: 15, medium: 15, hard: 15);
+      await installDeck('disney', premium: true);
+      await EntitlementRepository(db).grantFullVersion(DateTime.utc(2026, 8));
+      await pumpApp(tester);
+
+      await tapText(tester, l10n.homePlay);
+      await tapText(tester, l10n.modeFamily);
+      await tapText(tester, l10n.setupCustomize);
+
+      expect(
+        find.text(l10n.deckUnlockAction),
+        findsNothing,
+        reason:
+            'proposer de debloquer a qui a paye est le defaut que '
+            'MONETISATION.md nomme explicitement',
+      );
+
+      final selection = ProviderScope.containerOf(
+        tester.element(find.byType(CekoiApp)),
+      ).read(setupControllerProvider).deckIds;
+
+      expect(
+        selection,
+        contains('disney'),
+        reason: 'debloquee, elle rentre dans la preselection de R7.9',
+      );
+    });
+
+    testWidgets('une recompense en base l ouvre, sans rien acheter', (
+      tester,
+    ) async {
+      await installDeck('animaux', easy: 15, medium: 15, hard: 15);
+      await installDeck('disney', premium: true);
+      await EntitlementRepository(
+        db,
+      ).grantDeck('disney', DateTime.utc(2026, 8));
+      await pumpApp(tester);
+
+      await tapText(tester, l10n.homePlay);
+      await tapText(tester, l10n.modeFamily);
+      await tapText(tester, l10n.setupCustomize);
+
+      expect(find.text(l10n.deckUnlockAction), findsNothing);
+    });
   });
 
   testWidgets('R8.3 — les équipes se nomment, ou pas', (tester) async {
@@ -715,4 +1039,35 @@ void main() {
     // R7.10 : accepter mène à l'étape 2 de ce mode, le choix du vivier.
     expect(find.text(l10n.setupPoolTitle), findsOneWidget);
   });
+}
+
+/// Une passerelle qui ne répond jamais.
+///
+/// Ni réponse ni erreur : le cas réel d une `MissingPluginException` qui
+/// s échappe du plugin sans appeler aucun écouteur.
+class _MuteGateway implements ConsentGateway {
+  const _MuteGateway();
+
+  @override
+  Future<ConsentState> gather() => Completer<ConsentState>().future;
+
+  @override
+  Future<ConsentState> changeChoice() => Completer<ConsentState>().future;
+}
+
+/// Un consentement accorde, pour les tests qui veulent atteindre la pub.
+///
+/// Sans lui le portillon s arrete sur « pas de reponse, pas de pub » et rend
+/// la main tout de suite : l ecran de lancement est remplace avant d avoir ete
+/// vu, et un test qui regarde deux frames trop tot passe pour de mauvaises
+/// raisons.
+const _accorde = ConsentState(canRequestAds: true, canChangeChoice: true);
+
+/// Un interstitiel qui met du temps a repondre.
+///
+/// Sert a observer l ecran de lancement pendant que la pub charge : sans lui,
+/// l ecran est traverse en une frame et rien n est visible.
+class _SlowInterstitial {
+  Future<bool> call({required Duration loadTimeout}) =>
+      Completer<bool>().future;
 }

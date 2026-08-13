@@ -197,7 +197,10 @@ class _Menu extends ConsumerWidget {
           onPressed: () => unawaited(context.push(AppRoutes.myDecks)),
         ),
         const SizedBox(height: 12),
-        _HomeAction(label: l10n.homeSettings, onPressed: null),
+        _HomeAction(
+          label: l10n.homeSettings,
+          onPressed: () => unawaited(context.push(AppRoutes.settings)),
+        ),
         const SizedBox(height: 24),
       ],
     );

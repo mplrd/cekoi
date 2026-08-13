@@ -6,6 +6,8 @@ import 'package:cekoi/data/db/seed/deck_seeder.dart';
 import 'package:cekoi/data/providers.dart';
 import 'package:cekoi/domain/engine/game_state.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
+import 'package:cekoi/services/ads/ads.dart';
+import 'package:cekoi/services/purchases/purchases.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -50,6 +52,8 @@ void main() {
           deckSeedingProvider.overrideWith((ref) async => const SeedReport()),
           resumableGameProvider.overrideWith((ref) async => reprise),
           screenAwakeProvider.overrideWithValue(fakeScreenAwake()),
+          consentGatewayProvider.overrideWithValue(fakeConsentGateway()),
+          purchaseServiceProvider.overrideWithValue(fakePurchaseService()),
         ],
         child: CekoiApp(router: createAppRouter()),
       ),

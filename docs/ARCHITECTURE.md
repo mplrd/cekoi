@@ -95,8 +95,12 @@ Deux écarts assumés par rapport au découpage initial :
 - **Pas de dossier `results/`** : les scores de manche, le départage et le podium sont des
   phases du moteur au même titre que le tour, et l'écran de jeu les affiche à partir de la
   même `GamePhase`. Les séparer aurait dupliqué la machine à états.
-- **Pas encore de `services/` ni de `settings/`** : la publicité et l'achat in-app relèvent
-  du lot 7, l'écran de réglages n'est pas commencé.
+- **`services/` et `features/settings/` sont arrivés avec le lot 7.** `services/ads/` tient le
+  consentement et le SDK publicitaire, derrière des interfaces qu'aucune feature ne contourne —
+  `test/architecture_test.dart` interdit tout import d'un SDK de monétisation hors de
+  `lib/services/`. L'écran de réglages n'expose pour l'instant que le consentement : c'est le
+  seul réglage qui doit légalement rester joignable, les autres de `SPEC.md` s'y ajouteront.
+  `services/purchases/` n'existe pas encore.
 
 ## Stack
 
@@ -111,11 +115,12 @@ Deux écarts assumés par rapport au découpage initial :
 | Fichiers | `flutter_file_dialog` | Import et export des catégories du joueur. **Pas `file_picker`** : ses versions modernes exigent `win32 ^5` quand `wakelock_plus` exige `win32 ^6`, et sa version compatible appelle `jcenter()`, supprimé de Gradle 9. `flutter_file_dialog` ne cible que le mobile, donc pas de `win32` du tout. |
 | Chemins | `path_provider` | Base locale et fichier temporaire d'export. |
 
-Prévus, pas encore installés — ils relèvent du lot 7 :
+| Pub et consentement | `google_mobile_ads` | Inclut le CMP Google UMP dont on a besoin en Europe. Exige `minSdk 24` et `compileSdk 36`, qui sont les défauts de Flutter. |
+
+Prévu, pas encore installé :
 
 | Besoin | Choix | Pourquoi |
 |---|---|---|
-| Pub | `google_mobile_ads` | Inclut le CMP Google UMP dont on a besoin en Europe. |
 | Achat in-app | `in_app_purchase` | Officiel Flutter, couvre les deux stores. |
 
 Le **son des dix dernières secondes** passe par `SystemSound.play` de Flutter, sans paquet :

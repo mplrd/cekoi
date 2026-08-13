@@ -2,7 +2,9 @@ import 'package:cekoi/features/decks/presentation/deck_cards_screen.dart';
 import 'package:cekoi/features/decks/presentation/my_decks_screen.dart';
 import 'package:cekoi/features/home/presentation/home_screen.dart';
 import 'package:cekoi/features/play/presentation/game_screen.dart';
+import 'package:cekoi/features/settings/presentation/app_settings_screen.dart';
 import 'package:cekoi/features/setup/presentation/decks_screen.dart';
+import 'package:cekoi/features/setup/presentation/launch_screen.dart';
 import 'package:cekoi/features/setup/presentation/mode_screen.dart';
 import 'package:cekoi/features/setup/presentation/pool_screen.dart';
 import 'package:cekoi/features/setup/presentation/settings_screen.dart';
@@ -27,8 +29,16 @@ abstract final class AppRoutes {
   static const String setupSettings = '/jouer/reglages';
   static const String setupTeams = '/jouer/equipes';
   static const String setupSummary = '/jouer/recap';
+
+  /// L'écran de lancement, où se joue l'interstitiel. Entre le récapitulatif
+  /// et la partie, et hors de la pile une fois traversé.
+  static const String launch = '/lancement';
   static const String game = '/partie';
   static const String myDecks = '/mes-categories';
+
+  /// Les réglages de l'application — à ne pas confondre avec [setupSettings],
+  /// qui est l'étape 3 de la configuration d'une partie.
+  static const String settings = '/reglages';
 
   /// Cartes d'une catégorie du joueur.
   static String deckCards(String deckId) => '$myDecks/$deckId';
@@ -77,9 +87,19 @@ GoRouter createAppRouter() => GoRouter(
       builder: (context, state) => const SummaryScreen(),
     ),
     GoRoute(
+      path: AppRoutes.launch,
+      name: 'launch',
+      builder: (context, state) => const LaunchScreen(),
+    ),
+    GoRoute(
       path: AppRoutes.game,
       name: 'game',
       builder: (context, state) => const GameScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.settings,
+      name: 'settings',
+      builder: (context, state) => const AppSettingsScreen(),
     ),
     GoRoute(
       path: AppRoutes.myDecks,

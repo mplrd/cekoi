@@ -23,6 +23,20 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // L'identifiant d'application AdMob est une donnée du manifeste, lue
+        // par le SDK natif au démarrage du processus : contrairement aux
+        // identifiants de blocs publicitaires, il ne peut pas passer par
+        // --dart-define, qui ne vit que côté Dart. Sans lui, l'application
+        // plante à l'initialisation du SDK.
+        //
+        // Par défaut l'identifiant de test public de Google. Le vrai arrive
+        // au build de publication :
+        //
+        //   flutter build appbundle -Padmob.app.id=ca-app-pub-XXXX~YYYY
+        manifestPlaceholders["admobAppId"] =
+            (project.findProperty("admob.app.id") as String?)
+                ?: "ca-app-pub-3940256099942544~3347511713"
     }
 
     buildTypes {

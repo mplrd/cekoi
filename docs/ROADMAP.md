@@ -12,9 +12,9 @@ l'app dans un état jouable ou démontrable.
 | 2 — Moteur de jeu | Fait |
 | 3 — Parcours de configuration | Fait |
 | 4 — Jouer | Fait, **non vérifié sur iOS** |
-| 5 — Contenu | Outillage d'import fait ; les cartes sont en cours de rédaction |
+| 5 — Contenu | Outillage d'import fait ; 529 cartes livrées sur les 1 200 visées |
 | 6 — Catégories custom | Fait, **non vérifié sur iOS** |
-| 7 — Monétisation | Non commencé |
+| 7 — Monétisation | Fait, **aucun achat réel jamais effectué** |
 | 8 — Publication | Non commencé |
 
 **Une partie complète se joue de bout en bout**, se sauvegarde et se reprend. Un APK de test
@@ -27,16 +27,21 @@ Ce qui reste ouvert et ne dépend pas d'un lot :
   rien de plus. Le lot 4 écrit le cycle de vie du chrono, et c'est exactement ce qui se juge
   sur un vrai iPhone — voir la vigilance ci-dessous.
 - **Le son des dix dernières secondes** est celui du système, pas un son dessiné.
-- **Le contenu est le vrai goulot.** Une seule catégorie officielle de 16 cartes est livrée :
-  de quoi juger l'ergonomie, pas le rythme, qui est le cœur du jeu.
+- **Le contenu est le vrai goulot.** 529 cartes sur 21 catégories, pour une cible de 1 200 :
+  de quoi juger l'ergonomie et commencer à juger le rythme, qui est le cœur du jeu.
+- **Aucun achat in-app réel n'a jamais eu lieu**, et aucune vraie publicité n'a jamais été
+  affichée. Le lot 7 tourne de bout en bout sur les identifiants de test de Google et sur un
+  magasin injecté ; le passage en caisse suppose un compte Play et l'application déposée sur
+  une piste de test. Voir `docs/ADMINISTRATIF.md`.
 
 ## Prérequis — outillage
 
 - ~~SDK Flutter, Android Studio, SDK Android, émulateur~~ — fait.
 - ~~`git init`, repo GitHub, `gh` CLI~~ — fait, avec CI GitHub Actions sur Android et iOS.
-- **Comptes développeur : état inconnu de mon côté.** Google Play (25 $ une fois), Apple
-  Developer (99 $/an). Les délais de validation se comptent en jours : à lancer avant le
-  lot 8, pas pendant.
+- **Comptes développeur, compte AdMob, politique de confidentialité, classification :** voir
+  `docs/ADMINISTRATIF.md`. Rien de tout cela ne bloque le développement, tout bloque la
+  publication, et les délais se comptent en semaines — le test fermé à douze testeurs qu'exige
+  Google Play sur un compte personnel est à lui seul le plus long délai du projet.
 
 ### Stratégie de développement et de test
 

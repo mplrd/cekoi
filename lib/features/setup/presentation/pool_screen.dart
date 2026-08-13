@@ -1,7 +1,9 @@
 import 'dart:async';
 
+import 'package:cekoi/app/ownership.dart';
 import 'package:cekoi/app/router.dart';
 import 'package:cekoi/domain/entities/audience.dart';
+import 'package:cekoi/domain/rules/game_profiles.dart';
 import 'package:cekoi/features/setup/presentation/deck_catalog.dart';
 import 'package:cekoi/features/setup/presentation/setup_controller.dart';
 import 'package:cekoi/features/setup/presentation/setup_steps.dart';
@@ -47,11 +49,23 @@ class _PoolScreenState extends ConsumerState<PoolScreen> {
     // R7.9 : le mode prend toutes les catégories. Le catalogue arrive après le
     // premier rendu, et écrire dans l'état pendant une construction est
     // interdit — d'où le report d'une frame.
+    final possession = ref.watch(ownershipProvider);
+
+    // La possession fait partie des conditions : présélectionner avant de
+    // savoir ce que le joueur a débloqué cocherait tout sauf ses catégories
+    // premium, et R7.9 ne repasserait jamais. On attend qu'elle ait répondu —
+    // c'est une lecture locale, elle arrive en une frame.
     if (catalog case AsyncData(
       :final value,
-    ) when _preselectionne != setup.mode) {
+    ) when possession.hasValue && _preselectionne != setup.mode) {
       _preselectionne = setup.mode;
-      final ids = [for (final deck in value.decks) deck.id];
+      final ids = [
+        for (final deck in selectableDecks(
+          value.decks,
+          ownership: possession.requireValue,
+        ))
+          deck.id,
+      ];
       if (setup.deckIds.isEmpty && ids.isNotEmpty) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;

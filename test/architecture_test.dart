@@ -180,6 +180,51 @@ void main() {
     );
   });
 
+  test('la publicité et les achats ne sortent pas de services/', () {
+    // MONETISATION.md : pub et achats vivent derrière `AdService` et
+    // `PurchaseService`. L'intérêt n'est pas le rangement — c'est de pouvoir
+    // tourner en test et en développement sans SDK, et de changer de régie
+    // sans toucher aux écrans. Un seul import direct dans une feature suffit
+    // à perdre les deux, et rien ne le signalerait : le code compilerait, et
+    // le test qui monte l'écran échouerait sur une `MissingPluginException`
+    // dont la cause est ailleurs.
+    const forbidden = {
+      'package:google_mobile_ads/',
+      'package:in_app_purchase/',
+    };
+    const allowedUnder = 'lib/services/';
+
+    final offenders = <String>[];
+    var scanned = 0;
+
+    for (final entity in Directory('lib').listSync(recursive: true)) {
+      if (entity is! File || !entity.path.endsWith('.dart')) continue;
+      if (_normalize(entity.path).contains(allowedUnder)) continue;
+      scanned++;
+
+      final lines = entity.readAsLinesSync();
+      for (var i = 0; i < lines.length; i++) {
+        if (!_directiveStart.hasMatch(lines[i])) continue;
+
+        for (final uri in _quotedUri.allMatches(lines[i])) {
+          if (forbidden.any(uri.group(1)!.startsWith)) {
+            offenders.add('${entity.path}:${i + 1} → ${lines[i].trim()}');
+          }
+        }
+      }
+    }
+
+    expect(scanned, greaterThan(0));
+    expect(
+      offenders,
+      isEmpty,
+      reason:
+          'Un SDK de monétisation est importé hors de `lib/services/`. Ce qui '
+          'est nécessaire doit passer par une interface de `services/ads/` ou '
+          '`services/purchases/`.\n${offenders.join('\n')}',
+    );
+  });
+
   test('le test des features détecte bien une violation', () {
     // Le cas réel qui a motivé ce garde-fou : `setup` importait le provider
     // de partie en cours, qui vivait alors chez `play`.

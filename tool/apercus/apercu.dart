@@ -44,6 +44,8 @@ import 'package:cekoi/domain/entities/min_age.dart';
 import 'package:cekoi/domain/entities/team.dart';
 import 'package:cekoi/features/play/presentation/game_screen.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
+import 'package:cekoi/services/ads/ads.dart';
+import 'package:cekoi/services/purchases/purchases.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -205,6 +207,8 @@ void main() {
           deckSeedingProvider.overrideWith((ref) async => const SeedReport()),
           seedSourceProvider.overrideWithValue(() => 42),
           screenAwakeProvider.overrideWithValue(fakeScreenAwake()),
+          consentGatewayProvider.overrideWithValue(fakeConsentGateway()),
+          purchaseServiceProvider.overrideWithValue(fakePurchaseService()),
         ],
         child: CekoiApp(router: createAppRouter()),
       ),

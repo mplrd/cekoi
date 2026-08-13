@@ -5,6 +5,7 @@ import 'package:cekoi/domain/entities/deck.dart';
 import 'package:cekoi/domain/entities/difficulty.dart';
 import 'package:cekoi/domain/entities/game_config.dart';
 import 'package:cekoi/domain/entities/min_age.dart';
+import 'package:cekoi/domain/rules/ownership.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'game_profiles.freezed.dart';
@@ -111,14 +112,38 @@ class ProfileAvailability {
 /// la jouabilité d'un profil (R7.8), sans quoi il s'annoncerait jouable grâce
 /// à des cartes que le tirage ne prendra pas.
 ///
-/// Quand le déblocage existera, c'est ici que la possession se consultera —
-/// une catégorie débloquée redeviendra sélectionnable par profil.
-List<Deck> decksForProfile(GameProfile profile, List<Deck> decks) => [
+/// La possession se consulte par [Ownership] : une catégorie débloquée par
+/// une vidéo récompensée, ou couverte par la version complète, redevient
+/// éligible sans que rien d'autre ne bouge ici.
+List<Deck> decksForProfile(
+  GameProfile profile,
+  List<Deck> decks, {
+  Ownership ownership = Ownership.none,
+}) => [
   for (final deck in decks)
-    if (!deck.isPremium &&
+    if (ownership.allows(deck) &&
         deck.isDrawableIn(profile.mode) &&
         deck.minAge.isAllowedBy(profile.maxDeckAge))
       deck,
+];
+
+/// Les catégories que la présélection de R7.9 a le droit de cocher.
+///
+/// « On joue avec tout » veut dire tout ce que le joueur possède. Une
+/// catégorie premium n'en fait pas partie : l'écran de sélection grise sa
+/// case, donc la cocher d'office donnerait des cartes non débloquées, dans une
+/// sélection qu'on ne peut pas défaire — case cochée, case grisée, et le
+/// sous-titre « À débloquer » sous une catégorie déjà dans la partie.
+///
+/// Même exclusion et même raison que [decksForProfile], mais l'autre chemin :
+/// celui-ci est la présélection d'arrivée sur l'étape 2, qui ne passe par
+/// aucun profil. Les deux consultent la possession au même endroit.
+List<Deck> selectableDecks(
+  List<Deck> decks, {
+  Ownership ownership = Ownership.none,
+}) => [
+  for (final deck in decks)
+    if (ownership.allows(deck)) deck,
 ];
 
 /// Évalue un profil sur le contenu réellement installé (R7.8).
@@ -130,8 +155,12 @@ ProfileAvailability evaluateProfile({
   required GameProfile profile,
   required List<Deck> decks,
   required List<Card> cards,
+  Ownership ownership = Ownership.none,
 }) {
-  final deckIds = [for (final deck in decksForProfile(profile, decks)) deck.id];
+  final deckIds = [
+    for (final deck in decksForProfile(profile, decks, ownership: ownership))
+      deck.id,
+  ];
   final retained = deckIds.toSet();
 
   return ProfileAvailability(
@@ -154,9 +183,15 @@ List<ProfileAvailability> evaluateProfiles({
   required List<GameProfile> profiles,
   required List<Deck> decks,
   required List<Card> cards,
+  Ownership ownership = Ownership.none,
 }) => [
   for (final profile in profiles)
-    evaluateProfile(profile: profile, decks: decks, cards: cards),
+    evaluateProfile(
+      profile: profile,
+      decks: decks,
+      cards: cards,
+      ownership: ownership,
+    ),
 ];
 
 /// Ce qu'un profil pose sur la configuration : catégories, filtres et
