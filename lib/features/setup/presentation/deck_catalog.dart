@@ -1,3 +1,4 @@
+import 'package:cekoi/app/ownership.dart';
 import 'package:cekoi/data/providers.dart';
 import 'package:cekoi/domain/engine/draw.dart';
 import 'package:cekoi/domain/entities/audience.dart';
@@ -60,6 +61,11 @@ Future<DeckCatalog> deckCatalog(Ref ref, Audience mode) async {
   // rendrait un catalogue vide, et l'écran annoncerait « aucune catégorie ».
   await ref.watch(deckSeedingProvider.future);
 
+  // La possession décide quelles catégories premium sont éligibles : un profil
+  // évalué sans elle annoncerait moins de cartes qu'un joueur ayant payé n'en
+  // a réellement, et lui refuserait ses propres catégories.
+  final possession = await ref.watch(ownershipProvider.future);
+
   final repository = ref.watch(deckRepositoryProvider);
   final decks = await repository.byMode(mode);
   final cards = await repository.cardsForMode(mode);
@@ -76,6 +82,7 @@ Future<DeckCatalog> deckCatalog(Ref ref, Audience mode) async {
       ],
       decks: decks,
       cards: cards,
+      ownership: possession,
     ),
   );
 }

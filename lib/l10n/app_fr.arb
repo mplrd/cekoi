@@ -756,6 +756,77 @@
     "description": "Écran de lancement de partie, affiché pendant que l'interstitiel se charge. C'est une consigne réelle — le groupe se répartit autour de la table — et non un habillage de pub."
   },
 
+  "settingsFullVersion": "Version complète",
+  "@settingsFullVersion": {
+    "description": "Entrée des réglages qui propose l'achat unique : plus de publicité et toutes les catégories."
+  },
+
+  "settingsFullVersionPitch": "Plus aucune publicité, et toutes les catégories débloquées.",
+  "@settingsFullVersionPitch": {
+    "description": "Ce que l'achat apporte. Une seule promesse, pas deux offres séparées."
+  },
+
+  "settingsFullVersionOwned": "Vous avez la version complète. Merci !",
+  "@settingsFullVersionOwned": {
+    "description": "Remplace l'offre une fois l'achat effectué. Aucun point d'entrée publicitaire ne reste affiché."
+  },
+
+  "settingsRestore": "Restaurer mes achats",
+  "@settingsRestore": {
+    "description": "Redemande au magasin ce que le joueur possède. Obligatoire chez Apple pour un produit non consommable."
+  },
+
+  "settingsRestoreNothing": "Aucun achat à restaurer sur ce compte.",
+  "@settingsRestoreNothing": {
+    "description": "Réponse quand le magasin ne connaît aucun achat pour ce compte."
+  },
+
+  "purchaseFailed": "Le magasin n'a pas répondu. Rien n'a été débité.",
+  "@purchaseFailed": {
+    "description": "Échec d'un achat ou d'une restauration. Rassure explicitement sur le débit, qui est la première inquiétude."
+  },
+
+  "deckUnlockAction": "Débloquer",
+  "@deckUnlockAction": {
+    "description": "Bouton sur une catégorie premium verrouillée, dans l'écran de sélection."
+  },
+
+  "deckUnlockTitle": "Débloquer {name}",
+  "@deckUnlockTitle": {
+    "description": "Titre de la fenêtre de déblocage d'une catégorie.",
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+
+  "deckUnlockWatchAd": "Regarder une vidéo",
+  "@deckUnlockWatchAd": {
+    "description": "Choix gratuit : une vidéo récompensée débloque cette catégorie, définitivement."
+  },
+
+  "deckUnlockWatchAdHint": "Débloque cette catégorie pour toujours.",
+  "@deckUnlockWatchAdHint": {
+    "description": "Précise que la récompense n'expire pas — une récompense qui expire est perçue comme une arnaque."
+  },
+
+  "deckUnlockBuyHint": "Débloque toutes les catégories et retire les publicités.",
+  "@deckUnlockBuyHint": {
+    "description": "L'autre chemin, depuis la fenêtre de déblocage."
+  },
+
+  "deckUnlockFailed": "La vidéo n'est pas disponible pour le moment.",
+  "@deckUnlockFailed": {
+    "description": "Aucune vidéo chargée, ou vidéo fermée avant la fin. Rien n'est débloqué, et on peut retenter."
+  },
+
+  "deckUnlocked": "{name} est débloquée.",
+  "@deckUnlocked": {
+    "description": "Confirmation après une vidéo récompensée regardée jusqu'au bout.",
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+
   "settingsPrivacy": "Confidentialité",
   "@settingsPrivacy": {
     "description": "Titre de la section des réglages qui regroupe le consentement publicitaire et, plus tard, les mentions légales."
