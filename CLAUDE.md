@@ -16,6 +16,7 @@ Ne réimplémente pas ce qui est déjà décidé. Avant de coder, lis le documen
 | `docs/MONETISATION.md` | Pub, achat in-app, consentement RGPD, contraintes de publication. |
 | `docs/CONTENU.md` | Guide de rédaction des cartes, destiné à l'auteure du contenu. Format de livraison attendu. |
 | `docs/ROADMAP.md` | Ce qui est dans la v1 et ce qui est explicitement repoussé. |
+| `docs/ADMINISTRATIF.md` | Comptes, validations et arbitrages hors code. À relire avant toute question de délai ou de publication. |
 
 ## Règles d'or
 

@@ -34,9 +34,10 @@ Ce qui reste ouvert et ne dépend pas d'un lot :
 
 - ~~SDK Flutter, Android Studio, SDK Android, émulateur~~ — fait.
 - ~~`git init`, repo GitHub, `gh` CLI~~ — fait, avec CI GitHub Actions sur Android et iOS.
-- **Comptes développeur : état inconnu de mon côté.** Google Play (25 $ une fois), Apple
-  Developer (99 $/an). Les délais de validation se comptent en jours : à lancer avant le
-  lot 8, pas pendant.
+- **Comptes développeur, compte AdMob, politique de confidentialité, classification :** voir
+  `docs/ADMINISTRATIF.md`. Rien de tout cela ne bloque le développement, tout bloque la
+  publication, et les délais se comptent en semaines — le test fermé à douze testeurs qu'exige
+  Google Play sur un compte personnel est à lui seul le plus long délai du projet.
 
 ### Stratégie de développement et de test
 
