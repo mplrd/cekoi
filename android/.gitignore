@@ -1,5 +1,10 @@
 gradle-wrapper.jar
 /.gradle
+# Sortie de build. Le `/build/` de la racine ne couvre que celui du projet
+# Flutter ; le rapport de problèmes de Gradle s'était retrouvé versionné, et il
+# se réécrit à chaque compilation — modifié dans tous les diffs.
+/build/
+.kotlin/
 /captures/
 /gradlew
 /gradlew.bat
