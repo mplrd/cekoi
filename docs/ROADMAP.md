@@ -17,9 +17,23 @@ l'app dans un état jouable ou démontrable.
 | 7 — Monétisation | Fait, **aucun achat réel jamais effectué** |
 | 8 — Publication | Non commencé |
 
-**Une partie complète se joue de bout en bout**, se sauvegarde et se reprend. Un APK de test
-se produit avec `flutter build apk --release --split-per-abi` — signé avec la clé de debug,
-donc installable à la main mais pas publiable ; la vraie signature relève du lot 8.
+**Une partie complète se joue de bout en bout**, se sauvegarde et se reprend.
+
+La **signature de release est câblée** : dès que `android/key.properties` est complet, les
+artefacts sortent signés de la vraie clé (`ADMINISTRATIF.md`). Sans lui, on retombe sur la clé
+de debug pour que `flutter run --release` reste possible, en le signalant ; incomplet, le build
+s'arrête plutôt que de retomber en silence.
+
+**Le build de release ne passe pas sur la machine de développement**, et pas davantage sur
+`develop` sans ce câblage — ce n'est donc pas lui qui l'a cassé. `flutter build apk --release`
+meurt en R8 sur une allocation de 12 Mo, avec 2 Go de RAM libre et 39 Mo de fichier d'échange
+disponible sur 63 Go : c'est un état machine, pas une propriété du dépôt, et rien ne dit qu'il
+échouerait sur une machine reposée. Si le cas se répète, l'ajustement de `jvmargs` est
+machine-locale et se pose dans `~/.gradle/gradle.properties`, pas dans le fichier versionné.
+
+Ce que cet épisode montre en revanche, et qui tient du dépôt : **aucun build de release n'est
+couvert**. La CI ne construit qu'en debug (`ci.yml`), donc R8 ne tourne nulle part
+automatiquement, et personne ne s'en apercevrait. À couvrir avant la publication.
 
 Ce qui reste ouvert et ne dépend pas d'un lot :
 

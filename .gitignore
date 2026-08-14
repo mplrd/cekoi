@@ -59,6 +59,12 @@ app.*.map.json
 *.jks
 *.keystore
 
+# Vidages de tas de la JVM. `android/gradle.properties` demande
+# `-XX:+HeapDumpOnOutOfMemoryError`, et un build de release signé tient les mots
+# de passe du keystore en clair dans le tas du démon Gradle : un `.hprof` produit
+# à ce moment-là les contient.
+*.hprof
+
 # iOS / Xcode
 **/ios/**/*.mode1v3
 **/ios/**/*.mode2v3

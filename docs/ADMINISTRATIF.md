@@ -93,10 +93,9 @@ dont aucune ligne n'a jamais été exécutée sur iOS.
       nettement plus pauvre.
 - [ ] **Note de contenu publicitaire AdMob plafonnée à `PG`.** Se règle dans la console ; le
       code la demande déjà à chaque requête.
-- [ ] **Clé de signature Android** et son stockage sûr. Perdre la clé d'une application publiée
-      empêche toute mise à jour ultérieure. `android/app/build.gradle.kts` signe encore avec la
-      clé de debug : rien n'est publiable en l'état, et c'est volontairement resté ainsi jusqu'à
-      ce que la vraie clé existe.
+- [ ] **Clé de signature Android.** Le câblage est fait, la clé reste à créer — c'est la seule
+      démarche de cette page qui **ne dépend d'aucun compte** : la clé d'upload se génère hors
+      console, avant même d'avoir un compte Play. Voir la procédure ci-dessous.
 - [ ] **Politique de confidentialité et mentions légales : il faut les URL.** `SPEC.md` prévoit
       les deux entrées dans l'écran de réglages. Elles ne sont pas posées, parce qu'une entrée
       qui n'ouvre rien est pire que pas d'entrée du tout. Dès que les pages sont hébergées, le
@@ -106,6 +105,73 @@ dont aucune ligne n'a jamais été exécutée sur iOS.
       règle par palier dans la console, jamais dans le code. Tant qu'il n'existe pas, le
       passage en caisse ne peut pas être testé en vrai — le reste du parcours d'achat tourne
       sur des doublures.
+
+## Générer la clé de signature Android
+
+Rien à attendre de personne : cette clé se crée en local, sans compte, et c'est elle qui rend
+un artefact publiable. Trois minutes.
+
+**1. Créer la clé.** Hors du dépôt — un dossier de sauvegarde, pas le répertoire du projet :
+
+```bash
+"$JAVA_HOME/bin/keytool" -genkeypair -v \
+    -keystore C:/chemin/hors/du/depot/cekoi-upload.jks \
+    -keyalg RSA -keysize 2048 -validity 10000 -alias cekoi-upload
+```
+
+`keytool` vient du JDK de `JAVA_HOME`, quel qu'il soit — Adoptium sur cette machine. La validité
+de 10 000 jours n'est pas décorative : Google Play refuse une clé qui expirerait avant octobre
+2033.
+
+**2. Déclarer la clé** dans `android/key.properties` — fichier déjà couvert par
+`android/.gitignore`, avec `*.jks` et `*.keystore` :
+
+```properties
+storePassword=…
+keyPassword=…
+keyAlias=cekoi-upload
+storeFile=C:/chemin/hors/du/depot/cekoi-upload.jks
+```
+
+**Chemin absolu, et des slashs, pas des antislashs.** Deux pièges d'un coup : un chemin relatif
+se résout depuis `android/app/` et non depuis `android/`, donc le `.jks` posé à côté de
+`key.properties` est introuvable ; et dans un fichier `.properties`, l'antislash est un
+caractère d'échappement, donc un chemin Windows collé tel quel casse. Le build s'arrête
+maintenant avec un message qui dit lequel des deux.
+
+**3. Vérifier**, sans rien construire :
+
+```bash
+flutter build apk --debug      # une seule fois : le wrapper Gradle n'est pas versionné
+android/gradlew -p android :app:signingReport
+```
+
+La variante `release` doit afficher `Config: release` et l'empreinte de la nouvelle clé. Tant
+que `key.properties` est absent, elle affiche `Config: debug`, et tout build de release signale
+alors qu'il n'est pas publiable — un repli **volontaire** : `flutter run --release` doit rester
+possible sans clé, c'est le seul moyen de juger les performances réelles sur un téléphone.
+
+Ce que cette étape ne prouve pas : `signingReport` ouvre le magasin avec `storePassword` et
+imprime les empreintes du certificat, il n'exerce jamais `keyPassword`. Un `keyPassword` erroné
+passe l'étape 3 et n'échoue qu'à la première signature réelle.
+
+**4. Sauvegarder la clé et ses mots de passe** ailleurs que sur la machine de développement.
+
+Nuance qui change la gravité : **Play App Signing est obligatoire** pour toute application
+nouvelle depuis août 2021, en même temps que la livraison en AAB. Cékoi n'a pas encore de compte
+Play, ce sera donc une application nouvelle : Google détiendra la clé de signature finale, et
+celle qu'on génère ici n'est que la clé d'**upload**. Une clé d'upload perdue se réinitialise —
+par le support Play, en quelques jours, en envoyant le certificat de la nouvelle clé. Il n'y a
+donc pas d'arbitrage à rendre ni de perte fatale à craindre de ce côté : la clé dont la perte
+serait irréparable est justement celle que Google garde.
+
+**Ce que le repli sur la clé de debug coûte, et que rien n'annule.** Un APK signé de la clé de
+debug installé à la main sur le téléphone d'un testeur **refusera** la mise à jour signée de la
+vraie clé : conflit de signature, désinstallation obligatoire. À garder en tête pendant le test
+fermé à douze testeurs, où l'on distribue justement des artefacts à la main. La clé de debug
+d'Android est en outre publique — alias `androiddebugkey`, mot de passe `android` — donc
+n'importe qui peut re-signer un tel artefact. Play, lui, refuse les certificats de debug : c'est
+le chemin de main en main qui coûte, pas celui du store.
 
 ## Dette de développement assumée
 
