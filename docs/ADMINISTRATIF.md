@@ -5,7 +5,8 @@ arbitrages à rendre. Cette liste existe parce que ces éléments se comptent en
 semaines de calendrier, pas en heures de développement : les découvrir au moment du lot 8, une
 fois l'application prête, c'est attendre à vide.
 
-Tenue à jour au fil des lots. Dernière revue : 13 août 2026, après le lot 7.
+Tenue à jour au fil des lots. Dernière revue : 14 août 2026, après le câblage de la signature
+Android.
 
 ## À lancer maintenant
 
@@ -191,6 +192,19 @@ Ni bloquant ni administratif, mais à ne pas redécouvrir dans six mois :
   L'infrastructure ARB est en place, l'entrée arrivera avec la deuxième langue.
 
 ## Arbitrages produit en attente
+
+- [ ] **Ouvrir le déblocage depuis l'étape du vivier, en mode Sans filtre.** C'est une règle de
+      jeu, donc un arbitrage et non une décision technique. Aujourd'hui une catégorie adulte
+      marquée premium serait invisible **et** impossible à ouvrir dans ce mode (voir la dette
+      ci-dessus). R7.10 prévoit la sortie pour le **décochage** — « un accès depuis l'étape du
+      vivier, pas un retour des catégories sur le chemin » — mais ne dit rien du **déblocage**,
+      qui est le vrai trou.
+
+      La question à trancher : étendre R7.10 à un accès qui ne montre **que** les catégories
+      verrouillées du mode, sans réintroduire la grille complète que ce mode a délibérément
+      retirée ? Le code est prêt à le porter — l'écran de déblocage du mode Famille se réutilise
+      tel quel. Il manque la décision, et elle se prend avec l'arbitrage premium ci-dessous :
+      tant qu'aucune catégorie adulte n'est premium, le trou reste théorique.
 
 - [ ] **Quelles catégories passent premium.** Revient à l'auteure du contenu, avec la prochaine
       livraison. En attendant, `disneypixar` est marquée premium à titre provisoire pour que le
