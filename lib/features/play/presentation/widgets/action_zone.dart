@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cekoi/app/theme/app_colors.dart';
 import 'package:cekoi/app/theme/app_theme.dart';
 import 'package:flutter/gestures.dart';
@@ -15,13 +17,14 @@ import 'package:flutter/material.dart';
 ///
 /// La tolérance monte donc à [_slop]. Elle reste finie : un geste qui part
 /// franchement ailleurs n'est pas un tap, et doit continuer à être ignoré.
-class ActionZone extends StatelessWidget {
+class ActionZone extends StatefulWidget {
   const ActionZone({
     required this.label,
     required this.onPressed,
     this.background,
     this.foreground,
     this.secondaire = false,
+    this.urgent = false,
     super.key,
   });
 
@@ -41,10 +44,84 @@ class ActionZone extends StatelessWidget {
   /// des actions principales.
   final bool secondaire;
 
+  /// La fin du tour est imminente : la zone bat.
+  ///
+  /// Le narrateur ne regarde pas l'anneau du chrono — il tient le téléphone à
+  /// bout de bras et lit la carte. C'est la zone qu'il tape qui doit lui dire
+  /// que le temps tombe, parce que c'est elle qu'il a sous les yeux.
+  final bool urgent;
+
+  @override
+  State<ActionZone> createState() => _ActionZoneState();
+}
+
+class _ActionZoneState extends State<ActionZone>
+    with SingleTickerProviderStateMixin {
+  /// Un battement par demi-seconde : assez lent pour ne pas vibrer à l'œil,
+  /// assez rapide pour se voir du coin de l'œil sans regarder.
+  static const Duration _battement = Duration(milliseconds: 500);
+
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: _battement,
+  );
+
+  /// Et non `initState` : `_sync` consulte `MediaQuery`, qui n'est pas encore
+  /// disponible à l'initialisation. Appelé aussi quand le réglage
+  /// d'accessibilité change en cours de partie.
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _sync();
+  }
+
+  @override
+  void didUpdateWidget(ActionZone old) {
+    super.didUpdateWidget(old);
+    if (old.urgent != widget.urgent) _sync();
+  }
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
+
+  void _sync() {
+    // Rien à animer quand le battement est désactivé, ni quand la zone est
+    // morte. Sans ce test, l'animation tournerait à vide soixante fois par
+    // seconde : « réduire les animations » n'aurait réduit que le rendu, pas
+    // le travail.
+    if (widget.urgent && widget.onPressed != null && !_sansMouvement) {
+      // Le `TickerFuture` d'un cycle sans fin ne se résout jamais : rien à
+      // attendre, et l'attendre bloquerait.
+      unawaited(_pulse.repeat(reverse: true));
+    } else {
+      _pulse
+        ..stop()
+        ..value = _sansMouvement ? 1 : 0;
+    }
+  }
+
+  bool get _sansMouvement => MediaQuery.disableAnimationsOf(context);
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final actif = onPressed != null;
+    final actif = widget.onPressed != null;
+
+    // Une zone morte ne bat pas.
+    //
+    // R3.4 désactive *Passer* sur la dernière carte du paquet : sans ce test,
+    // c'est elle qui clignerait en rouge vif dans les trois dernières
+    // secondes, soit l'élément le plus criard de l'écran, pour demander au
+    // narrateur de taper là où rien ne se passe.
+    final bat = widget.urgent && actif;
+
+    // Accessibilité : « réduire les animations » coupe le battement, pas
+    // l'information. Le liseret reste, fixe et à pleine intensité — supprimer
+    // le signal rendrait la fin de tour à nouveau invisible pour ceux qui ont
+    // justement besoin qu'elle ne les surprenne pas.
 
     // L'action secondaire est blanche, cernée du corail de la marque.
     //
@@ -52,14 +129,15 @@ class ActionZone extends StatelessWidget {
     // détachait pas du fond. Le blanc tranche franchement, et le liseret coloré
     // dit que c'est une action — ce qu'un aplat blanc seul ne dirait pas.
     final fond =
-        background ?? (secondaire ? AppColors.card : theme.colorScheme.primary);
+        widget.background ??
+        (widget.secondaire ? AppColors.card : theme.colorScheme.primary);
     final encre =
-        foreground ??
-        (secondaire ? AppColors.ink : theme.colorScheme.onPrimary);
+        widget.foreground ??
+        (widget.secondaire ? AppColors.ink : theme.colorScheme.onPrimary);
 
     final couleur = actif ? fond : fond.withValues(alpha: 0.35);
     final texte = actif ? encre : encre.withValues(alpha: 0.4);
-    final liseret = secondaire && background == null
+    final liseret = widget.secondaire && widget.background == null
         ? Border.all(
             color: AppColors.main.withValues(alpha: actif ? 1 : 0.35),
             width: 3,
@@ -69,7 +147,7 @@ class ActionZone extends StatelessWidget {
     return Semantics(
       button: true,
       enabled: actif,
-      label: label,
+      label: widget.label,
       excludeSemantics: true,
       child: RawGestureDetector(
         behavior: HitTestBehavior.opaque,
@@ -77,10 +155,10 @@ class ActionZone extends StatelessWidget {
           TapGestureRecognizer:
               GestureRecognizerFactoryWithHandlers<TapGestureRecognizer>(
                 () => TapGestureRecognizer(
-                  preAcceptSlopTolerance: _slop,
-                  postAcceptSlopTolerance: _slop,
+                  preAcceptSlopTolerance: ActionZone._slop,
+                  postAcceptSlopTolerance: ActionZone._slop,
                 ),
-                (recognizer) => recognizer.onTap = onPressed,
+                (recognizer) => recognizer.onTap = widget.onPressed,
               ),
         },
         // Une hauteur plancher, et non seulement l'espace qu'on lui laisse.
@@ -94,14 +172,13 @@ class ActionZone extends StatelessWidget {
           constraints: const BoxConstraints(
             minHeight: AppTheme.minTouchTarget,
           ),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: couleur,
-              border: liseret,
-              borderRadius: const BorderRadius.all(
-                Radius.circular(AppTheme.radius),
-              ),
-            ),
+          child: AnimatedBuilder(
+            animation: _pulse,
+            // L'enfant ne dépend pas du battement : le `builder` le reçoit tel
+            // quel au lieu de le reconstruire à chaque image. Il est bien
+            // reconstruit dix fois par seconde par l'écran de jeu, ce qui est
+            // le rythme du chrono ; ce qu'on évite ici, ce sont les soixante
+            // images d'animation qui viendraient par-dessus.
             child: Center(
               child: Padding(
                 padding: const EdgeInsets.symmetric(
@@ -109,7 +186,7 @@ class ActionZone extends StatelessWidget {
                   vertical: 8,
                 ),
                 child: Text(
-                  label,
+                  widget.label,
                   textAlign: TextAlign.center,
                   style: theme.textTheme.titleLarge?.copyWith(
                     color: texte,
@@ -118,6 +195,29 @@ class ActionZone extends StatelessWidget {
                 ),
               ),
             ),
+            builder: (context, child) {
+              final t = _sansMouvement ? 1.0 : _pulse.value;
+              return DecoratedBox(
+                decoration: BoxDecoration(
+                  color: couleur,
+                  // Le liseret d'urgence prime sur celui du traitement
+                  // secondaire : ils occupent le même bord, et c'est la fin du
+                  // tour qui compte à cet instant.
+                  border: bat
+                      ? Border.all(
+                          color: AppColors.urgent.withValues(
+                            alpha: 0.35 + 0.65 * t,
+                          ),
+                          width: 3 + 3 * t,
+                        )
+                      : liseret,
+                  borderRadius: const BorderRadius.all(
+                    Radius.circular(AppTheme.radius),
+                  ),
+                ),
+                child: child,
+              );
+            },
           ),
         ),
       ),

@@ -477,9 +477,14 @@
     }
   },
 
-  "turnSummaryEmpty": "Aucune carte vue pendant ce tour.",
-  "@turnSummaryEmpty": {
-    "description": "Cas où le chrono s'est écoulé sans qu'aucune carte soit tranchée."
+  "turnSummaryAtBuzzer": "À l'écran au buzzer",
+  "@turnSummaryAtBuzzer": {
+    "description": "Intitulé de la carte affichée quand le chrono est tombé (R3.5, R3.6)."
+  },
+
+  "turnSummaryAtBuzzerHint": "Elle ne compte pas et retourne dans le paquet : elle ressortira plus tard.",
+  "@turnSummaryAtBuzzerHint": {
+    "description": "Explique le sort de la carte du buzzer. Son absence faisait croire que l'application remettait les cartes trouvées en jeu."
   },
 
   "outcomeFound": "Trouvée",

@@ -23,6 +23,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class PlayingView extends ConsumerWidget {
   const PlayingView({required this.game, super.key});
 
+  /// Sous ce seuil, les zones d'action battent.
+  ///
+  /// Trois secondes et non dix : l'anneau vire déjà au rouge sous dix
+  /// secondes, et faire battre la moitié basse de l'écran pendant tout ce
+  /// temps banaliserait le signal. Ici on annonce la seconde qui reste, pas
+  /// la fin qui approche.
+  static const Duration pulseBelow = Duration(seconds: 3);
+
   final GameState game;
 
   @override
@@ -389,6 +397,23 @@ class _Actions extends ConsumerWidget {
     final controller = ref.read(playControllerProvider.notifier);
     final offersPass = game.round.allowsPass;
 
+    // Un booléen, et non la durée : `select` ne notifie qu'au basculement.
+    //
+    // Ça n'empêche pas les reconstructions — `GameScreen` observe la partie
+    // entière et redescend ici dix fois par seconde de toute façon. Ce que le
+    // booléen évite, c'est une **seconde** source de reconstruction qui se
+    // superposerait à celle du chrono.
+    final urgent = ref.watch(
+      currentGameProvider.select((g) {
+        final reste = g?.remaining;
+        return g != null &&
+            g.canAct &&
+            reste != null &&
+            reste > Duration.zero &&
+            reste <= PlayingView.pulseBelow;
+      }),
+    );
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
       child: Column(
@@ -423,6 +448,7 @@ class _Actions extends ConsumerWidget {
                       // vide qu'elle a porté la faisait passer pour
                       // indisponible.
                       secondaire: true,
+                      urgent: urgent,
                       onPressed: game.canPass ? controller.passed : null,
                     ),
                   ),
@@ -433,6 +459,7 @@ class _Actions extends ConsumerWidget {
                     label: l10n.actionFound,
                     background: AppColors.deep,
                     foreground: Colors.white,
+                    urgent: urgent,
                     onPressed: game.canAct ? controller.found : null,
                   ),
                 ),

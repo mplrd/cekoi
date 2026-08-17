@@ -111,6 +111,52 @@ abstract class GameState with _$GameState {
     return null;
   }
 
+  /// Le tour affiché s'est arrêté **au chrono**, et non sur un paquet vidé.
+  ///
+  /// R3.5 donne deux fins de tour, et elles n'ont pas la même conséquence :
+  /// au chrono, une carte était à l'écran et n'a jamais été tranchée ; paquet
+  /// vidé, il n'y a rien de tel et la manche s'arrête (R4.1).
+  bool get turnEndedOnTime {
+    final elapsed = turn?.elapsed;
+    return elapsed != null && elapsed >= config.turnDuration;
+  }
+
+  /// La carte qui était à l'écran quand le chrono est tombé, ou `null`.
+  ///
+  /// Elle n'a pas été tranchée, donc elle ne compte pas et retourne dans le
+  /// paquet — c'est R3.5, et c'est juste. Ce qui ne l'était pas, c'est de n'en
+  /// rien dire : R3.6 l'excluait du récapitulatif, si bien qu'une carte
+  /// devinée à la seconde près disparaissait sans un mot et ressortait deux
+  /// tours plus tard. Retour de partie du 15 août 2026 : cinq cartes dans la
+  /// même manche, et la seule conclusion possible pour la table était que
+  /// l'application remettait les cartes trouvées en jeu.
+  ///
+  /// Nulle quand le paquet s'est vidé : il n'y avait alors aucune carte à
+  /// l'écran, la dernière venait d'être trouvée.
+  ///
+  /// Nulle aussi quand cette carte a **déjà été tranchée dans ce tour** : elle
+  /// a alors sa ligne au récapitulatif, qui dit la même chose en mieux — elle
+  /// est corrigeable. Le cas n'a rien d'exotique : en manches 2 et 3, une
+  /// carte passée retourne au fond (R4.6) et remonte en tête dès que ce qui la
+  /// précédait est tranché, c'est-à-dire précisément en fin de manche, quand
+  /// le paquet est court et que les tours tombent au chrono. L'annoncer deux
+  /// fois donnerait deux récits contradictoires de la même carte : « elle ne
+  /// compte pas » au-dessus, « Passée », corrigeable, juste en dessous.
+  ///
+  /// Ni garde de phase ni garde de paquet vide, en revanche, et c'est
+  /// délibéré — les deux que j'avais écrites étaient mortes, aucune mutation
+  /// ne les tuait. `currentCard` rend déjà `null` sur un paquet vide, et le
+  /// réducteur pose `elapsed` à la durée du tour et bascule en récapitulatif
+  /// dans la **même** réduction : un tour dont le temps est écoulé n'existe
+  /// pas ailleurs. C'est un invariant du réducteur et non du type — un jour où
+  /// une règle prolongerait un tour en cours, il faudrait y revenir.
+  Card? get cardAtBuzzer {
+    if (!turnEndedOnTime) return null;
+    final carte = currentCard;
+    if (carte == null) return null;
+    return turn?.resultFor(carte.id) == null ? carte : null;
+  }
+
   /// Temps restant au tour en cours, jamais négatif.
   Duration get remaining {
     final elapsed = turn?.elapsed;

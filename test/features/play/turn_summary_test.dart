@@ -119,20 +119,31 @@ void main() {
       await stopGame(tester);
     });
 
-    testWidgets('une carte jamais retournée n’y figure pas', (tester) async {
-      // Le récapitulatif ne corrige que ce qui a été vu : proposer les autres
-      // reviendrait à donner des points sur des cartes jamais montrées.
+    testWidgets('seules les cartes tranchées ont une ligne corrigeable', (
+      tester,
+    ) async {
+      // Le récapitulatif ne corrige que ce qui a été tranché : proposer les
+      // autres reviendrait à donner des points sur des cartes jamais montrées.
+      // La carte du buzzer, elle, est bien annoncée depuis R3.6 — mais dans un
+      // bloc à part, sans ligne à inverser.
       await playTurn(tester, found: 1, passed: 0, cardCount: 6);
 
       expect(find.byType(ListTile), findsOneWidget);
       await stopGame(tester);
     });
 
-    testWidgets('un tour sans aucune carte tranchée le dit', (tester) async {
+    testWidgets('un tour sans aucune carte tranchée nomme celle du buzzer', (
+      tester,
+    ) async {
+      // Le narrateur bloqué sur sa première carte. L'écran annonçait
+      // « Aucune carte vue pendant ce tour » alors qu'il y en avait une à
+      // l'écran, qui allait ressortir plus tard : c'est exactement le cas où
+      // le silence est le plus déroutant.
       await playTurn(tester, found: 0, passed: 0);
 
-      expect(find.text(l10n.turnSummaryEmpty), findsOneWidget);
+      expect(find.text(l10n.turnSummaryAtBuzzer), findsOneWidget);
       expect(find.text(l10n.turnSummaryScore(0)), findsOneWidget);
+      expect(find.byType(ListTile), findsNothing, reason: 'rien à corriger');
       await stopGame(tester);
     });
 

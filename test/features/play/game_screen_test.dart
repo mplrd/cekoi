@@ -5,6 +5,7 @@ import 'package:cekoi/app/current_game.dart';
 import 'package:cekoi/app/preferences.dart';
 import 'package:cekoi/app/router.dart';
 import 'package:cekoi/app/screen_awake.dart';
+import 'package:cekoi/app/theme/app_colors.dart';
 import 'package:cekoi/data/repositories/preferences_repository.dart';
 import 'package:cekoi/domain/engine/game_phase.dart';
 import 'package:cekoi/domain/engine/game_state.dart';
@@ -58,6 +59,10 @@ void main() {
   /// effet observable dans l'arbre de widgets : sans les compter, leur
   /// suppression ne ferait rougir aucun test.
   late List<String> platformCalls;
+
+  /// Les mêmes appels, argument compris : « HapticFeedback.vibrate » ne dit
+  /// pas s'il s'agit du tic léger du décompte ou du choc franc du buzzer.
+  late List<String> platformDetails;
   late GoRouter routeur;
 
   setUpAll(() async {
@@ -66,9 +71,14 @@ void main() {
 
   setUp(() {
     platformCalls = [];
+    platformDetails = [];
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(SystemChannels.platform, (call) async {
           platformCalls.add(call.method);
+          // Avec l'argument : c'est lui qui distingue le tic du décompte du
+          // buzzer de fin de tour. Sur la seule méthode, les deux se
+          // confondent — `HapticFeedback.vibrate` dans les deux cas.
+          platformDetails.add('${call.method}:${call.arguments}');
           return null;
         });
   });
@@ -620,6 +630,247 @@ void main() {
         reason: 'Sonner pendant tout le tour rendrait le signal inutile',
       );
       await stopGame(tester);
+    });
+  });
+
+  group('R3.6, R3.6 bis — la fin du tour se signale, et se raconte', () {
+    /// Le liseret de la zone nommée, ou `null` s'il n'y en a pas.
+    BorderSide? liseretDe(WidgetTester tester, String label) {
+      final boite = tester.widget<DecoratedBox>(
+        find
+            .descendant(
+              of: find.widgetWithText(ActionZone, label),
+              matching: find.byType(DecoratedBox),
+            )
+            .first,
+      );
+      return (boite.decoration as BoxDecoration).border?.top;
+    }
+
+    /// Joue jusqu'au buzzer, sans jamais trancher de carte.
+    Future<void> jusquAuBuzzer(WidgetTester tester) async {
+      await pumpScreen(
+        tester,
+        game: testGame(turnDuration: const Duration(seconds: 12)),
+      );
+      await startTurn(tester);
+      platformDetails.clear();
+      await clock.advance(tester, const Duration(seconds: 12));
+    }
+
+    testWidgets('le buzzer est franc, et distinct du tic du décompte', (
+      tester,
+    ) async {
+      // Le tic s'arrêtait à une seconde : rien ne marquait le zéro. Le
+      // narrateur, téléphone à bout de bras, découvrait la fin du tour parce
+      // que l'écran avait changé.
+      await jusquAuBuzzer(tester);
+
+      expect(partie().phase, GamePhase.turnSummary);
+      expect(
+        platformDetails,
+        contains('SystemSound.play:SystemSoundType.alert'),
+      );
+      expect(
+        platformDetails,
+        contains('HapticFeedback.vibrate:HapticFeedbackType.heavyImpact'),
+      );
+    });
+
+    testWidgets('un paquet vidé ne buzze pas : ce n est pas une interruption', (
+      tester,
+    ) async {
+      await pumpScreen(tester, game: testGame(cardCount: 2));
+      await startTurn(tester);
+      platformDetails.clear();
+
+      await tester.tap(find.text(l10n.actionFound));
+      await tester.pump();
+      await tester.tap(find.text(l10n.actionFound));
+      await tester.pump();
+
+      expect(partie().phase, GamePhase.turnSummary);
+      expect(partie().pile, isEmpty);
+      expect(
+        platformDetails,
+        isNot(contains('SystemSound.play:SystemSoundType.alert')),
+        reason: 'la dernière carte trouvée est une manche gagnée (R4.1)',
+      );
+    });
+
+    testWidgets('son coupé, le buzzer vibre quand même', (tester) async {
+      await pumpScreen(
+        tester,
+        game: testGame(turnDuration: const Duration(seconds: 12)),
+        reglages: const AppPreferences(soundEnabled: false),
+      );
+      await startTurn(tester);
+      platformDetails.clear();
+      await clock.advance(tester, const Duration(seconds: 12));
+
+      expect(
+        platformDetails,
+        isNot(contains('SystemSound.play:SystemSoundType.alert')),
+      );
+      expect(
+        platformDetails,
+        contains('HapticFeedback.vibrate:HapticFeedbackType.heavyImpact'),
+      );
+    });
+
+    testWidgets('la carte du buzzer est nommée au récapitulatif', (
+      tester,
+    ) async {
+      // Son silence faisait croire à un bug : elle disparaissait sans un mot
+      // et ressortait deux tours plus tard.
+      await jusquAuBuzzer(tester);
+
+      final auBuzzer = partie().cardAtBuzzer;
+      expect(auBuzzer, isNotNull);
+      expect(find.text(l10n.turnSummaryAtBuzzer), findsOneWidget);
+      expect(find.text(auBuzzer!.text), findsOneWidget);
+      expect(find.text(l10n.turnSummaryAtBuzzerHint), findsOneWidget);
+    });
+
+    testWidgets('rien à annoncer quand le paquet s est vidé', (tester) async {
+      await pumpScreen(tester, game: testGame(cardCount: 2));
+      await startTurn(tester);
+      await tester.tap(find.text(l10n.actionFound));
+      await tester.pump();
+      await tester.tap(find.text(l10n.actionFound));
+      await tester.pump();
+
+      expect(find.text(l10n.turnSummaryAtBuzzer), findsNothing);
+    });
+
+    testWidgets(
+      'les zones d action battent dans les trois dernieres secondes',
+      (
+        tester,
+      ) async {
+        // C'est la surface que le narrateur a sous les yeux — pas l'anneau du
+        // chrono, qu'il ne regarde pas.
+        await pumpScreen(
+          tester,
+          game: testGame(turnDuration: const Duration(seconds: 12)),
+        );
+        await startTurn(tester);
+
+        ActionZone zone() =>
+            tester.widget<ActionZone>(find.byType(ActionZone).first);
+
+        await clock.advance(tester, const Duration(seconds: 8));
+        expect(zone().urgent, isFalse, reason: 'il reste 4 secondes');
+
+        await clock.advance(tester, const Duration(seconds: 1));
+        expect(zone().urgent, isTrue, reason: 'il reste 3 secondes');
+      },
+    );
+
+    testWidgets('le liseret d urgence apparait, et il bat vraiment', (
+      tester,
+    ) async {
+      // Le test precedent ne verifie que la circulation du booleen : retirer
+      // le liseret ou le `repeat` le laissait vert. C'est pourtant la moitie
+      // visible de R3.6 bis.
+      await pumpScreen(
+        tester,
+        game: testGame(turnDuration: const Duration(seconds: 12)),
+      );
+      await startTurn(tester);
+
+      await clock.advance(tester, const Duration(seconds: 8));
+      expect(liseretDe(tester, l10n.actionFound), isNull, reason: '4 s');
+
+      await clock.advance(tester, const Duration(seconds: 1));
+      final avant = liseretDe(tester, l10n.actionFound);
+      expect(avant, isNotNull, reason: '3 s');
+
+      await tester.pump(const Duration(milliseconds: 250));
+      final apres = liseretDe(tester, l10n.actionFound);
+
+      expect(
+        apres!.width,
+        isNot(avant!.width),
+        reason: 'un liseret fixe ne se remarque pas : il doit battre',
+      );
+      await stopGame(tester);
+    });
+
+    testWidgets('une zone desactivee par R3.4 ne bat pas', (tester) async {
+      // Derniere carte du paquet en manche 2 : *Passer* est verrouille. Le
+      // faire clignoter en rouge vif serait demander de taper la zone morte au
+      // moment ou le narrateur ne regarde plus rien d'autre.
+      await pumpScreen(
+        tester,
+        game: testGame(
+          cardCount: 12,
+          turnDuration: const Duration(seconds: 12),
+        ),
+      );
+      await startTurn(tester);
+      for (var i = 0; i < 11; i++) {
+        await tester.tap(find.text(l10n.actionFound));
+        await tester.pump();
+      }
+      await clock.advance(tester, const Duration(seconds: 9));
+
+      expect(partie().pile, hasLength(1));
+      expect(partie().canPass, isFalse, reason: 'R3.4');
+      expect(liseretDe(tester, l10n.actionFound), isNotNull);
+      expect(
+        liseretDe(tester, l10n.actionPass)?.color,
+        isNot(AppColors.urgent),
+        reason: 'la zone verrouillee ne doit pas etre le point le plus criard',
+      );
+      await stopGame(tester);
+    });
+
+    testWidgets('vibration coupee, le buzzer sonne quand meme', (tester) async {
+      await pumpScreen(
+        tester,
+        game: testGame(turnDuration: const Duration(seconds: 12)),
+        reglages: const AppPreferences(hapticsEnabled: false),
+      );
+      await startTurn(tester);
+      platformDetails.clear();
+      await clock.advance(tester, const Duration(seconds: 12));
+
+      expect(
+        platformDetails,
+        contains('SystemSound.play:SystemSoundType.alert'),
+      );
+      expect(
+        platformDetails,
+        isNot(
+          contains('HapticFeedback.vibrate:HapticFeedbackType.heavyImpact'),
+        ),
+      );
+    });
+
+    testWidgets('R9.1 — une partie reprise en recapitulatif ne buzze pas', (
+      tester,
+    ) async {
+      // Le tour s'est termine hier. Buzzer a l'ouverture de l'application
+      // annoncerait une fin qui n'a pas lieu maintenant.
+      final finiAuChrono = testGame(turnDuration: const Duration(seconds: 12));
+      await pumpScreen(
+        tester,
+        game: finiAuChrono.copyWith(
+          phase: GamePhase.turnSummary,
+          turn: finiAuChrono.turn!.copyWith(
+            elapsed: const Duration(seconds: 12),
+          ),
+        ),
+      );
+
+      expect(partie().turnEndedOnTime, isTrue);
+      expect(find.text(l10n.turnSummaryAtBuzzer), findsOneWidget);
+      expect(
+        platformDetails,
+        isNot(contains('SystemSound.play:SystemSoundType.alert')),
+        reason: 'la partie est adoptee, elle n a pas bascule sous nos yeux',
+      );
     });
   });
 
