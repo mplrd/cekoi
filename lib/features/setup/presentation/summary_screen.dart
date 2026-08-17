@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cekoi/app/clock.dart';
 import 'package:cekoi/app/current_game.dart';
+import 'package:cekoi/app/launch_ad.dart';
 import 'package:cekoi/app/router.dart';
 import 'package:cekoi/app/theme/app_colors.dart';
 import 'package:cekoi/domain/engine/draw.dart';
@@ -31,9 +32,10 @@ List<String> fallbackTeamNames(GameSetup setup, AppLocalizations l10n) => [
 
 /// Étape 5 — récapitulatif et lancement.
 ///
-/// C'est ici que se déclenchera l'interstitiel publicitaire (lot monétisation)
-/// : le seul emplacement autorisé, parce qu'il n'interrompt aucun tour
-/// chronométré.
+/// C'est ici que se déclenche l'interstitiel publicitaire, au tap sur
+/// *Lancer la partie* : le seul emplacement autorisé, parce qu'il n'interrompt
+/// aucun tour chronométré et que le temps mort existe déjà — le groupe
+/// s'installe et se passe le téléphone.
 class SummaryScreen extends ConsumerWidget {
   const SummaryScreen({super.key});
 
@@ -141,16 +143,27 @@ class _SummaryRow extends StatelessWidget {
   }
 }
 
-class _LaunchButton extends ConsumerWidget {
+class _LaunchButton extends ConsumerStatefulWidget {
   const _LaunchButton({required this.catalog});
 
   final DeckCatalog? catalog;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_LaunchButton> createState() => _LaunchButtonState();
+}
+
+class _LaunchButtonState extends ConsumerState<_LaunchButton> {
+  /// Le portillon travaille : trois secondes au pire, et le plus souvent rien.
+  ///
+  /// Sans cet état, le bouton reste inerte le temps du chargement de la pub et
+  /// on tape deux fois.
+  bool _enCours = false;
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final setup = ref.watch(setupControllerProvider);
-    final pool = catalog?.cards;
+    final pool = widget.catalog?.cards;
 
     if (pool == null) {
       return const Center(child: CircularProgressIndicator());
@@ -158,7 +171,7 @@ class _LaunchButton extends ConsumerWidget {
 
     // Aucun tirage ici : seulement un décompte des cartes éligibles. Le paquet
     // définitif est tiré au clic, avec une graine prise à cet instant.
-    final available = catalog!.availableCards(
+    final available = widget.catalog!.availableCards(
       deckIds: setup.deckIds.toSet(),
       difficulties: setup.difficulties,
       adultOnly: setup.adultOnly,
@@ -168,31 +181,49 @@ class _LaunchButton extends ConsumerWidget {
       requested: setup.resolvedCardCount,
     );
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (!verdict.isPlayable)
-          _Notice(
-            text: l10n.launchImpossible(
-              available,
-              GameConfig.minimumCardCount,
+    return PopScope(
+      // Le retour est fermé le temps du chargement — trois secondes au pire.
+      //
+      // Sans ça, un retour pendant l'attente ramène à l'étape précédente et la
+      // pub s'affiche par-dessus un écran de configuration, ce que
+      // `MONETISATION.md` interdit nommément ; le quota serait en plus
+      // consommé pour une pub que personne n'a demandée. C'est la seule chose
+      // que l'écran de lancement faisait et qui manquait sans lui.
+      canPop: !_enCours,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (!verdict.isPlayable)
+            _Notice(
+              text: l10n.launchImpossible(
+                available,
+                GameConfig.minimumCardCount,
+              ),
+              isError: true,
             ),
-            isError: true,
+          if (verdict.mustWarnShortage)
+            _Notice(text: l10n.launchTruncated(available)),
+          const SizedBox(height: 8),
+          FilledButton(
+            onPressed: verdict.isPlayable && setup.canStart && !_enCours
+                ? () => unawaited(_launch(pool))
+                : null,
+            child: _enCours
+                ? SizedBox.square(
+                    dimension: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
+                  )
+                : Text(l10n.actionStartGame),
           ),
-        if (verdict.mustWarnShortage)
-          _Notice(text: l10n.launchTruncated(available)),
-        const SizedBox(height: 8),
-        FilledButton(
-          onPressed: verdict.isPlayable && setup.canStart
-              ? () => _launch(context, ref, pool)
-              : null,
-          child: Text(l10n.actionStartGame),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  void _launch(BuildContext context, WidgetRef ref, List<domain.Card> pool) {
+  Future<void> _launch(List<domain.Card> pool) async {
     final setup = ref.read(setupControllerProvider);
     final outcome = launchGame(
       setup: setup,
@@ -221,14 +252,30 @@ class _LaunchButton extends ConsumerWidget {
       return;
     }
 
-    ref.read(currentGameProvider.notifier).game = game;
     // Le paquet est tiré **avant** la pub : au retour de l'interstitiel, il
     // n'y a plus rien à attendre.
+    ref.read(currentGameProvider.notifier).game = game;
+
+    // L'interstitiel se déclenche ici, au tap sur « Lancer la partie », et
+    // n'a pas d'écran à lui.
     //
+    // Il en a eu un — « Installez-vous, la partie commence » — et c'était un
+    // écran de trop : il redisait le nom et la contrainte de la manche que
+    // l'annonce du tour affiche juste après, et il s'affichait même quand
+    // aucune pub ne sortait, c'est-à-dire presque toujours. Retour de partie :
+    // deux écrans pour la même chose entre le récapitulatif et le jeu.
+    //
+    // La pub, elle, est un plein écran : elle recouvre le récapitulatif sans
+    // rien lui demander. Le seul coût est l'attente, plafonnée à trois
+    // secondes par le portillon, pendant laquelle le bouton tourne.
+    setState(() => _enCours = true);
+    await ref.read(interstitialGateProvider).present();
+    if (!mounted) return;
+    setState(() => _enCours = false);
+
     // `push` et non `go` : la configuration reste sous la partie, pour que le
-    // retour y ramène tant que le premier tour n'a pas commencé. L'écran de
-    // lancement, lui, se retire de la pile en passant la main.
-    unawaited(context.push(AppRoutes.launch));
+    // retour y ramène tant que le premier tour n'a pas commencé.
+    unawaited(context.push(AppRoutes.game));
   }
 }
 

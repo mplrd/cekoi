@@ -756,11 +756,6 @@
     }
   },
 
-  "launchSettleIn": "Installez-vous, la partie commence",
-  "@launchSettleIn": {
-    "description": "Écran de lancement de partie, affiché pendant que l'interstitiel se charge. C'est une consigne réelle — le groupe se répartit autour de la table — et non un habillage de pub."
-  },
-
   "settingsFullVersion": "Version complète",
   "@settingsFullVersion": {
     "description": "Entrée des réglages qui propose l'achat unique : plus de publicité et toutes les catégories."

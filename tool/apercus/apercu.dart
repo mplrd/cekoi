@@ -22,7 +22,6 @@
 /// lance quand on veut regarder.
 library;
 
-import 'dart:async';
 import 'dart:io';
 
 import 'package:cekoi/app/app.dart';
@@ -289,24 +288,9 @@ void main() {
     await shoot(tester, '15-reglages');
   });
 
-  testWidgets('l écran de lancement de partie', (tester) async {
-    // Ce que la table lit pendant que la pub charge. Il n'apparaît que
-    // pendant ce chargement : sans un interstitiel qui prend son temps, le
-    // banc le traverserait sans rien capturer.
-    await installCatalogue();
-    await pumpApp(
-      tester,
-      interstitiel: ({required loadTimeout}) => Completer<bool>().future,
-    );
-
-    await tapText(tester, l10n.homePlay);
-    await tapText(tester, l10n.modeFamily);
-    await tapText(tester, l10n.actionContinue);
-    await tapText(tester, l10n.actionContinue);
-    await tapText(tester, l10n.actionContinue);
-    await tapText(tester, l10n.actionStartGame);
-    await shoot(tester, '16-lancement');
-  });
+  // Il a existé ici un aperçu `16-lancement`, l'écran intercalé qui portait
+  // l'interstitiel. Cet écran a été retiré : la pub est un plein écran, elle
+  // recouvre le récapitulatif et n'a pas besoin d'une page à elle.
 
   testWidgets('mes catégories', (tester) async {
     await installCatalogue();

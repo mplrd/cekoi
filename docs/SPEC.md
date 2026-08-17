@@ -119,9 +119,13 @@ l'équipe (R3.1).
 
 Mode, catégories, réglages, équipes. Un bouton **Lancer la partie**.
 
-C'est ici que se déclenche l'interstitiel publicitaire (voir `MONETISATION.md`) : pendant que
-la pub tourne, l'écran affiche « Installez-vous, la partie commence » avec le rappel des
-règles de la manche 1. Le temps mort est réel, on ne le fabrique pas.
+C'est ici que se déclenche l'interstitiel publicitaire (voir `MONETISATION.md`), au tap sur
+**Lancer la partie**. Le temps mort est réel — le groupe s'installe et se passe le téléphone —
+on ne le fabrique pas. La pub recouvre cet écran ; **il n'y a pas d'écran intermédiaire**, et
+il ne doit pas y en avoir : l'annonce du tour, juste après, dit déjà l'équipe qui commence et
+la contrainte de la manche.
+
+Le bouton tourne le temps du chargement, et le retour est fermé pendant ce temps-là.
 
 **Le retour reste libre jusqu'au clic sur « C'est parti » de la manche 1.** Tant que le premier
 tour n'a pas commencé, il n'y a qu'un paquet tiré, qu'un nouveau tirage remplacera : on

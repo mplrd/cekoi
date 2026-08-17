@@ -314,41 +314,12 @@ void main() {
       );
     });
 
-    testWidgets(
-      'l ecran de lancement dit quoi faire, et rappelle la manche 1',
-      (
-        tester,
-      ) async {
-        // Le temps mort est reel — le groupe s installe et se passe le
-        // telephone. Le texte est une consigne, pas un habillage de pub.
-        await installDeck('animaux', easy: 15, medium: 15, hard: 15);
-        await pumpApp(
-          tester,
-          passerelle: fakeConsentGateway(_accorde),
-          interstitiel: _SlowInterstitial().call,
-        );
-
-        await tapText(tester, l10n.homePlay);
-        await tapText(tester, l10n.modeFamily);
-        await tapText(tester, l10n.actionContinue);
-        await tapText(tester, l10n.actionContinue);
-        await tapText(tester, l10n.actionContinue);
-        await tester.tap(find.text(l10n.actionStartGame));
-        await tester.pump();
-        await tester.pump();
-
-        expect(find.text(l10n.launchSettleIn), findsOneWidget);
-        expect(find.text(l10n.roundRuleFree), findsOneWidget);
-      },
-    );
-
-    testWidgets('le retour est ferme pendant le chargement de la pub', (
+    testWidgets('pendant le chargement, le bouton tourne et rien ne bouge', (
       tester,
     ) async {
-      // Sans cela, un retour pendant les trois secondes ramene au
-      // recapitulatif et la pub s affiche par-dessus un ecran de
-      // configuration : MONETISATION.md l interdit nommement, et le quota
-      // serait consomme pour une pub que personne n a demandee.
+      // La pub n'a plus d'ecran a elle : elle recouvre le recapitulatif, qui
+      // reste donc a l'ecran le temps du chargement. Sans etat d'attente, le
+      // bouton paraitrait inerte et on le taperait deux fois.
       await installDeck('animaux', easy: 15, medium: 15, hard: 15);
       await pumpApp(
         tester,
@@ -361,14 +332,64 @@ void main() {
       await tapText(tester, l10n.actionContinue);
       await tapText(tester, l10n.actionContinue);
       await tapText(tester, l10n.actionContinue);
-      await tapText(tester, l10n.actionStartGame);
-      expect(find.text(l10n.launchSettleIn), findsOneWidget);
+      await tester.tap(find.text(l10n.actionStartGame));
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text(l10n.setupSummaryTitle), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(FilledButton),
+          matching: find.byType(CircularProgressIndicator),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+        isNull,
+        reason: 'un second tap relancerait un tirage et une seconde pub',
+      );
+      expect(
+        find.text(l10n.turnIntroTeam(l10n.teamDefaultName(1))),
+        findsNothing,
+        reason: 'la partie ne s ouvre qu au retour de la pub',
+      );
+    });
+
+    testWidgets('le retour est ferme pendant le chargement de la pub', (
+      tester,
+    ) async {
+      // Sans cela, un retour pendant les trois secondes ramene a l'etape
+      // precedente et la pub s affiche par-dessus un ecran de configuration :
+      // MONETISATION.md l interdit nommement, et le quota serait consomme
+      // pour une pub que personne n a demandee.
+      await installDeck('animaux', easy: 15, medium: 15, hard: 15);
+      await pumpApp(
+        tester,
+        passerelle: fakeConsentGateway(_accorde),
+        interstitiel: _SlowInterstitial().call,
+      );
+
+      await tapText(tester, l10n.homePlay);
+      await tapText(tester, l10n.modeFamily);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionContinue);
+      await tester.tap(find.text(l10n.actionStartGame));
+      await tester.pump();
+      await tester.pump();
 
       await tester.state<NavigatorState>(find.byType(Navigator)).maybePop();
-      await tester.pumpAndSettle();
+      // `pump` et non `pumpAndSettle` : l'indicateur du bouton tourne tant que
+      // la pub charge, et rien ne se stabiliserait jamais.
+      await tester.pump();
+      await tester.pump();
 
-      expect(find.text(l10n.launchSettleIn), findsOneWidget);
-      expect(find.text(l10n.setupSummaryTitle), findsNothing);
+      expect(
+        find.text(l10n.setupSummaryTitle),
+        findsOneWidget,
+        reason: 'on ne quitte pas le recapitulatif tant que la pub charge',
+      );
     });
 
     testWidgets('une pub qui explose laisse la partie demarrer', (
@@ -391,12 +412,12 @@ void main() {
       expect(launchedGame(tester).deck, hasLength(GameConfig.defaultCardCount));
     });
 
-    testWidgets('l ecran de lancement ne reste pas dans la pile', (
+    testWidgets('le retour depuis la partie ramene au recapitulatif', (
       tester,
     ) async {
-      // Le retour depuis la partie ramene au recapitulatif tant que le premier
-      // tour n a pas commence : repasser par l ecran de lancement relancerait
-      // une pub, et ferait clignoter un ecran que personne n a demande.
+      // Tant que le premier tour n a pas commence, le retour reste libre. Il
+      // n y a plus d ecran intercale a retraverser — et donc plus de pub
+      // relancee au passage.
       await installDeck('animaux', easy: 15, medium: 15, hard: 15);
       await pumpApp(tester);
 
@@ -411,7 +432,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text(l10n.setupSummaryTitle), findsOneWidget);
-      expect(find.text(l10n.launchSettleIn), findsNothing);
+      expect(
+        find.text(l10n.turnIntroTeam(l10n.teamDefaultName(1))),
+        findsNothing,
+      );
     });
   });
 
