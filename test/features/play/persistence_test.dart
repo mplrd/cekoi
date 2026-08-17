@@ -11,6 +11,8 @@ import 'package:cekoi/domain/rules/resume.dart';
 import 'package:cekoi/features/play/presentation/game_screen.dart';
 import 'package:cekoi/features/play/presentation/play_controller.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
+import 'package:cekoi/services/feedback/feedback.dart';
+import 'package:cekoi/services/feedback/game_feedback.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -66,6 +68,7 @@ void main() {
         appDatabaseProvider.overrideWithValue(db),
         nowProvider.overrideWithValue(() => wallClock),
         screenAwakeProvider.overrideWithValue(fakeScreenAwake()),
+        gameFeedbackProvider.overrideWithValue(const SilentGameFeedback()),
         currentPreferencesProvider.overrideWithValue(fakePreferences()),
       ],
     );

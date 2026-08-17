@@ -7,6 +7,8 @@ import 'package:cekoi/data/providers.dart';
 import 'package:cekoi/domain/engine/game_state.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:cekoi/services/ads/ads.dart';
+import 'package:cekoi/services/feedback/feedback.dart';
+import 'package:cekoi/services/feedback/game_feedback.dart';
 import 'package:cekoi/services/purchases/purchases.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -52,6 +54,7 @@ void main() {
           deckSeedingProvider.overrideWith((ref) async => const SeedReport()),
           resumableGameProvider.overrideWith((ref) async => reprise),
           screenAwakeProvider.overrideWithValue(fakeScreenAwake()),
+          gameFeedbackProvider.overrideWithValue(const SilentGameFeedback()),
           consentGatewayProvider.overrideWithValue(fakeConsentGateway()),
           purchaseServiceProvider.overrideWithValue(fakePurchaseService()),
         ],

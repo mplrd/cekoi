@@ -6,6 +6,8 @@ import 'package:cekoi/domain/engine/game_phase.dart';
 import 'package:cekoi/domain/engine/game_state.dart';
 import 'package:cekoi/features/play/presentation/game_screen.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
+import 'package:cekoi/services/feedback/feedback.dart';
+import 'package:cekoi/services/feedback/game_feedback.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -37,6 +39,7 @@ void main() {
         overrides: [
           monotonicClockProvider.overrideWithValue(clock.read),
           screenAwakeProvider.overrideWithValue(fakeScreenAwake()),
+          gameFeedbackProvider.overrideWithValue(const SilentGameFeedback()),
           currentPreferencesProvider.overrideWithValue(fakePreferences()),
         ],
         child: const MaterialApp(

@@ -12,8 +12,9 @@ import 'package:cekoi/features/play/presentation/widgets/tie_break_view.dart';
 import 'package:cekoi/features/play/presentation/widgets/turn_intro_view.dart';
 import 'package:cekoi/features/play/presentation/widgets/turn_summary_view.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
+import 'package:cekoi/services/feedback/feedback.dart';
+import 'package:cekoi/services/feedback/game_feedback.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -33,6 +34,7 @@ class GameScreen extends ConsumerWidget {
     // lancé même si la phase ne l'est pas encore.
     final countdown = ref.watch(playControllerProvider);
     final reglages = ref.watch(currentPreferencesProvider);
+    final feedback = ref.watch(gameFeedbackProvider);
 
     // Le buzzer de fin de tour.
     //
@@ -46,8 +48,9 @@ class GameScreen extends ConsumerWidget {
     // découvrait la fin du tour parce que l'écran avait changé, sans jamais
     // savoir si son dernier tap était passé avant ou après.
     //
-    // Franc, et distinct du tic : `heavyImpact` contre `lightImpact`, `alert`
-    // contre `click`. Un buzzer qui ressemble au décompte ne se remarque pas.
+    // Franc, et d'un autre timbre que le tic : deux coups graves contre un
+    // blip clair, deux impulsions contre une. Un buzzer qui ressemble au
+    // décompte ne se remarque pas.
     //
     // Seulement quand le chrono tombe : un tour qui s'arrête parce que la
     // dernière carte vient d'être trouvée n'est pas une interruption, c'est
@@ -61,10 +64,10 @@ class GameScreen extends ConsumerWidget {
       if (!(ref.read(currentGameProvider)?.turnEndedOnTime ?? false)) return;
 
       if (reglages.hapticsEnabled) {
-        unawaited(HapticFeedback.heavyImpact());
+        unawaited(feedback.vibrate(GameSound.buzzer));
       }
       if (reglages.soundEnabled) {
-        unawaited(SystemSound.play(SystemSoundType.alert));
+        unawaited(feedback.play(GameSound.buzzer));
       }
     });
 

@@ -22,6 +22,8 @@ import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:cekoi/services/ads/ad_service.dart';
 import 'package:cekoi/services/ads/ads.dart';
 import 'package:cekoi/services/ads/consent.dart';
+import 'package:cekoi/services/feedback/feedback.dart';
+import 'package:cekoi/services/feedback/game_feedback.dart';
 import 'package:cekoi/services/purchases/purchases.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
@@ -132,6 +134,7 @@ void main() {
           deckSeedingProvider.overrideWith((ref) async => const SeedReport()),
           seedSourceProvider.overrideWithValue(() => 42),
           screenAwakeProvider.overrideWithValue(fakeScreenAwake()),
+          gameFeedbackProvider.overrideWithValue(const SilentGameFeedback()),
           currentPreferencesProvider.overrideWithValue(fakePreferences()),
           consentGatewayProvider.overrideWithValue(
             passerelle ?? fakeConsentGateway(),

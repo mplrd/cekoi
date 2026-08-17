@@ -1,6 +1,7 @@
 import 'package:cekoi/app/screen_awake.dart';
 import 'package:cekoi/data/repositories/preferences_repository.dart';
 import 'package:cekoi/services/ads/consent.dart';
+import 'package:cekoi/services/feedback/game_feedback.dart';
 import 'package:cekoi/services/purchases/purchase_service.dart';
 
 /// Un maintien d'écran inoffensif, pour les tests widget.
@@ -59,6 +60,31 @@ class _FakeStore implements PurchaseService {
   @override
   Future<PurchaseOutcome> restore(String productId) async =>
       PurchaseOutcome.nothing;
+}
+
+/// Un retour sensoriel muet, qui note ce qu'on lui demande.
+///
+/// Indispensable : ni le son ni la vibration n'ont d'effet observable dans
+/// l'arbre de widgets. Sans ce témoin, les supprimer entièrement ne ferait
+/// rougir aucun test.
+///
+/// Les appels sont notés sous la forme `son:tick`, `vibration:buzzer` — le
+/// geste **et** lequel des deux signaux, parce que c'est justement ce qui les
+/// distingue.
+class RecordingFeedback implements GameFeedback {
+  final List<String> calls = [];
+
+  int compte(String appel) => calls.where((c) => c == appel).length;
+
+  @override
+  Future<void> play(GameSound sound) async => calls.add('son:${sound.name}');
+
+  @override
+  Future<void> vibrate(GameSound sound) async =>
+      calls.add('vibration:${sound.name}');
+
+  @override
+  Future<void> dispose() async {}
 }
 
 /// Des réglages figés, sans base ni attente.
