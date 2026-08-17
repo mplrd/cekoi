@@ -18,7 +18,8 @@ de la table et se passe le téléphone : le temps mort existe déjà, on ne le f
 Si la pub n'est pas chargée au bout de 3 secondes, **on démarre la partie sans elle** — jamais
 d'attente imposée. Pendant cette attente l'étape des équipes reste à l'écran, le bouton
 tourne, et le retour est fermé : sans ça, la pub s'afficherait par-dessus une étape de
-configuration, ce que la section suivante interdit.
+configuration que le joueur n'a pas quittée, ce que la section « Ce qui est interdit »
+proscrit.
 
 Une ligne discrète au-dessus du bouton prévient qu'une courte publicité précède la partie.
 Elle ne dépend que de ce que le joueur possède : la version complète retire la publicité, tout
@@ -51,10 +52,17 @@ que l'utilisateur choisit de le déclencher.
 
 ### Ce qui est interdit
 
-Aucune bannière nulle part. Aucun interstitiel entre les manches, entre les tours, ni sur
-aucun écran de configuration. Aucune pub pendant qu'un chrono tourne. Ces interdictions sont
-structurantes, pas des préférences — elles doivent survivre aux futures tentations
-d'optimisation de revenu.
+Aucune bannière nulle part. Aucun interstitiel entre les manches, entre les tours, ni pendant
+qu'un chrono tourne. Aucun interstitiel déclenché depuis une étape de configuration — à la
+seule exception du tap sur **Lancer la partie**, qui met fin à la configuration et ouvre le
+temps mort décrit plus haut. La nuance n'est pas un assouplissement : ce qui est interdit,
+c'est de couvrir de publicité un écran sur lequel le joueur a encore quelque chose à faire.
+C'est précisément ce que garantit le `PopScope` du bouton de lancement — sans lui, un retour
+pendant le chargement ramènerait à l'étape précédente et la pub s'afficherait par-dessus des
+réglages en cours.
+
+Ces interdictions sont structurantes, pas des préférences — elles doivent survivre aux futures
+tentations d'optimisation de revenu.
 
 ## Achat in-app
 

@@ -29,7 +29,8 @@ Ne réimplémente pas ce qui est déjà décidé. Avant de coder, lis le documen
    officiel et custom confondus, distingués par la colonne `origin`. Ne jamais merger deux
    sources à chaud.
 3. **Jamais de pub pendant un tour chronométré.** Le seul emplacement interstitiel autorisé
-   est l'écran de lancement de partie. Voir `docs/MONETISATION.md`.
+   est le lancement de la partie, au tap sur « Lancer la partie » — il n'y a pas d'écran
+   dédié, la pub recouvre la dernière étape de la configuration. Voir `docs/MONETISATION.md`.
 4. **Les cartes custom restent locales au device en v1.** Aucun partage, aucun upload. C'est
    ce qui nous exempte de la guideline Apple 1.2 sur le contenu généré par les utilisateurs.
 5. **Le français est la langue de référence.** Le contenu des cartes est écrit en français et

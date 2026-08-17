@@ -28,9 +28,10 @@ table**, un téléphone qu'on se passe, avec du bruit et de l'agitation. Concrè
 
 ## Parcours de configuration
 
-**Cinq étapes des deux côtés**, avec une barre de progression et un retour possible à chaque
-niveau. Seule la deuxième change de nature selon le mode (R7.10). L'objectif est de pouvoir
-enchaîner en moins d'une minute quand on relance une partie identique.
+**Quatre étapes des deux côtés** (R7.10), avec une barre de progression et un retour possible à
+chaque niveau. Seule la deuxième change de nature selon le mode. La partie part du pied de la
+quatrième, il n'y a pas d'étape de plus entre la configuration et le jeu. L'objectif est de
+pouvoir enchaîner en moins d'une minute quand on relance une partie identique.
 
 ### 1. Choix du mode
 
