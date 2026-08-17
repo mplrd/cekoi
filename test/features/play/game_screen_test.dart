@@ -58,6 +58,10 @@ void main() {
   /// effet observable dans l'arbre de widgets : sans les compter, leur
   /// suppression ne ferait rougir aucun test.
   late List<String> platformCalls;
+
+  /// Les mêmes appels, argument compris : « HapticFeedback.vibrate » ne dit
+  /// pas s'il s'agit du tic léger du décompte ou du choc franc du buzzer.
+  late List<String> platformDetails;
   late GoRouter routeur;
 
   setUpAll(() async {
@@ -66,9 +70,14 @@ void main() {
 
   setUp(() {
     platformCalls = [];
+    platformDetails = [];
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(SystemChannels.platform, (call) async {
           platformCalls.add(call.method);
+          // Avec l'argument : c'est lui qui distingue le tic du décompte du
+          // buzzer de fin de tour. Sur la seule méthode, les deux se
+          // confondent — `HapticFeedback.vibrate` dans les deux cas.
+          platformDetails.add('${call.method}:${call.arguments}');
           return null;
         });
   });
@@ -621,6 +630,128 @@ void main() {
       );
       await stopGame(tester);
     });
+  });
+
+  group('R3.5 — la fin du tour se signale, et se raconte', () {
+    /// Joue jusqu'au buzzer, sans jamais trancher de carte.
+    Future<void> jusquAuBuzzer(WidgetTester tester) async {
+      await pumpScreen(
+        tester,
+        game: testGame(turnDuration: const Duration(seconds: 12)),
+      );
+      await startTurn(tester);
+      platformDetails.clear();
+      await clock.advance(tester, const Duration(seconds: 12));
+    }
+
+    testWidgets('le buzzer est franc, et distinct du tic du décompte', (
+      tester,
+    ) async {
+      // Le tic s'arrêtait à une seconde : rien ne marquait le zéro. Le
+      // narrateur, téléphone à bout de bras, découvrait la fin du tour parce
+      // que l'écran avait changé.
+      await jusquAuBuzzer(tester);
+
+      expect(partie().phase, GamePhase.turnSummary);
+      expect(
+        platformDetails,
+        contains('SystemSound.play:SystemSoundType.alert'),
+      );
+      expect(
+        platformDetails,
+        contains('HapticFeedback.vibrate:HapticFeedbackType.heavyImpact'),
+      );
+    });
+
+    testWidgets('un paquet vidé ne buzze pas : ce n est pas une interruption', (
+      tester,
+    ) async {
+      await pumpScreen(tester, game: testGame(cardCount: 2));
+      await startTurn(tester);
+      platformDetails.clear();
+
+      await tester.tap(find.text(l10n.actionFound));
+      await tester.pump();
+      await tester.tap(find.text(l10n.actionFound));
+      await tester.pump();
+
+      expect(partie().phase, GamePhase.turnSummary);
+      expect(partie().pile, isEmpty);
+      expect(
+        platformDetails,
+        isNot(contains('SystemSound.play:SystemSoundType.alert')),
+        reason: 'la dernière carte trouvée est une manche gagnée (R4.1)',
+      );
+    });
+
+    testWidgets('son coupé, le buzzer vibre quand même', (tester) async {
+      await pumpScreen(
+        tester,
+        game: testGame(turnDuration: const Duration(seconds: 12)),
+        reglages: const AppPreferences(soundEnabled: false),
+      );
+      await startTurn(tester);
+      platformDetails.clear();
+      await clock.advance(tester, const Duration(seconds: 12));
+
+      expect(
+        platformDetails,
+        isNot(contains('SystemSound.play:SystemSoundType.alert')),
+      );
+      expect(
+        platformDetails,
+        contains('HapticFeedback.vibrate:HapticFeedbackType.heavyImpact'),
+      );
+    });
+
+    testWidgets('la carte du buzzer est nommée au récapitulatif', (
+      tester,
+    ) async {
+      // Son silence faisait croire à un bug : elle disparaissait sans un mot
+      // et ressortait deux tours plus tard.
+      await jusquAuBuzzer(tester);
+
+      final auBuzzer = partie().cardAtBuzzer;
+      expect(auBuzzer, isNotNull);
+      expect(find.text(l10n.turnSummaryAtBuzzer), findsOneWidget);
+      expect(find.text(auBuzzer!.text), findsOneWidget);
+      expect(find.text(l10n.turnSummaryAtBuzzerHint), findsOneWidget);
+    });
+
+    testWidgets('rien à annoncer quand le paquet s est vidé', (tester) async {
+      await pumpScreen(tester, game: testGame(cardCount: 2));
+      await startTurn(tester);
+      await tester.tap(find.text(l10n.actionFound));
+      await tester.pump();
+      await tester.tap(find.text(l10n.actionFound));
+      await tester.pump();
+
+      expect(find.text(l10n.turnSummaryAtBuzzer), findsNothing);
+    });
+
+    testWidgets(
+      'les zones d action battent dans les trois dernieres secondes',
+      (
+        tester,
+      ) async {
+        // C'est la surface que le narrateur a sous les yeux — pas l'anneau du
+        // chrono, qu'il ne regarde pas.
+        await pumpScreen(
+          tester,
+          game: testGame(turnDuration: const Duration(seconds: 12)),
+        );
+        await startTurn(tester);
+
+        ActionZone zone() =>
+            tester.widget<ActionZone>(find.byType(ActionZone).first);
+
+        await clock.advance(tester, const Duration(seconds: 8));
+        expect(zone().urgent, isFalse, reason: 'il reste 4 secondes');
+
+        await clock.advance(tester, const Duration(seconds: 1));
+        expect(zone().urgent, isTrue, reason: 'il reste 3 secondes');
+      },
+    );
   });
 
   group('quitter une partie demande confirmation', () {

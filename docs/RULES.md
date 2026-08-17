@@ -68,10 +68,27 @@ lit comme une panne.
 **R3.5** — Le tour se termine quand le chrono atteint zéro, ou quand le paquet est vide.
 
 **R3.6** — À la fin du tour, un écran de récapitulatif liste les cartes **tranchées pendant le
-tour** — trouvées ou passées — avec leur résultat. Une carte affichée mais jamais tranchée n'y
-figure pas ; une carte passée y figure, même si elle est revenue en tête du paquet. **Chaque résultat est corrigeable** — c'est indispensable en usage réel, les erreurs
-de manipulation sont fréquentes dans le feu de l'action. La correction recalcule le score et
-la composition du paquet avant de passer à la suite.
+tour** — trouvées ou passées — avec leur résultat. Une carte passée y figure, même si elle est
+revenue en tête du paquet. **Chaque résultat est corrigeable** — c'est indispensable en usage
+réel, les erreurs de manipulation sont fréquentes dans le feu de l'action. La correction
+recalcule le score et la composition du paquet avant de passer à la suite.
+
+**La carte qui était à l'écran quand le chrono est tombé y figure aussi**, à part : nommée,
+non comptée, et annoncée comme retournant dans le paquet. Elle n'est **pas** corrigeable —
+elle n'a pas été tranchée, il n'y a pas de résultat à inverser.
+
+Elle en était exclue, et ce silence coûtait cher. Retour de partie du 15 août 2026 : sur une
+manche de six tours, cinq cartes ont subi ce sort. Chacune avait été décrite, souvent devinée,
+et le buzzer est tombé avant le tap. Elles disparaissaient sans un mot et ressortaient deux
+tours plus tard, si bien que la table en a conclu — c'était la seule conclusion possible — que
+l'application remettait en jeu des cartes déjà trouvées. Le paquet était juste ; l'écran
+mentait par omission.
+
+**R3.6 bis** — **La fin du tour au chrono se signale**, par un son et une vibration francs,
+distincts du tic des dix dernières secondes. Sans marqueur, le narrateur — qui tient le
+téléphone à bout de bras et lit la carte, pas le chrono — ne peut pas savoir si son dernier
+geste est passé avant ou après. Sous trois secondes, les zones d'action battent : c'est la
+surface qu'il a sous les yeux.
 
 **R3.7** — Si l'application passe en arrière-plan pendant un tour, le chrono se met en pause.
 À la reprise, un compte à rebours de 3 secondes précède la reprise du jeu.

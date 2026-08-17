@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:cekoi/app/current_game.dart';
+import 'package:cekoi/app/preferences.dart';
 import 'package:cekoi/app/router.dart';
 import 'package:cekoi/domain/engine/game_phase.dart';
 import 'package:cekoi/features/play/presentation/play_controller.dart';
@@ -10,6 +13,7 @@ import 'package:cekoi/features/play/presentation/widgets/turn_intro_view.dart';
 import 'package:cekoi/features/play/presentation/widgets/turn_summary_view.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -28,6 +32,37 @@ class GameScreen extends ConsumerWidget {
     // Le compte à rebours de « C'est parti » : tant qu'il tourne, le tour est
     // lancé même si la phase ne l'est pas encore.
     final countdown = ref.watch(playControllerProvider);
+    final reglages = ref.watch(currentPreferencesProvider);
+
+    // Le buzzer de fin de tour.
+    //
+    // Ici, et pas dans l'écran de jeu : c'est justement au moment où la phase
+    // bascule que celui-ci est démonté, et une vue ne peut pas annoncer sa
+    // propre disparition.
+    //
+    // Il manquait, et son absence coûtait cher. Le tic des dix dernières
+    // secondes s'arrête à une seconde — rien ne marquait le zéro. Le narrateur
+    // tient le téléphone à bout de bras au milieu d'une table qui crie : il
+    // découvrait la fin du tour parce que l'écran avait changé, sans jamais
+    // savoir si son dernier tap était passé avant ou après.
+    //
+    // Franc, et distinct du tic : `heavyImpact` contre `lightImpact`, `alert`
+    // contre `click`. Un buzzer qui ressemble au décompte ne se remarque pas.
+    //
+    // Seulement quand le chrono tombe : un tour qui s'arrête parce que la
+    // dernière carte vient d'être trouvée n'est pas une interruption, c'est
+    // une manche gagnée (R4.1).
+    ref.listen(currentGameProvider.select((g) => g?.phase), (avant, apres) {
+      if (avant == apres || apres != GamePhase.turnSummary) return;
+      if (!(ref.read(currentGameProvider)?.turnEndedOnTime ?? false)) return;
+
+      if (reglages.hapticsEnabled) {
+        unawaited(HapticFeedback.heavyImpact());
+      }
+      if (reglages.soundEnabled) {
+        unawaited(SystemSound.play(SystemSoundType.alert));
+      }
+    });
 
     if (game == null) {
       return Scaffold(

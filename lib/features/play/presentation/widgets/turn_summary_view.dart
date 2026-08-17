@@ -74,6 +74,13 @@ class TurnSummaryView extends ConsumerWidget {
             ],
           ),
         ),
+        // La carte qui était à l'écran quand le chrono est tombé.
+        //
+        // Au-dessus de la liste et non dedans : elle n'a pas été tranchée,
+        // elle ne se corrige donc pas et ne compte pas. La mêler aux lignes
+        // corrigeables laisserait croire le contraire.
+        if (game.cardAtBuzzer case final auBuzzer?)
+          _AtBuzzer(text: auBuzzer.text),
         Expanded(
           child: results.isEmpty
               ? Center(
@@ -120,6 +127,78 @@ class TurnSummaryView extends ConsumerWidget {
       result.outcome == TurnOutcome.found
       ? TurnOutcome.passed
       : TurnOutcome.found;
+}
+
+/// La carte affichée quand le chrono est tombé (R3.5, R3.6).
+///
+/// Elle existait déjà dans le paquet, mais nulle part à l'écran : le
+/// récapitulatif ne listait que les cartes tranchées, et celle-ci
+/// disparaissait sans un mot pour ressortir deux tours plus tard. En partie
+/// réelle, cinq cartes par manche subissaient ce sort, et la table en
+/// concluait — logiquement — que l'application remettait en jeu des cartes
+/// déjà trouvées. Le paquet était juste ; c'est l'écran qui mentait par
+/// omission.
+class _AtBuzzer extends StatelessWidget {
+  const _AtBuzzer({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: AppColors.groundSoft,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.main, width: 2),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.timer_off_outlined,
+                    size: 18,
+                    color: AppColors.main,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    l10n.turnSummaryAtBuzzer,
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: AppColors.main,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                text,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: AppColors.ink,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                l10n.turnSummaryAtBuzzerHint,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.ink.withValues(alpha: 0.75),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 /// Une ligne du récapitulatif : la carte, son sort, et un tap pour l'inverser.
