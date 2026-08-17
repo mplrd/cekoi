@@ -82,33 +82,32 @@ class TurnSummaryView extends ConsumerWidget {
         if (game.cardAtBuzzer case final auBuzzer?)
           _AtBuzzer(text: auBuzzer.text),
         Expanded(
-          child: results.isEmpty
-              ? Center(
-                  child: Text(
-                    l10n.turnSummaryEmpty,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: encre.withValues(alpha: 0.85),
-                    ),
-                  ),
-                )
-              : ListView(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  children: [
-                    for (final result in results)
-                      _ResultTile(
-                        text: game.cardById(result.cardId)?.text ?? '',
-                        outcome: result.outcome,
-                        // En manche 1 on ne passe pas (R3.9) : une carte non
-                        // devinée n'est pas « passée », elle n'a pas été
-                        // trouvée. Le mot que l'écran de jeu vient d'exclure
-                        // ne doit pas revenir au récapitulatif.
-                        allowsPass: game.round.allowsPass,
-                        onToggle: () => ref
-                            .read(playControllerProvider.notifier)
-                            .correctResult(result.cardId, _opposite(result)),
-                      ),
-                  ],
+          // Plus de « Aucune carte vue pendant ce tour ».
+          //
+          // Le message était devenu inatteignable, et faux avant de l'être :
+          // un récapitulatif sans ligne veut dire que le tour est tombé au
+          // chrono sans qu'on tranche, donc qu'une carte était à l'écran — le
+          // bloc du dessus vient de la nommer. C'est le cas du narrateur bloqué
+          // sur sa première carte, celui où l'écran doit être le plus clair, et
+          // il annonçait justement qu'il n'y avait rien à voir.
+          child: ListView(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            children: [
+              for (final result in results)
+                _ResultTile(
+                  text: game.cardById(result.cardId)?.text ?? '',
+                  outcome: result.outcome,
+                  // En manche 1 on ne passe pas (R3.9) : une carte non
+                  // devinée n'est pas « passée », elle n'a pas été
+                  // trouvée. Le mot que l'écran de jeu vient d'exclure
+                  // ne doit pas revenir au récapitulatif.
+                  allowsPass: game.round.allowsPass,
+                  onToggle: () => ref
+                      .read(playControllerProvider.notifier)
+                      .correctResult(result.cardId, _opposite(result)),
                 ),
+            ],
+          ),
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),

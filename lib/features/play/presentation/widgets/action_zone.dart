@@ -66,9 +66,12 @@ class _ActionZoneState extends State<ActionZone>
     duration: _battement,
   );
 
+  /// Et non `initState` : `_sync` consulte `MediaQuery`, qui n'est pas encore
+  /// disponible à l'initialisation. Appelé aussi quand le réglage
+  /// d'accessibilité change en cours de partie.
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     _sync();
   }
 
@@ -85,26 +88,40 @@ class _ActionZoneState extends State<ActionZone>
   }
 
   void _sync() {
-    if (widget.urgent) {
+    // Rien à animer quand le battement est désactivé, ni quand la zone est
+    // morte. Sans ce test, l'animation tournerait à vide soixante fois par
+    // seconde : « réduire les animations » n'aurait réduit que le rendu, pas
+    // le travail.
+    if (widget.urgent && widget.onPressed != null && !_sansMouvement) {
       // Le `TickerFuture` d'un cycle sans fin ne se résout jamais : rien à
       // attendre, et l'attendre bloquerait.
       unawaited(_pulse.repeat(reverse: true));
     } else {
       _pulse
         ..stop()
-        ..value = 0;
+        ..value = _sansMouvement ? 1 : 0;
     }
   }
+
+  bool get _sansMouvement => MediaQuery.disableAnimationsOf(context);
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final actif = widget.onPressed != null;
+
+    // Une zone morte ne bat pas.
+    //
+    // R3.4 désactive *Passer* sur la dernière carte du paquet : sans ce test,
+    // c'est elle qui clignerait en rouge vif dans les trois dernières
+    // secondes, soit l'élément le plus criard de l'écran, pour demander au
+    // narrateur de taper là où rien ne se passe.
+    final bat = widget.urgent && actif;
+
     // Accessibilité : « réduire les animations » coupe le battement, pas
     // l'information. Le liseret reste, fixe et à pleine intensité — supprimer
     // le signal rendrait la fin de tour à nouveau invisible pour ceux qui ont
     // justement besoin qu'elle ne les surprenne pas.
-    final sansMouvement = MediaQuery.disableAnimationsOf(context);
 
     // L'action secondaire est blanche, cernée du corail de la marque.
     //
@@ -157,9 +174,11 @@ class _ActionZoneState extends State<ActionZone>
           ),
           child: AnimatedBuilder(
             animation: _pulse,
-            // L'enfant ne dépend pas du battement : il est construit une fois
-            // et repassé tel quel. Sans ça on reconstruirait le texte à chaque
-            // image, sur l'écran qui se rafraîchit déjà dix fois par seconde.
+            // L'enfant ne dépend pas du battement : le `builder` le reçoit tel
+            // quel au lieu de le reconstruire à chaque image. Il est bien
+            // reconstruit dix fois par seconde par l'écran de jeu, ce qui est
+            // le rythme du chrono ; ce qu'on évite ici, ce sont les soixante
+            // images d'animation qui viendraient par-dessus.
             child: Center(
               child: Padding(
                 padding: const EdgeInsets.symmetric(
@@ -177,14 +196,14 @@ class _ActionZoneState extends State<ActionZone>
               ),
             ),
             builder: (context, child) {
-              final t = sansMouvement ? 1.0 : _pulse.value;
+              final t = _sansMouvement ? 1.0 : _pulse.value;
               return DecoratedBox(
                 decoration: BoxDecoration(
                   color: couleur,
                   // Le liseret d'urgence prime sur celui du traitement
                   // secondaire : ils occupent le même bord, et c'est la fin du
                   // tour qui compte à cet instant.
-                  border: widget.urgent
+                  border: bat
                       ? Border.all(
                           color: AppColors.urgent.withValues(
                             alpha: 0.35 + 0.65 * t,

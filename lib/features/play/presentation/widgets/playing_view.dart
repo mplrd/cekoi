@@ -397,10 +397,12 @@ class _Actions extends ConsumerWidget {
     final controller = ref.read(playControllerProvider.notifier);
     final offersPass = game.round.allowsPass;
 
-    // Un booléen, et non la durée : `select` ne reconstruit qu'au basculement.
-    // Observer `remaining` ici ferait reconstruire les deux zones dix fois par
-    // seconde, ce que tout ce fichier s'applique à éviter — seul l'anneau doit
-    // suivre ce rythme.
+    // Un booléen, et non la durée : `select` ne notifie qu'au basculement.
+    //
+    // Ça n'empêche pas les reconstructions — `GameScreen` observe la partie
+    // entière et redescend ici dix fois par seconde de toute façon. Ce que le
+    // booléen évite, c'est une **seconde** source de reconstruction qui se
+    // superposerait à celle du chrono.
     final urgent = ref.watch(
       currentGameProvider.select((g) {
         final reste = g?.remaining;

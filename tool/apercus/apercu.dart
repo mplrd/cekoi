@@ -460,7 +460,13 @@ void main() {
     testWidgets('en jeu, chrono urgent', (tester) async {
       await pumpGame(tester, partie());
       await tapText(tester, l10n.actionStartTurn);
-      await clock.advance(tester, const Duration(seconds: 58));
+      // Trois secondes de décompte, puis le tour : il reste 2,7 secondes.
+      // Sous les trois dernières (R3.6 bis), les zones d'action battent — on
+      // attrape donc le liseret en pleine pulsation, en plus du chrono rouge.
+      await clock.advance(
+        tester,
+        const Duration(seconds: 60, milliseconds: 300),
+      );
       await shoot(tester, '10-jeu-urgence');
     });
 
@@ -470,6 +476,11 @@ void main() {
         tester,
         jouee.copyWith(
           phase: GamePhase.turnSummary,
+          // Le paquet tel que le moteur l'aurait laissé : les deux trouvées
+          // retirées, la passée renvoyée au fond. Le laisser intact mettrait
+          // en tête une carte déjà tranchée — un état qu'aucune partie ne
+          // produit, et qui masquait le bloc « À l'écran au buzzer ».
+          pile: [...jouee.pile.skip(3), jouee.pile[2]],
           turn: PlayedTurn(
             teamId: 't1',
             round: jouee.round,

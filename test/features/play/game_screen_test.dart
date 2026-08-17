@@ -5,6 +5,7 @@ import 'package:cekoi/app/current_game.dart';
 import 'package:cekoi/app/preferences.dart';
 import 'package:cekoi/app/router.dart';
 import 'package:cekoi/app/screen_awake.dart';
+import 'package:cekoi/app/theme/app_colors.dart';
 import 'package:cekoi/data/repositories/preferences_repository.dart';
 import 'package:cekoi/domain/engine/game_phase.dart';
 import 'package:cekoi/domain/engine/game_state.dart';
@@ -632,7 +633,20 @@ void main() {
     });
   });
 
-  group('R3.5 — la fin du tour se signale, et se raconte', () {
+  group('R3.6, R3.6 bis — la fin du tour se signale, et se raconte', () {
+    /// Le liseret de la zone nommée, ou `null` s'il n'y en a pas.
+    BorderSide? liseretDe(WidgetTester tester, String label) {
+      final boite = tester.widget<DecoratedBox>(
+        find
+            .descendant(
+              of: find.widgetWithText(ActionZone, label),
+              matching: find.byType(DecoratedBox),
+            )
+            .first,
+      );
+      return (boite.decoration as BoxDecoration).border?.top;
+    }
+
     /// Joue jusqu'au buzzer, sans jamais trancher de carte.
     Future<void> jusquAuBuzzer(WidgetTester tester) async {
       await pumpScreen(
@@ -752,6 +766,112 @@ void main() {
         expect(zone().urgent, isTrue, reason: 'il reste 3 secondes');
       },
     );
+
+    testWidgets('le liseret d urgence apparait, et il bat vraiment', (
+      tester,
+    ) async {
+      // Le test precedent ne verifie que la circulation du booleen : retirer
+      // le liseret ou le `repeat` le laissait vert. C'est pourtant la moitie
+      // visible de R3.6 bis.
+      await pumpScreen(
+        tester,
+        game: testGame(turnDuration: const Duration(seconds: 12)),
+      );
+      await startTurn(tester);
+
+      await clock.advance(tester, const Duration(seconds: 8));
+      expect(liseretDe(tester, l10n.actionFound), isNull, reason: '4 s');
+
+      await clock.advance(tester, const Duration(seconds: 1));
+      final avant = liseretDe(tester, l10n.actionFound);
+      expect(avant, isNotNull, reason: '3 s');
+
+      await tester.pump(const Duration(milliseconds: 250));
+      final apres = liseretDe(tester, l10n.actionFound);
+
+      expect(
+        apres!.width,
+        isNot(avant!.width),
+        reason: 'un liseret fixe ne se remarque pas : il doit battre',
+      );
+      await stopGame(tester);
+    });
+
+    testWidgets('une zone desactivee par R3.4 ne bat pas', (tester) async {
+      // Derniere carte du paquet en manche 2 : *Passer* est verrouille. Le
+      // faire clignoter en rouge vif serait demander de taper la zone morte au
+      // moment ou le narrateur ne regarde plus rien d'autre.
+      await pumpScreen(
+        tester,
+        game: testGame(
+          cardCount: 12,
+          turnDuration: const Duration(seconds: 12),
+        ),
+      );
+      await startTurn(tester);
+      for (var i = 0; i < 11; i++) {
+        await tester.tap(find.text(l10n.actionFound));
+        await tester.pump();
+      }
+      await clock.advance(tester, const Duration(seconds: 9));
+
+      expect(partie().pile, hasLength(1));
+      expect(partie().canPass, isFalse, reason: 'R3.4');
+      expect(liseretDe(tester, l10n.actionFound), isNotNull);
+      expect(
+        liseretDe(tester, l10n.actionPass)?.color,
+        isNot(AppColors.urgent),
+        reason: 'la zone verrouillee ne doit pas etre le point le plus criard',
+      );
+      await stopGame(tester);
+    });
+
+    testWidgets('vibration coupee, le buzzer sonne quand meme', (tester) async {
+      await pumpScreen(
+        tester,
+        game: testGame(turnDuration: const Duration(seconds: 12)),
+        reglages: const AppPreferences(hapticsEnabled: false),
+      );
+      await startTurn(tester);
+      platformDetails.clear();
+      await clock.advance(tester, const Duration(seconds: 12));
+
+      expect(
+        platformDetails,
+        contains('SystemSound.play:SystemSoundType.alert'),
+      );
+      expect(
+        platformDetails,
+        isNot(
+          contains('HapticFeedback.vibrate:HapticFeedbackType.heavyImpact'),
+        ),
+      );
+    });
+
+    testWidgets('R9.1 — une partie reprise en recapitulatif ne buzze pas', (
+      tester,
+    ) async {
+      // Le tour s'est termine hier. Buzzer a l'ouverture de l'application
+      // annoncerait une fin qui n'a pas lieu maintenant.
+      final finiAuChrono = testGame(turnDuration: const Duration(seconds: 12));
+      await pumpScreen(
+        tester,
+        game: finiAuChrono.copyWith(
+          phase: GamePhase.turnSummary,
+          turn: finiAuChrono.turn!.copyWith(
+            elapsed: const Duration(seconds: 12),
+          ),
+        ),
+      );
+
+      expect(partie().turnEndedOnTime, isTrue);
+      expect(find.text(l10n.turnSummaryAtBuzzer), findsOneWidget);
+      expect(
+        platformDetails,
+        isNot(contains('SystemSound.play:SystemSoundType.alert')),
+        reason: 'la partie est adoptee, elle n a pas bascule sous nos yeux',
+      );
+    });
   });
 
   group('quitter une partie demande confirmation', () {

@@ -53,7 +53,11 @@ class GameScreen extends ConsumerWidget {
     // dernière carte vient d'être trouvée n'est pas une interruption, c'est
     // une manche gagnée (R4.1).
     ref.listen(currentGameProvider.select((g) => g?.phase), (avant, apres) {
-      if (avant == apres || apres != GamePhase.turnSummary) return;
+      // `avant == null` : la partie vient d'être adoptée de l'extérieur, elle
+      // n'a pas basculé sous nos yeux. C'est le cas de la reprise (R9.1) —
+      // une partie sauvegardée en récapitulatif buzzerait à l'ouverture de
+      // l'application, pour un tour terminé la veille.
+      if (avant == null || apres != GamePhase.turnSummary) return;
       if (!(ref.read(currentGameProvider)?.turnEndedOnTime ?? false)) return;
 
       if (reglages.hapticsEnabled) {
