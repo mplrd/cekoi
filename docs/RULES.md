@@ -345,7 +345,11 @@ dédié dans `test/domain/`.
 14. Trois équipes demandées après en avoir nommé deux → les deux noms restent, la troisième
     prend son nom par défaut (R8.4). Repasser à deux ne doit pas ressusciter un nom effacé.
 15. Le chrono tombe alors qu'une carte est affichée → elle repart au tour suivant, le paquet ne
-    perd que les cartes trouvées (R4.6). Elle ne figure au récapitulatif que si elle avait été
-    tranchée pendant le tour (R3.6).
-16. Un tour se termine avec des cartes au paquet → la manche continue avec l'équipe suivante,
+    perd que les cartes trouvées (R4.6). **Elle est nommée au récapitulatif**, à part et non
+    comptée (R3.6) : c'est son silence qui faisait croire à un bug.
+16. Le chrono tombe sur une carte **déjà tranchée dans ce tour** — passée plus tôt, revenue en
+    tête parce que tout ce qui la précédait a été tranché (R4.6) → elle n'est **pas** annoncée
+    au buzzer. Sa ligne « Passée » existe déjà au récapitulatif et se corrige ; l'annoncer deux
+    fois donnerait deux récits contradictoires de la même carte (R3.6).
+17. Un tour se termine avec des cartes au paquet → la manche continue avec l'équipe suivante,
     et l'écran de scores intermédiaires n'apparaît pas (R4.5).

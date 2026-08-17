@@ -100,7 +100,7 @@ void main() {
     });
   });
 
-  group('R3.5, R3.6 — la carte a l ecran quand le chrono tombe', () {
+  group("R3.5, R3.6 — la carte à l'écran quand le chrono tombe", () {
     /// Le tour de 12 cartes, dont on en trouve [trouvees] avant le buzzer.
     (GameState, Card?) turnCutByTimer(int trouvees) {
       var state = reduce(start(), const GameEvent.turnStarted());
@@ -114,7 +114,7 @@ void main() {
       );
     }
 
-    test('elle est nommable une fois le tour tombe', () {
+    test('elle est nommable une fois le tour tombé', () {
       final (state, aLEcran) = turnCutByTimer(2);
 
       expect(state.phase, GamePhase.turnSummary);
@@ -122,10 +122,10 @@ void main() {
       expect(state.cardAtBuzzer, aLEcran);
     });
 
-    test("elle n'est pas comptee : elle n'a jamais ete tranchee", () {
+    test("elle n'est pas comptée : elle n'a jamais été tranchée", () {
       final (state, aLEcran) = turnCutByTimer(2);
 
-      expect(state.turn!.score, 2, reason: 'les deux trouvees, pas la sienne');
+      expect(state.turn!.score, 2, reason: 'les deux trouvées, pas la sienne');
       expect(
         state.turn!.results.map((r) => r.cardId),
         isNot(contains(aLEcran!.id)),
@@ -133,8 +133,8 @@ void main() {
     });
 
     test('elle retourne dans le paquet et ressortira plus tard', () {
-      // C'est ce comportement, juste mais muet, qui a fait croire a un bug en
-      // partie reelle : la carte devinee a la seconde pres disparaissait sans
+      // C'est ce comportement, juste mais muet, qui a fait croire à un bug en
+      // partie réelle : la carte devinée à la seconde près disparaissait sans
       // un mot et revenait deux tours plus tard.
       final (state, aLEcran) = turnCutByTimer(2);
       final suivant = reduce(state, const GameEvent.turnConfirmed());
@@ -142,7 +142,7 @@ void main() {
       expect(suivant.pile, contains(aLEcran!.id));
     });
 
-    test('un tour qui vide le paquet n a pas de carte au buzzer', () {
+    test("un tour qui vide le paquet n'a pas de carte au buzzer", () {
       var state = reduce(start(), const GameEvent.turnStarted());
       for (var i = 0; i < 12; i++) {
         state = reduce(state, const GameEvent.cardFound());
@@ -153,15 +153,55 @@ void main() {
       expect(
         state.cardAtBuzzer,
         isNull,
-        reason: "la derniere carte vient d'etre trouvee, l'ecran etait vide",
+        reason: "la dernière carte vient d'être trouvée, l'écran était vide",
       );
       expect(state.turnEndedOnTime, isFalse);
     });
 
-    test('entre deux manches, aucun tour ne s est termine au chrono', () {
+    test(
+      "une carte déjà tranchée dans ce tour n'est pas annoncée deux fois",
+      () {
+        // Manche 2 : la carte passée retourne au fond (R4.6) et remonte en
+        // tête dès que ce qui la précédait est tranché — donc en fin de
+        // manche, quand les tours tombent justement au chrono. Elle a déjà sa
+        // ligne au récapitulatif, corrigeable ; l'annoncer aussi au buzzer
+        // donnerait deux récits contradictoires de la même carte.
+        var state = startGame(
+          config: _config,
+          teams: [testTeam('team-1'), testTeam('team-2')],
+          deck: testCards(12),
+          seed: 3,
+        ).copyWith(roundIndex: 1);
+        state = state.copyWith(
+          turn: state.turn!.copyWith(round: state.rounds[1]),
+        );
+        state = reduce(state, const GameEvent.turnStarted());
+
+        final passee = state.currentCard!;
+        state = reduce(state, const GameEvent.cardPassed());
+        // On tranche tout le reste : la carte passée revient en tête.
+        for (var i = 0; i < 11; i++) {
+          state = reduce(state, const GameEvent.cardFound());
+        }
+
+        expect(state.currentCardId, passee.id, reason: 'elle est bien revenue');
+        expect(state.turn!.resultFor(passee.id), isNotNull);
+
+        state = reduce(state, const GameEvent.ticked(Duration(seconds: 60)));
+
+        expect(state.phase, GamePhase.turnSummary);
+        expect(
+          state.cardAtBuzzer,
+          isNull,
+          reason: "sa ligne « Passée » raconte déjà l'histoire, et se corrige",
+        );
+      },
+    );
+
+    test("entre deux manches, aucun tour ne s'est terminé au chrono", () {
       // `turn` est nul entre la validation d'un tour et l'ouverture du
-      // suivant : c'est le seul etat ou la question se pose sans qu'il y ait
-      // de tour, et y repondre « oui » n'aurait aucun sens.
+      // suivant : c'est le seul état où la question se pose sans qu'il y ait
+      // de tour, et y répondre « oui » n'aurait aucun sens.
       var state = reduce(start(), const GameEvent.turnStarted());
       for (var i = 0; i < 12; i++) {
         state = reduce(state, const GameEvent.cardFound());
@@ -174,7 +214,7 @@ void main() {
       expect(state.cardAtBuzzer, isNull);
     });
 
-    test("pendant le tour, il n'y a rien a annoncer", () {
+    test("pendant le tour, il n'y a rien à annoncer", () {
       final state = reduce(start(), const GameEvent.turnStarted());
 
       expect(state.phase, GamePhase.playing);
@@ -182,10 +222,10 @@ void main() {
       expect(state.turnEndedOnTime, isFalse);
     });
 
-    test('un tour tombe sans avoir rien trouve la nomme quand meme', () {
-      // Le cas du narrateur qui bloque sur la premiere carte : le
-      // recapitulatif est vide, et c'est justement la que le silence est le
-      // plus deroutant.
+    test('un tour tombé sans avoir rien trouvé la nomme quand même', () {
+      // Le cas du narrateur qui bloque sur la première carte : le
+      // récapitulatif est vide, et c'est justement là que le silence est le
+      // plus déroutant.
       final (state, aLEcran) = turnCutByTimer(0);
 
       expect(state.turn!.results, isEmpty);
