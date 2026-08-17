@@ -113,11 +113,16 @@ flutter:
 
 # Icônes de lanceur, générées depuis le logo par `dart run flutter_launcher_icons`.
 #
-# Le premier plan Android est le logo **réduit à 70 %** sur du transparent :
-# une icône adaptative est rognée par le lanceur, parfois en cercle, et un logo
-# à fond perdu y perdrait ses coins — la bulle et le « 1 » sont justement dans
-# les coins. Le fond uni reprend exactement le corail du logo, si bien que la
-# jointure entre les deux ne se voit pas.
+# Le premier plan Android est fabriqué par `python tool/make_icons.py` : le
+# dessin détouré, sur du transparent, sans son fond corail. Il ne porte aucune
+# marge — c'est `mipmap-anydpi-v26/ic_launcher.xml` qui applique le retrait de
+# 16 % de l'icône adaptative, et ajouter la nôtre par-dessus rapetissait le
+# dessin d'un tiers. Le fond uni reprend exactement le corail du logo, si bien
+# que la jointure entre les deux ne se voit pas.
+#
+# L'écran de démarrage d'Android 12, lui, consomme le drawable **brut** : il a
+# donc son propre fichier, `splash_icon`, que le même script produit avec la
+# marge des deux tiers qu'attend le masque du système.
 flutter_launcher_icons:
   image_path: assets/branding/logo.png
   android: true

@@ -180,7 +180,7 @@ void main() {
     );
   });
 
-  test('la publicité et les achats ne sortent pas de services/', () {
+  test('les greffons de plateforme ne sortent pas de services/', () {
     // MONETISATION.md : pub et achats vivent derrière `AdService` et
     // `PurchaseService`. L'intérêt n'est pas le rangement — c'est de pouvoir
     // tourner en test et en développement sans SDK, et de changer de régie
@@ -188,9 +188,15 @@ void main() {
     // à perdre les deux, et rien ne le signalerait : le code compilerait, et
     // le test qui monte l'écran échouerait sur une `MissingPluginException`
     // dont la cause est ailleurs.
+    //
+    // Le son et la vibration ont rejoint la liste pour exactement la même
+    // raison, et après le même accident : c'est `GameFeedback` qu'un écran
+    // demande, jamais `audioplayers`.
     const forbidden = {
       'package:google_mobile_ads/',
       'package:in_app_purchase/',
+      'package:audioplayers/',
+      'package:vibration/',
     };
     const allowedUnder = 'lib/services/';
 

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Fabrique les sons du jeu, en WAV, sans dépendance.
 
     python tool/make_sounds.py
@@ -49,7 +50,8 @@ def ecrire(nom: str, echantillons: list[float]) -> None:
                 for e in echantillons
             )
         )
-    print(f"{chemin.relative_to(SORTIE.parent.parent)}  ({chemin.stat().st_size} octets)")
+    relatif = chemin.relative_to(SORTIE.parent.parent)
+    print(f"{relatif}  ({chemin.stat().st_size} octets)")
 
 
 def enveloppe(i: int, total: int, attaque: float, chute: float) -> float:
@@ -101,6 +103,10 @@ def buzzer() -> list[float]:
     return frappe(233.0) + silence + frappe(175.0)
 
 
-if __name__ == "__main__":
+def main() -> None:
     ecrire("tick.wav", tick())
     ecrire("buzzer.wav", buzzer())
+
+
+if __name__ == "__main__":
+    main()

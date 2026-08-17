@@ -32,6 +32,26 @@ class ActionZone extends StatefulWidget {
   /// geste traversant l'écran reste un glissement et non un tap.
   static const double _slop = 64;
 
+  /// De combien le fond se déplace vers [pulseTarget] au sommet du battement.
+  ///
+  /// Le seul endroit de l'application qui descende sous 4,5:1 de contraste :
+  /// au sommet, le libellé blanc sur le teal éclairci rend 4,0:1. C'est tenu
+  /// pour du grand texte, qui est ce que la zone porte — 22 points en `w800` —
+  /// et `action_zone_test.dart` le vérifie. **Monter cette valeur casse
+  /// l'accessibilité** : à 0,5 le même contraste tombe à 2,9:1, sous le seuil.
+  static const double pulseAmount = 0.3;
+
+  /// Vers quoi la zone bat.
+  ///
+  /// Une couleur de la même famille, et jamais [AppColors.urgent] : le teal
+  /// des actions principales tiré vers le rouge passe par un brun sale, et à
+  /// mi-course c'est exactement là qu'il se trouve.
+  ///
+  /// Le sens dépend de la zone. Le teal, sombre, s'éclaircit vers la sauge ;
+  /// le blanc de l'action secondaire se teinte de corail.
+  static Color pulseTarget(Color fond) =>
+      fond.computeLuminance() > 0.4 ? AppColors.main : AppColors.secondary;
+
   final String label;
 
   /// `null` désactive la zone, comme sur un bouton ordinaire.
@@ -105,19 +125,6 @@ class _ActionZoneState extends State<ActionZone>
 
   bool get _sansMouvement => MediaQuery.disableAnimationsOf(context);
 
-  /// Vers quoi la zone bat.
-  ///
-  /// Une couleur de la même famille, et jamais [AppColors.urgent] : le teal
-  /// des actions principales tiré vers le rouge passe par un brun sale, et à
-  /// mi-course c'est exactement là qu'il se trouve.
-  ///
-  /// Le sens dépend de la zone. Le teal, sombre, s'éclaircit vers la sauge ;
-  /// le blanc de l'action secondaire se teinte de corail. Dans les deux cas
-  /// l'écart de contraste avec le libellé se resserre sans jamais passer sous
-  /// le seuil du grand texte.
-  static Color _cible(Color fond) =>
-      fond.computeLuminance() > 0.4 ? AppColors.main : AppColors.secondary;
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -149,6 +156,11 @@ class _ActionZoneState extends State<ActionZone>
         (widget.secondaire ? AppColors.ink : theme.colorScheme.onPrimary);
 
     final couleur = actif ? fond : fond.withValues(alpha: 0.35);
+
+    // Calculée une fois par construction et non dans le `builder` : elle ne
+    // dépend pas du battement, et le `builder` tourne soixante fois par
+    // seconde. Même raison que l'enfant sorti du `AnimatedBuilder` plus bas.
+    final sommet = bat ? ActionZone.pulseTarget(couleur) : null;
     final texte = actif ? encre : encre.withValues(alpha: 0.4);
     final liseret = widget.secondaire && widget.background == null
         ? Border.all(
@@ -220,7 +232,7 @@ class _ActionZoneState extends State<ActionZone>
                   // franchement laid. La moitié basse de l'écran qui
                   // s'éclaircit deux fois par seconde, elle, ne se rate pas.
                   color: bat
-                      ? Color.lerp(couleur, _cible(couleur), 0.3 * t) ?? couleur
+                      ? Color.lerp(couleur, sommet, ActionZone.pulseAmount * t)
                       : couleur,
                   border: liseret,
                   borderRadius: const BorderRadius.all(

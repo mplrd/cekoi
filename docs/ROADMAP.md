@@ -40,7 +40,10 @@ Ce qui reste ouvert et ne dépend pas d'un lot :
 - **iOS n'a jamais tourné ailleurs qu'en compilation.** La CI le construit à chaque commit,
   rien de plus. Le lot 4 écrit le cycle de vie du chrono, et c'est exactement ce qui se juge
   sur un vrai iPhone — voir la vigilance ci-dessous.
-- **Le son des dix dernières secondes** est celui du système, pas un son dessiné.
+- **Les deux sons du jeu sont synthétisés**, pas dessinés : `tool/make_sounds.py` fabrique un
+  blip et deux coups graves à partir de quelques lignes de trigonométrie. Ils remplacent les
+  sons système, qui ne sortaient sur aucun téléphone dont les *sons des touches* sont coupés
+  — voir `ARCHITECTURE.md`. Ils tiennent leur rôle ; un vrai travail sonore reste à faire.
 - **Le contenu est le vrai goulot.** 529 cartes sur 21 catégories, pour une cible de 1 200 :
   de quoi juger l'ergonomie et commencer à juger le rythme, qui est le cœur du jeu.
 - **Aucun achat in-app réel n'a jamais eu lieu**, et aucune vraie publicité n'a jamais été

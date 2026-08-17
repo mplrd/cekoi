@@ -5,13 +5,17 @@
      le travail de branding de `launch_background.xml` reste sans effet sur
      les telephones actuels, et le flash blanc revient.
 
-     `windowSplashScreenAnimatedIcon` reprend le premier plan de l icone
-     adaptative, qui est justement dessine pour etre masque en cercle par le
-     systeme. -->
+     `splash_icon` et non `ic_launcher_foreground`, apres avoir essaye le
+     second : le systeme consomme ce drawable **brut**, la ou le lanceur
+     applique d abord le retrait de 16 % de `ic_launcher.xml`. Un fichier sans
+     marge y etait donc rogne — la bulle, la carte « 1 » et les jambes du
+     coureur passaient a la trappe — et un fichier avec marge rapetissait
+     l icone du lanceur d autant. Deux consommateurs, deux fichiers, tous deux
+     produits par `tool/make_icons.py`. -->
 <resources>
     <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
         <item name="android:windowSplashScreenBackground">@color/launch_background</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_icon</item>
     </style>
     <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
         <item name="android:windowBackground">@color/launch_background</item>

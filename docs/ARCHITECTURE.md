@@ -114,6 +114,8 @@ Deux écarts assumés par rapport au découpage initial :
 | Écran allumé | `wakelock_plus` | Indispensable : une partie dure 40 min avec peu d'interactions. Le narrateur mime sans toucher l'écran. |
 | Fichiers | `flutter_file_dialog` | Import et export des catégories du joueur. **Pas `file_picker`** : ses versions modernes exigent `win32 ^5` quand `wakelock_plus` exige `win32 ^6`, et sa version compatible appelle `jcenter()`, supprimé de Gradle 9. `flutter_file_dialog` ne cible que le mobile, donc pas de `win32` du tout. |
 | Chemins | `path_provider` | Base locale et fichier temporaire d'export. |
+| Son du jeu | `audioplayers` | Le tic des dix dernières secondes et le buzzer de fin de tour, joués depuis un asset sur le canal média. **Pas `SystemSound.play`** : voir ci-dessous, c'était le choix précédent et il ne produisait aucun son sur un téléphone. Mode basse latence, et `mixWithOthers` pour ne pas couper la musique de la table. |
+| Vibration | `vibration` | Même raison : `HapticFeedback` demande un retour tactile au système, que le réglage « vibration au toucher » coupe. Le service `Vibrator` répond toujours, et accepte un motif — deux impulsions pour le buzzer. Entraîne `device_info_plus`, dont `hasVibrator()` se sert pour reconnaître un émulateur. |
 
 | Pub et consentement | `google_mobile_ads` | Inclut le CMP Google UMP dont on a besoin en Europe. Exige `minSdk 24` et `compileSdk 36`, qui sont les défauts de Flutter. |
 
@@ -123,9 +125,29 @@ Prévu, pas encore installé :
 |---|---|---|
 | Achat in-app | `in_app_purchase` | Officiel Flutter, couvre les deux stores. |
 
-Le **son des dix dernières secondes** passe par `SystemSound.play` de Flutter, sans paquet :
-il suit le volume et le mode silencieux de l'appareil, ce qu'un asset joué à plein régime au
-milieu d'un repas ne ferait pas. Un son dessiné et `just_audio` restent possibles ensuite.
+### Le son est passé par un asset, et pourquoi
+
+Le **son du jeu** a d'abord été celui du système, `SystemSound.play`, sans paquet — au motif
+qu'il suivrait le volume et le mode silencieux de l'appareil. **C'était faux**, et personne ne
+s'en est aperçu pendant tout un lot : sur Android, `SystemSound.play` et `HapticFeedback`
+passent par la couche de retour tactile, que les réglages *sons des touches* et *vibration au
+toucher* éteignent — et ils le sont chez beaucoup de monde. Le tic des dix dernières secondes
+n'a donc jamais sonné sur ces appareils-là. Quant au buzzer de fin de tour, il avait été écrit
+avec `SystemSoundType.alert`, que la documentation de Flutter donne pour **ignoré sur Android
+et iOS** : il ne pouvait rien produire du tout.
+
+Aucun test ne pouvait l'attraper : ils vérifiaient que l'appel de canal partait, pas qu'on
+entendait quelque chose. Il a fallu une partie réelle.
+
+Les sons sont donc des assets, fabriqués par `tool/make_sounds.py` et versionnés, joués par
+`audioplayers` sur le canal média. Le timbre les distingue, pas le volume — au milieu d'une
+table qui crie, deux sons de la même famille ne se séparent pas. La vibration passe par le
+service `Vibrator`, hors retour tactile.
+
+Un arbitrage y est attaché, et il n'a pas de bonne réponse : `mixWithOthers` — ne pas couper
+la musique de la table — et `respectSilence` s'excluent, le paquet l'interdit par une
+assertion. On garde le premier, ce qui veut dire qu'**un iPhone en silencieux sonnera quand
+même**. Le recours est le réglage *Son* de l'application, qui coupe tout.
 
 ## Modèle de données
 
