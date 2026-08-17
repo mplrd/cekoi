@@ -100,6 +100,100 @@ void main() {
     });
   });
 
+  group('R3.5, R3.6 — la carte a l ecran quand le chrono tombe', () {
+    /// Le tour de 12 cartes, dont on en trouve [trouvees] avant le buzzer.
+    (GameState, Card?) turnCutByTimer(int trouvees) {
+      var state = reduce(start(), const GameEvent.turnStarted());
+      for (var i = 0; i < trouvees; i++) {
+        state = reduce(state, const GameEvent.cardFound());
+      }
+      final aLEcran = state.currentCard;
+      return (
+        reduce(state, const GameEvent.ticked(Duration(seconds: 60))),
+        aLEcran,
+      );
+    }
+
+    test('elle est nommable une fois le tour tombe', () {
+      final (state, aLEcran) = turnCutByTimer(2);
+
+      expect(state.phase, GamePhase.turnSummary);
+      expect(aLEcran, isNotNull);
+      expect(state.cardAtBuzzer, aLEcran);
+    });
+
+    test("elle n'est pas comptee : elle n'a jamais ete tranchee", () {
+      final (state, aLEcran) = turnCutByTimer(2);
+
+      expect(state.turn!.score, 2, reason: 'les deux trouvees, pas la sienne');
+      expect(
+        state.turn!.results.map((r) => r.cardId),
+        isNot(contains(aLEcran!.id)),
+      );
+    });
+
+    test('elle retourne dans le paquet et ressortira plus tard', () {
+      // C'est ce comportement, juste mais muet, qui a fait croire a un bug en
+      // partie reelle : la carte devinee a la seconde pres disparaissait sans
+      // un mot et revenait deux tours plus tard.
+      final (state, aLEcran) = turnCutByTimer(2);
+      final suivant = reduce(state, const GameEvent.turnConfirmed());
+
+      expect(suivant.pile, contains(aLEcran!.id));
+    });
+
+    test('un tour qui vide le paquet n a pas de carte au buzzer', () {
+      var state = reduce(start(), const GameEvent.turnStarted());
+      for (var i = 0; i < 12; i++) {
+        state = reduce(state, const GameEvent.cardFound());
+      }
+
+      expect(state.phase, GamePhase.turnSummary);
+      expect(state.pile, isEmpty);
+      expect(
+        state.cardAtBuzzer,
+        isNull,
+        reason: "la derniere carte vient d'etre trouvee, l'ecran etait vide",
+      );
+      expect(state.turnEndedOnTime, isFalse);
+    });
+
+    test('entre deux manches, aucun tour ne s est termine au chrono', () {
+      // `turn` est nul entre la validation d'un tour et l'ouverture du
+      // suivant : c'est le seul etat ou la question se pose sans qu'il y ait
+      // de tour, et y repondre « oui » n'aurait aucun sens.
+      var state = reduce(start(), const GameEvent.turnStarted());
+      for (var i = 0; i < 12; i++) {
+        state = reduce(state, const GameEvent.cardFound());
+      }
+      state = reduce(state, const GameEvent.turnConfirmed());
+
+      expect(state.phase, GamePhase.roundSummary);
+      expect(state.turn, isNull);
+      expect(state.turnEndedOnTime, isFalse);
+      expect(state.cardAtBuzzer, isNull);
+    });
+
+    test("pendant le tour, il n'y a rien a annoncer", () {
+      final state = reduce(start(), const GameEvent.turnStarted());
+
+      expect(state.phase, GamePhase.playing);
+      expect(state.cardAtBuzzer, isNull);
+      expect(state.turnEndedOnTime, isFalse);
+    });
+
+    test('un tour tombe sans avoir rien trouve la nomme quand meme', () {
+      // Le cas du narrateur qui bloque sur la premiere carte : le
+      // recapitulatif est vide, et c'est justement la que le silence est le
+      // plus deroutant.
+      final (state, aLEcran) = turnCutByTimer(0);
+
+      expect(state.turn!.results, isEmpty);
+      expect(state.cardAtBuzzer, aLEcran);
+      expect(state.cardAtBuzzer, isNotNull);
+    });
+  });
+
   group('R9.1 — un état de partie est sérialisable', () {
     test('un aller-retour JSON rend un état identique', () {
       // La reprise de partie du lot 4 en dépend. Le vérifier maintenant évite
