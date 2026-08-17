@@ -22,7 +22,7 @@ import 'package:go_router/go_router.dart';
 /// Ils vivent ici et non dans le domaine, qui ne fabrique aucun libellé : c'est
 /// la présentation qui comble les noms laissés vides, au moment de construire
 /// les équipes.
-List<String> fallbackTeamNames(GameSetup setup, AppLocalizations l10n) => [
+List<String> _fallbackTeamNames(GameSetup setup, AppLocalizations l10n) => [
   for (var i = 0; i < setup.teamCount; i++) l10n.teamDefaultName(i + 1),
 ];
 
@@ -82,6 +82,13 @@ class _LaunchButtonState extends ConsumerState<LaunchButton> {
     // Et de rien d'autre. Le consentement refusé et le plafond de fréquence
     // sont des raisons de ne pas *charger* une pub à cet instant — pas des
     // raisons de laisser croire qu'on en est débarrassé.
+    //
+    // Le repli tait la mention plutôt que de l'afficher : c'est la convention
+    // de `launch_ad.dart`, où l'absence de réponse ne doit jamais valoir
+    // autorisation. Il est de toute façon inatteignable ici — le garde sur
+    // `pool` ci-dessus a déjà attendu `deckCatalogProvider`, qui attend
+    // lui-même la possession — mais l'afficher par défaut ferait clignoter la
+    // ligne chez qui a payé si cet ordre changeait.
     final avecPub = ref.watch(ownershipProvider).value?.showsAds ?? false;
 
     return PopScope(
@@ -126,12 +133,21 @@ class _LaunchButtonState extends ConsumerState<LaunchButton> {
   }
 
   Future<void> _launch(List<domain.Card> pool) async {
+    // Le bouton grisé ne protège du double tap que si une frame est rendue
+    // entre les deux — vrai en pratique, 16 ms contre une centaine pour un
+    // appui réel, mais la closure de `onPressed` ne relit pas `_enCours`. Cette
+    // ligne le relit, et deux taps dans la même frame ne lancent qu'une partie.
+    //
+    // Elle ne couvre pas la transition de route : `_enCours` est déjà retombé
+    // quand `push` s'exécute. Là, c'est la route entrante qui recouvre l'écran.
+    if (_enCours) return;
+
     final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
     final setup = ref.read(setupControllerProvider);
     final outcome = launchGame(
       setup: setup,
-      teams: setup.teamsNamed(fallbackTeamNames(setup, l10n)),
+      teams: setup.teamsNamed(_fallbackTeamNames(setup, l10n)),
       pool: pool,
       seed: ref.read(seedSourceProvider)(),
     );

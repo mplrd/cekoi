@@ -277,9 +277,11 @@ void main() {
   });
 
   testWidgets('les réglages de l application', (tester) async {
-    // Le seul écran dont l'apparence dépend de ce que le joueur possède :
-    // l'offre d'achat s'efface une fois payée. Le banc l'accorde consentement
-    // et formulaire disponibles, donc la carte de choix publicitaire est là.
+    // L'apparence de cet écran dépend de ce que le joueur possède : l'offre
+    // d'achat s'efface une fois payée. Le banc n'accorde jamais la version
+    // complète, donc l'offre est là — comme la mention de publicité de
+    // `05-equipes`, qui suit la même possession. Consentement et formulaire
+    // sont accordés, donc la carte de choix publicitaire est là aussi.
     await installCatalogue();
     await pumpApp(tester);
 

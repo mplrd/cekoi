@@ -9,7 +9,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'game_setup.freezed.dart';
 
-/// Une partie en cours de configuration, au fil des cinq étapes.
+/// Une partie en cours de configuration, au fil des quatre étapes.
 ///
 /// Dart pur et immuable, comme le moteur : le parcours de configuration est
 /// une suite de transformations testables sans interface. L'écran ne fait
@@ -25,7 +25,11 @@ abstract class GameSetup with _$GameSetup {
     required Set<Difficulty> difficulties,
     required Duration turnDuration,
 
-    /// `null` signifie *auto* (R6.1).
+    /// Le volume du paquet, toujours explicite (R6.1).
+    ///
+    /// Il a existé un mode *auto* où ce champ était nullable et le volume se
+    /// déduisait du nombre d'équipes ; il a été retiré, et le défaut est
+    /// désormais une constante.
     @Default(GameConfig.defaultCardCount) int cardCount,
 
     /// Sans filtre, mais **rien que** les cartes réservées aux grands (R7.1).
@@ -56,8 +60,8 @@ abstract class GameSetup with _$GameSetup {
   /// Nombre de cartes du paquet (R6.1).
   ///
   /// Conservé comme accesseur alors qu'il ne calcule plus rien : c'est le nom
-  /// qu'emploient le récapitulatif et le tirage, et il redeviendrait un calcul
-  /// si le volume devait un jour dépendre d'autre chose.
+  /// qu'emploient le bouton de lancement et le tirage, et il redeviendrait un
+  /// calcul si le volume devait un jour dépendre d'autre chose.
   int get resolvedCardCount => cardCount;
 
   /// Tout ce que R8.5 et R6.2 exigent avant de lancer.
