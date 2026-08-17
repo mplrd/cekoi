@@ -271,10 +271,9 @@ void main() {
     await shoot(tester, '04-reglages');
 
     await tapText(tester, l10n.actionContinue);
+    // Dernière étape : c'est d'ici que part la partie, le bouton de lancement
+    // est au pied de l'écran.
     await shoot(tester, '05-equipes');
-
-    await tapText(tester, l10n.actionContinue);
-    await shoot(tester, '06-recapitulatif');
   });
 
   testWidgets('les réglages de l application', (tester) async {
@@ -288,9 +287,11 @@ void main() {
     await shoot(tester, '15-reglages');
   });
 
-  // Il a existé ici un aperçu `16-lancement`, l'écran intercalé qui portait
-  // l'interstitiel. Cet écran a été retiré : la pub est un plein écran, elle
-  // recouvre le récapitulatif et n'a pas besoin d'une page à elle.
+  // Il a existé ici deux aperçus, `06-recapitulatif` et `16-lancement` : le
+  // récapitulatif de la configuration, et l'écran intercalé qui portait
+  // l'interstitiel. Les deux écrans ont été retirés — le premier n'apprenait
+  // rien à qui venait de tout choisir, le second redisait ce que l'annonce du
+  // tour affiche juste après.
 
   testWidgets('mes catégories', (tester) async {
     await installCatalogue();

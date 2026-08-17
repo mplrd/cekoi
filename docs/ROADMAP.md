@@ -108,7 +108,9 @@ tous les écrans.
 
 ## Lot 3 — Parcours de configuration
 
-Les cinq étapes de `SPEC.md` : mode, catégories, réglages, équipes, récapitulatif.
+Les quatre étapes de `SPEC.md` : mode, catégories, réglages, équipes — la partie part du pied
+de la dernière. Un récapitulatif fermait la marche ; il a été retiré après essai en partie
+réelle, il n'apprenait rien à qui venait de tout choisir.
 
 **Livrable :** on configure une partie de bout en bout et on obtient un paquet tiré.
 

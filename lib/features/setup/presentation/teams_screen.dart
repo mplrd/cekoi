@@ -1,20 +1,25 @@
-import 'package:cekoi/app/router.dart';
 import 'package:cekoi/app/theme/app_colors.dart';
 import 'package:cekoi/app/theme/app_theme.dart';
 import 'package:cekoi/domain/engine/team_builder.dart';
 import 'package:cekoi/features/setup/presentation/setup_controller.dart';
 import 'package:cekoi/features/setup/presentation/setup_steps.dart';
+import 'package:cekoi/features/setup/presentation/widgets/launch_button.dart';
 import 'package:cekoi/features/setup/presentation/widgets/setup_scaffold.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
-/// Étape 4 — combien d'équipes, et comment elles s'appellent (R8.3).
+/// Dernière étape — combien d'équipes, comment elles s'appellent (R8.3), et
+/// le lancement de la partie.
 ///
 /// L'écran tient en deux gestes parce que c'est le moment où tout le monde
 /// attend autour de la table. L'application ne connaît pas les joueurs (R8.2) :
 /// qui joue avec qui se règle de vive voix, plus vite que par un écran.
+///
+/// C'est aussi d'ici que part la partie. Une sixième étape récapitulait la
+/// configuration avant de lancer : elle n'apprenait rien à qui venait de tout
+/// choisir, et son seul contenu propre était le bouton. Il a donc rejoint la
+/// dernière étape réelle, avec la mention de la publicité qui peut suivre.
 class TeamsScreen extends ConsumerStatefulWidget {
   const TeamsScreen({super.key});
 
@@ -66,10 +71,7 @@ class _TeamsScreenState extends ConsumerState<TeamsScreen> {
     return SetupScaffold(
       step: SetupStep.teams,
       title: l10n.setupTeamsTitle,
-      footer: FilledButton(
-        onPressed: () => context.push(AppRoutes.setupSummary),
-        child: Text(l10n.actionContinue),
-      ),
+      footer: const LaunchButton(),
       child: ListView(
         padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
         children: [

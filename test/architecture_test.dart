@@ -234,7 +234,7 @@ void main() {
   test('le test des features détecte bien une violation', () {
     // Le cas réel qui a motivé ce garde-fou : `setup` importait le provider
     // de partie en cours, qui vivait alors chez `play`.
-    final from = File('lib/features/setup/presentation/summary_screen.dart');
+    final from = File('lib/features/setup/presentation/teams_screen.dart');
 
     expect(
       _targetFeature(from, 'package:cekoi/features/play/presentation/x.dart'),

@@ -70,7 +70,7 @@ lib/
     repositories/             # DeckRepository, GameRepository
   features/                   # feature-first : un dossier = un parcours
     home/
-    setup/                    # mode → catégories → réglages → équipes → récap
+    setup/                    # mode → catégories → réglages → équipes (la partie part d'ici)
     play/                     # jeu, chrono, récap de tour, scores, départage, podium
     decks/                    # CRUD des catégories et cartes du joueur
   l10n/

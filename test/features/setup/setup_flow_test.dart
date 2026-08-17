@@ -34,7 +34,7 @@ import '../../support/providers.dart';
 
 /// Parcours de configuration de bout en bout, sur une base en mémoire.
 ///
-/// C'est le livrable du lot : cinq étapes, et un paquet réellement tiré au
+/// C'est le livrable du lot : quatre étapes, et un paquet réellement tiré au
 /// bout. Le reste des écrans est couvert par les tests du domaine — on ne
 /// teste pas ici la mise en page, mais le chemin critique.
 void main() {
@@ -194,7 +194,7 @@ void main() {
     }
   }
 
-  testWidgets('les cinq étapes mènent à un paquet tiré', (tester) async {
+  testWidgets('les quatre étapes mènent à un paquet tiré', (tester) async {
     await installDeck('animaux');
     await installDeck('metiers', minAge: MinAge.ten);
     await pumpApp(tester);
@@ -213,15 +213,13 @@ void main() {
     expect(find.text(l10n.setupSettingsTitle), findsOneWidget);
     await tapText(tester, l10n.actionContinue);
 
-    // 4 — les équipes : deux par défaut, sans rien taper (R8.3)
+    // 4 — les équipes : deux par défaut, sans rien taper (R8.3). Derniere
+    // etape, et c'est d'ici que part la partie : le recapitulatif qui
+    // suivait n'apprenait rien a qui venait de tout choisir.
     expect(find.text(l10n.setupTeamsTitle), findsOneWidget);
     expect(find.text(l10n.teamDefaultName(1)), findsOneWidget);
     expect(find.text(l10n.teamDefaultName(2)), findsOneWidget);
-    await tapText(tester, l10n.actionContinue);
 
-    // 5 — le récapitulatif
-    expect(find.text(l10n.setupSummaryTitle), findsOneWidget);
-    expect(find.text(l10n.summaryMode), findsOneWidget);
     await tapText(tester, l10n.actionStartGame);
 
     // Le paquet est tiré, au volume par défaut de R6.1.
@@ -263,7 +261,6 @@ void main() {
 
     await tapText(tester, l10n.actionContinue);
     await tapText(tester, l10n.actionContinue);
-    await tapText(tester, l10n.actionContinue);
     await tapText(tester, l10n.actionStartGame);
 
     expect(
@@ -286,7 +283,6 @@ void main() {
     await tapText(tester, l10n.modeFamily);
     await tapText(tester, l10n.actionContinue);
     await tapText(tester, l10n.actionContinue);
-    await tapText(tester, l10n.actionContinue);
     await tapText(tester, l10n.actionStartGame);
 
     expect(launchedGame(tester).deck, hasLength(GameConfig.defaultCardCount));
@@ -303,21 +299,20 @@ void main() {
       await tapText(tester, l10n.modeFamily);
       await tapText(tester, l10n.actionContinue);
       await tapText(tester, l10n.actionContinue);
-      await tapText(tester, l10n.actionContinue);
       await tapText(tester, l10n.actionStartGame);
 
       expect(launchedGame(tester).deck, hasLength(GameConfig.defaultCardCount));
       expect(
         find.text(l10n.turnIntroTeam(l10n.teamDefaultName(1))),
         findsOneWidget,
-        reason: 'l ecran de lancement doit passer la main a la partie',
+        reason: 'le bouton de lancement doit passer la main a la partie',
       );
     });
 
     testWidgets('pendant le chargement, le bouton tourne et rien ne bouge', (
       tester,
     ) async {
-      // La pub n'a plus d'ecran a elle : elle recouvre le recapitulatif, qui
+      // La pub n'a plus d'ecran a elle : elle recouvre la derniere etape, qui
       // reste donc a l'ecran le temps du chargement. Sans etat d'attente, le
       // bouton paraitrait inerte et on le taperait deux fois.
       await installDeck('animaux', easy: 15, medium: 15, hard: 15);
@@ -331,12 +326,11 @@ void main() {
       await tapText(tester, l10n.modeFamily);
       await tapText(tester, l10n.actionContinue);
       await tapText(tester, l10n.actionContinue);
-      await tapText(tester, l10n.actionContinue);
       await tester.tap(find.text(l10n.actionStartGame));
       await tester.pump();
       await tester.pump();
 
-      expect(find.text(l10n.setupSummaryTitle), findsOneWidget);
+      expect(find.text(l10n.setupTeamsTitle), findsOneWidget);
       expect(
         find.descendant(
           of: find.byType(FilledButton),
@@ -374,7 +368,6 @@ void main() {
       await tapText(tester, l10n.modeFamily);
       await tapText(tester, l10n.actionContinue);
       await tapText(tester, l10n.actionContinue);
-      await tapText(tester, l10n.actionContinue);
       await tester.tap(find.text(l10n.actionStartGame));
       await tester.pump();
       await tester.pump();
@@ -386,9 +379,9 @@ void main() {
       await tester.pump();
 
       expect(
-        find.text(l10n.setupSummaryTitle),
+        find.text(l10n.setupTeamsTitle),
         findsOneWidget,
-        reason: 'on ne quitte pas le recapitulatif tant que la pub charge',
+        reason: 'on ne quitte pas la derniere etape tant que la pub charge',
       );
     });
 
@@ -406,13 +399,12 @@ void main() {
       await tapText(tester, l10n.modeFamily);
       await tapText(tester, l10n.actionContinue);
       await tapText(tester, l10n.actionContinue);
-      await tapText(tester, l10n.actionContinue);
       await tapText(tester, l10n.actionStartGame);
 
       expect(launchedGame(tester).deck, hasLength(GameConfig.defaultCardCount));
     });
 
-    testWidgets('le retour depuis la partie ramene au recapitulatif', (
+    testWidgets('le retour depuis la partie ramene aux equipes', (
       tester,
     ) async {
       // Tant que le premier tour n a pas commence, le retour reste libre. Il
@@ -425,13 +417,12 @@ void main() {
       await tapText(tester, l10n.modeFamily);
       await tapText(tester, l10n.actionContinue);
       await tapText(tester, l10n.actionContinue);
-      await tapText(tester, l10n.actionContinue);
       await tapText(tester, l10n.actionStartGame);
 
       tester.state<NavigatorState>(find.byType(Navigator)).pop();
       await tester.pumpAndSettle();
 
-      expect(find.text(l10n.setupSummaryTitle), findsOneWidget);
+      expect(find.text(l10n.setupTeamsTitle), findsOneWidget);
       expect(
         find.text(l10n.turnIntroTeam(l10n.teamDefaultName(1))),
         findsNothing,
@@ -463,7 +454,6 @@ void main() {
       await tapText(tester, l10n.modeFamily);
       await tapText(tester, l10n.actionContinue);
       await tapText(tester, l10n.actionContinue);
-      await tapText(tester, l10n.actionContinue);
       await tapText(tester, l10n.actionStartGame);
 
       expect(interstitiels, 0);
@@ -487,7 +477,6 @@ void main() {
 
       await tapText(tester, l10n.homePlay);
       await tapText(tester, l10n.modeFamily);
-      await tapText(tester, l10n.actionContinue);
       await tapText(tester, l10n.actionContinue);
       await tapText(tester, l10n.actionContinue);
       await tapText(tester, l10n.actionStartGame);
@@ -576,7 +565,6 @@ void main() {
     await setTeamCount(tester, 3);
     await tester.enterText(find.byType(TextField).at(1), 'Les Zèbres');
     await tester.pumpAndSettle();
-    await tapText(tester, l10n.actionContinue);
     await tapText(tester, l10n.actionStartGame);
 
     expect(
@@ -653,7 +641,6 @@ void main() {
       reason: "le champ montre ce que la partie emportera, pas ce qu'on a tapé",
     );
 
-    await tapText(tester, l10n.actionContinue);
     await tapText(tester, l10n.actionStartGame);
 
     // « Les Verts » n'a jamais été coupé, lui : R8.4 garde les noms des
@@ -717,9 +704,9 @@ void main() {
       await tapText(tester, l10n.adultConfirmAccept);
 
       // R7.10 : l'étape 2 de ce mode est le choix du vivier, au même rang que
-      // les catégories en Famille — cinq étapes des deux côtés.
+      // les catégories en Famille — quatre étapes des deux côtés.
       expect(find.text(l10n.setupPoolTitle), findsOneWidget);
-      expect(find.text(l10n.setupStep(2, 5)), findsOneWidget);
+      expect(find.text(l10n.setupStep(2, 4)), findsOneWidget);
 
       await tapText(tester, l10n.adultPoolAll);
       expect(find.text(l10n.setupSettingsTitle), findsOneWidget);
@@ -756,7 +743,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text(l10n.setupPoolTitle), findsOneWidget);
-      expect(find.text(l10n.setupStep(2, 5)), findsOneWidget);
+      expect(find.text(l10n.setupStep(2, 4)), findsOneWidget);
 
       // Et revenir n'a pas défait la présélection de R7.9.
       expect(
@@ -908,7 +895,6 @@ void main() {
       expect(container.read(setupControllerProvider).adultOnly, isTrue);
 
       await tapText(tester, l10n.actionContinue);
-      await tapText(tester, l10n.actionContinue);
       await tapText(tester, l10n.actionStartGame);
 
       final tirees = launchedGame(tester).deck;
@@ -920,7 +906,7 @@ void main() {
       );
     });
 
-    testWidgets('le mode Famille garde ses cinq étapes', (tester) async {
+    testWidgets('le mode Famille garde ses quatre étapes', (tester) async {
       // Rien d'autre ne fixe la longueur du parcours familial : raccourcir
       // `setupStepsFor` laisserait toute la suite verte.
       await installDeck('animaux');
@@ -930,7 +916,7 @@ void main() {
       await tapText(tester, l10n.modeFamily);
 
       expect(find.text(l10n.setupDecksTitle), findsOneWidget);
-      expect(find.text(l10n.setupStep(2, 5)), findsOneWidget);
+      expect(find.text(l10n.setupStep(2, 4)), findsOneWidget);
     });
 
     testWidgets('une categorie decochee ne revient pas seule', (tester) async {
@@ -987,19 +973,18 @@ void main() {
     expect(button.onPressed, isNull);
   });
 
-  /// Traverse les étapes 1 à 4 jusqu'au récapitulatif, avec [deck] coché à la
-  /// main et deux équipes — soit 24 cartes demandées (R6.1).
-  Future<void> goToSummary(WidgetTester tester, String deck) async {
+  /// Traverse la configuration jusqu'à la dernière étape, celle d'où part la
+  /// partie, avec [deck] coché et deux équipes — soit 24 cartes (R6.1).
+  Future<void> goToLaunch(WidgetTester tester, String deck) async {
     await tapText(tester, l10n.homePlay);
     await tapText(tester, l10n.modeFamily);
     await tapText(tester, l10n.actionContinue);
     await tapText(tester, l10n.actionContinue);
-    await tapText(tester, l10n.actionContinue);
-    expect(find.text(l10n.setupSummaryTitle), findsOneWidget);
+    expect(find.text(l10n.setupTeamsTitle), findsOneWidget);
   }
 
   group('R6.2 — un vivier trop petit est annoncé avant de démarrer', () {
-    testWidgets('le récapitulatif dit avec combien de cartes on jouera', (
+    testWidgets('la dernière étape dit avec combien de cartes on jouera', (
       tester,
     ) async {
       // 16 cartes pour 24 demandées : au-dessus du plancher de 12, donc la
@@ -1007,7 +992,7 @@ void main() {
       // que ce soit dit et non découvert en jouant.
       await installDeck('animaux', easy: 6, medium: 6, hard: 4);
       await pumpApp(tester);
-      await goToSummary(tester, 'animaux');
+      await goToLaunch(tester, 'animaux');
 
       expect(find.text(l10n.launchTruncated(16)), findsOneWidget);
 
@@ -1029,7 +1014,7 @@ void main() {
       // passerait le test précédent.
       await installDeck('animaux');
       await pumpApp(tester);
-      await goToSummary(tester, 'animaux');
+      await goToLaunch(tester, 'animaux');
 
       expect(find.textContaining(l10n.launchTruncated(30)), findsNothing);
       await tapText(tester, l10n.actionStartGame);

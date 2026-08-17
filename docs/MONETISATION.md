@@ -11,22 +11,30 @@ exclusivement sur les temps morts réels du jeu.
 
 ### Interstitiel au lancement de la partie — le seul autorisé
 
-Il se déclenche au tap sur **Lancer la partie**, depuis l'écran de récapitulatif. C'est le
-moment où le groupe s'installe, se répartit autour de la table et se passe le téléphone : le
-temps mort existe déjà, on ne le fabrique pas.
+Il se déclenche au tap sur **Lancer la partie**, au pied de la dernière étape de la
+configuration — celle des équipes. C'est le moment où le groupe s'installe, se répartit autour
+de la table et se passe le téléphone : le temps mort existe déjà, on ne le fabrique pas.
 
 Si la pub n'est pas chargée au bout de 3 secondes, **on démarre la partie sans elle** — jamais
-d'attente imposée. Pendant cette attente le récapitulatif reste à l'écran, son bouton tourne,
-et le retour est fermé : sans ça, la pub s'afficherait par-dessus une étape de configuration,
-ce que la section suivante interdit.
+d'attente imposée. Pendant cette attente l'étape des équipes reste à l'écran, le bouton
+tourne, et le retour est fermé : sans ça, la pub s'afficherait par-dessus une étape de
+configuration, ce que la section suivante interdit.
 
-**Pas d'écran dédié.** Il y en a eu un — « Installez-vous, la partie commence », avec le
-rappel de la contrainte de la manche 1 — intercalé entre le récapitulatif et la partie pour
-porter l'interstitiel. Retiré après essai en partie réelle : il redisait ce que l'annonce du
-tour affiche immédiatement après, et comme il était traversé même quand aucune pub ne sortait
-— c'est-à-dire presque toujours — les joueurs voyaient clignoter un écran de plus entre leur
-décision et leur partie. Une pub interstitielle est un plein écran : elle recouvre ce qui est
-dessous et n'a pas besoin d'une page à elle.
+Une ligne discrète au-dessus du bouton prévient qu'une courte publicité précède la partie.
+Elle ne dépend que de ce que le joueur possède : la version complète retire la publicité, tout
+le monde la voit. Ni le consentement refusé ni le plafond de fréquence ne la font disparaître —
+ils décident du chargement d'une pub à un instant donné, pas de ce qui a été acheté, et taire
+la mention sur cette base laisserait croire qu'on en est débarrassé.
+
+**Pas d'écran dédié.** Il y en a eu deux, retirés tous les deux après essai en partie réelle.
+Un **récapitulatif** de la configuration — mode, catégories, durée, équipes — qui portait le
+bouton de lancement : il n'apprenait rien à qui venait de tout choisir. Puis un écran
+« Installez-vous, la partie commence », avec le rappel de la contrainte de la manche 1,
+intercalé pour porter l'interstitiel : il redisait ce que l'annonce du tour affiche
+immédiatement après, et comme il était traversé même quand aucune pub ne sortait — c'est-à-dire
+presque toujours — les joueurs voyaient clignoter un écran de plus entre leur décision et leur
+partie. Une pub interstitielle est un plein écran : elle recouvre ce qui est dessous et n'a pas
+besoin d'une page à elle.
 
 Fréquence : une seule fois par partie, avec un plafond de 3 par heure et un délai minimum de
 5 minutes entre deux. Rejouer avec les mêmes réglages juste après une partie ne doit pas

@@ -7,7 +7,6 @@ import 'package:cekoi/features/setup/presentation/decks_screen.dart';
 import 'package:cekoi/features/setup/presentation/mode_screen.dart';
 import 'package:cekoi/features/setup/presentation/pool_screen.dart';
 import 'package:cekoi/features/setup/presentation/settings_screen.dart';
-import 'package:cekoi/features/setup/presentation/summary_screen.dart';
 import 'package:cekoi/features/setup/presentation/teams_screen.dart';
 import 'package:go_router/go_router.dart';
 
@@ -18,7 +17,7 @@ import 'package:go_router/go_router.dart';
 /// plus cher que de les tenir dès le départ.
 ///
 /// Les étapes de la configuration s'empilent : le retour de `SPEC.md` est le
-/// retour système, sans code de navigation à écrire. Six routes pour cinq
+/// retour système, sans code de navigation à écrire. Cinq routes pour quatre
 /// étapes — la deuxième a deux écrans, un par mode (R7.10).
 abstract final class AppRoutes {
   static const String home = '/';
@@ -26,14 +25,19 @@ abstract final class AppRoutes {
   static const String setupDecks = '/jouer/categories';
   static const String setupPool = '/jouer/vivier';
   static const String setupSettings = '/jouer/reglages';
-  static const String setupTeams = '/jouer/equipes';
-  static const String setupSummary = '/jouer/recap';
 
-  // Il a existé une route `/lancement`, un écran intercalé entre le
-  // récapitulatif et la partie pour porter l'interstitiel. Elle a été retirée :
-  // l'écran redisait ce que l'annonce du tour affiche juste après, et il
-  // apparaissait même quand aucune pub ne sortait. La pub est un plein écran,
-  // elle n'a pas besoin d'une route à elle.
+  /// La dernière étape de la configuration : c'est de là que part la partie.
+  static const String setupTeams = '/jouer/equipes';
+
+  // Deux routes ont disparu entre celle-ci et la partie.
+  //
+  // `/jouer/recap` récapitulait mode, catégories, durée et équipes avant de
+  // laisser lancer — il n'apprenait rien à qui venait de tout choisir, et son
+  // seul contenu propre était le bouton. `/lancement` affichait « Installez-
+  // vous » pendant que l'interstitiel chargeait, et redisait ce que l'annonce
+  // du tour affiche juste après ; il était en plus traversé même quand aucune
+  // pub ne sortait. Une pub interstitielle est un plein écran : elle recouvre
+  // ce qui est dessous et n'a besoin d'aucune route à elle.
   static const String game = '/partie';
   static const String myDecks = '/mes-categories';
 
@@ -81,11 +85,6 @@ GoRouter createAppRouter() => GoRouter(
       path: AppRoutes.setupTeams,
       name: 'setup-teams',
       builder: (context, state) => const TeamsScreen(),
-    ),
-    GoRoute(
-      path: AppRoutes.setupSummary,
-      name: 'setup-summary',
-      builder: (context, state) => const SummaryScreen(),
     ),
     GoRoute(
       path: AppRoutes.game,

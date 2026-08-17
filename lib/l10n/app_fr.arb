@@ -281,43 +281,14 @@
     }
   },
 
-  "setupSummaryTitle": "Prêts ?",
-  "@setupSummaryTitle": {
-    "description": "Titre de l'étape 5, le récapitulatif."
-  },
-
-  "summaryMode": "Mode",
-  "@summaryMode": {
-    "description": "Ligne du récapitulatif : mode de contenu."
-  },
-
-  "summaryDecks": "Catégories",
-  "@summaryDecks": {
-    "description": "Ligne du récapitulatif : catégories retenues."
-  },
-
-  "summarySettings": "Réglages",
-  "@summarySettings": {
-    "description": "Ligne du récapitulatif : chrono, cartes, manches."
-  },
-
-  "summaryTeams": "Équipes",
-  "@summaryTeams": {
-    "description": "Ligne du récapitulatif : composition."
-  },
-
-  "summarySettingsValue": "{seconds} s · {cards} cartes · 3 manches",
-  "@summarySettingsValue": {
-    "description": "Résumé des réglages sur une ligne. Les trois manches sont annoncées mais ne se règlent plus (R2.2).",
-    "placeholders": {
-      "seconds": { "type": "int" },
-      "cards": { "type": "int" }
-    }
-  },
-
   "actionStartGame": "Lancer la partie",
   "@actionStartGame": {
-    "description": "Bouton final du récapitulatif."
+    "description": "Bouton qui lance la partie, au pied de la dernière étape de la configuration."
+  },
+
+  "launchAdNotice": "Une courte publicité précède la partie.",
+  "@launchAdNotice": {
+    "description": "Prévient de l'interstitiel au lancement. N'apparaît pas pour qui a acheté la version complète — et ne dépend que de ça : le consentement et le plafond de fréquence décident du chargement d'une pub, pas de ce que le joueur a acheté."
   },
 
   "launchTruncated": "Le vivier ne contient que {available} cartes : la partie se jouera avec celles-là.",
