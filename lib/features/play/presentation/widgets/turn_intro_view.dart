@@ -30,70 +30,88 @@ class TurnIntroView extends ConsumerWidget {
     const encre = AppColors.ink;
     final voile = AppColors.inkSoft;
 
-    return Padding(
-      padding: const EdgeInsets.all(32),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            l10n.roundStep(game.roundIndex + 1, game.rounds.length),
-            textAlign: TextAlign.center,
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: voile,
-              letterSpacing: 1.5,
-              fontWeight: FontWeight.w600,
+    // Centré tant que ça tient, défilant dès que ça déborde — `SPEC.md`
+    // n'accepte que ces deux états, et cet écran ne faisait ni l'un ni
+    // l'autre : 132 px sous le bord sur un 360 × 640, 454 px avec le texte
+    // agrandi par le système, et « C'est parti » avec eux.
+    //
+    // Le `minHeight` est ce qui préserve le centrage : sans lui la colonne se
+    // colle en haut du défilement dès qu'il y a de la place, et l'annonce
+    // n'occupe plus l'écran. La colonne n'a aucun enfant flexible, donc elle
+    // peut se mesurer sous une contrainte de hauteur infinie.
+    return LayoutBuilder(
+      builder: (context, contraintes) => SingleChildScrollView(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: contraintes.maxHeight),
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  l10n.roundStep(game.roundIndex + 1, game.rounds.length),
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: voile,
+                    letterSpacing: 1.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  game.round.label(l10n),
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.displaySmall?.copyWith(
+                    color: encre,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  game.round.rule(l10n),
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.titleMedium?.copyWith(color: voile),
+                ),
+                const SizedBox(height: 40),
+                Text(
+                  l10n.turnIntroTeam(game.activeTeam.name),
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: encre,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  l10n.turnIntroPassPhone,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.titleMedium?.copyWith(color: voile),
+                ),
+                const SizedBox(height: 48),
+                if (countdown == null)
+                  ActionZone(
+                    label: l10n.actionStartTurn,
+                    background: AppColors.deep,
+                    foreground: Colors.white,
+                    onPressed: ref
+                        .read(playControllerProvider.notifier)
+                        .startTurn,
+                  )
+                else
+                  Text(
+                    l10n.gameSecondsLeft(countdown),
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.displayLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: encre,
+                    ),
+                  ),
+              ],
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            game.round.label(l10n),
-            textAlign: TextAlign.center,
-            style: theme.textTheme.displaySmall?.copyWith(
-              color: encre,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.5,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            game.round.rule(l10n),
-            textAlign: TextAlign.center,
-            style: theme.textTheme.titleMedium?.copyWith(color: voile),
-          ),
-          const SizedBox(height: 40),
-          Text(
-            l10n.turnIntroTeam(game.activeTeam.name),
-            textAlign: TextAlign.center,
-            style: theme.textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: encre,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            l10n.turnIntroPassPhone,
-            textAlign: TextAlign.center,
-            style: theme.textTheme.titleMedium?.copyWith(color: voile),
-          ),
-          const SizedBox(height: 48),
-          if (countdown == null)
-            ActionZone(
-              label: l10n.actionStartTurn,
-              background: AppColors.deep,
-              foreground: Colors.white,
-              onPressed: ref.read(playControllerProvider.notifier).startTurn,
-            )
-          else
-            Text(
-              l10n.gameSecondsLeft(countdown),
-              textAlign: TextAlign.center,
-              style: theme.textTheme.displayLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: encre,
-              ),
-            ),
-        ],
+        ),
       ),
     );
   }

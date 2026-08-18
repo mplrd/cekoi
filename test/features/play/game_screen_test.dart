@@ -71,24 +71,33 @@ void main() {
   });
 
   /// Monte l'écran de jeu sur une partie donnée.
-  /// Monte l'écran de jeu sur une partie donnée.
   ///
-  /// [surUnePile] empile la partie au-dessus de l'accueil, comme le
-  /// récapitulatif le fait en vrai : sans route en dessous, un retour n'a rien
-  /// à dépiler et le comportement testé n'existe pas.
+  /// [surUnePile] empile la partie au-dessus de l'accueil, comme l'étape des
+  /// équipes le fait en vrai : sans route en dessous, un retour n'a rien à
+  /// dépiler et le comportement testé n'existe pas.
   Future<void> pumpScreen(
     WidgetTester tester, {
     GameState? game,
     bool surUnePile = false,
+
+    /// La géométrie de l'appareil. Par défaut un écran très haut, pour que la
+    /// mise en page ne soit jamais ce qui fait échouer un test de contenu.
+    Size? taille,
+
+    /// L'agrandissement du texte par le système. Rien ne le borne dans
+    /// l'application : le réglage s'applique en entier.
+    double echelleTexte = 1,
 
     /// Réglages de l'appareil. `null` laisse les valeurs par défaut, tout
     /// activé — l'état de quelqu'un qui n'a jamais rien touché.
     AppPreferences? reglages,
   }) async {
     clock = FakeClock();
-    tester.view.physicalSize = const Size(1000, 2000);
+    tester.view.physicalSize = taille ?? const Size(1000, 2000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
+    tester.platformDispatcher.textScaleFactorTestValue = echelleTexte;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
 
     await tester.pumpWidget(
       ProviderScope(
@@ -196,6 +205,81 @@ void main() {
       await pumpScreen(tester, game: game);
 
       expect(find.text(game.deck.first.text), findsNothing);
+      await stopGame(tester);
+    });
+
+    for (final (libelle, taille, echelle) in const [
+      // La géométrie Android la plus répandue, à l'échelle par défaut.
+      ('un ecran courant', Size(360, 800), 1.0),
+      // Le même écran avec le texte agrandi par le système.
+      ('un texte agrandi', Size(360, 800), 1.3),
+      // Une hauteur utile courte.
+      ('un petit ecran', Size(360, 640), 1.0),
+      // Le cumul des deux, soit le pire cas réellement atteignable.
+      ('un petit ecran au texte agrandi', Size(360, 640), 1.3),
+    ]) {
+      testWidgets("l'annonce tient sur $libelle", (tester) async {
+        // `SPEC.md` : un écran doit tenir, ou défiler. Celui-ci ne faisait ni
+        // l'un ni l'autre — il débordait de 132 px sur un 360 × 640, et de
+        // 454 px avec le texte agrandi, emportant « C'est parti » sous le bord.
+        // C'est l'écran vu à chaque tour, et le seul de `play/` qui ne défilait
+        // pas.
+        //
+        // Trouvé en tapant sur « Lancer la partie » depuis un test de
+        // géométrie de la configuration : rien ici ne le couvrait.
+        await pumpScreen(tester, taille: taille, echelleTexte: echelle);
+
+        // Un débordement de `RenderFlex` remonte comme exception de test.
+        expect(tester.takeException(), isNull);
+
+        // Et le bouton reste entièrement à l'écran : c'est ce que « tenir »
+        // veut dire ici. Le défilement n'aide que si l'on peut l'atteindre,
+        // donc on le fait défiler d'abord, comme le joueur le ferait.
+        final bouton = find.widgetWithText(ActionZone, l10n.actionStartTurn);
+        await tester.ensureVisible(bouton);
+        await tester.pumpAndSettle();
+
+        final rect = tester.getRect(bouton);
+        expect(rect.top, greaterThanOrEqualTo(0.0));
+        expect(
+          rect.bottom,
+          lessThanOrEqualTo(taille.height),
+          reason: "« C'est parti » sort de l'écran",
+        );
+
+        // Et il lance vraiment le tour : un bouton visible mais inerte ne
+        // vaudrait pas mieux.
+        await tester.tap(bouton);
+        await tester.pump();
+        expect(find.text(l10n.gameSecondsLeft(3)), findsOneWidget);
+
+        await stopGame(tester);
+      });
+    }
+
+    testWidgets("quand il y a de la place, l'annonce reste centrée", (
+      tester,
+    ) async {
+      // Le témoin du `minHeight` : sans lui l'écran cesse de déborder — un
+      // défilement ne déborde jamais — mais l'annonce se colle en haut, et
+      // les quatre tests de géométrie restent verts. C'est le seul qui rougit
+      // si on retire la contrainte.
+      await pumpScreen(tester, taille: const Size(360, 800));
+
+      final entete = find.text(l10n.roundStep(2, 3));
+      final bouton = find.widgetWithText(ActionZone, l10n.actionStartTurn);
+      final hautDuBloc = tester.getRect(entete).top;
+      final basDuBloc = tester.getRect(bouton).bottom;
+
+      // Collé en haut, le bloc commencerait exactement a la marge de 32.
+      expect(
+        hautDuBloc,
+        greaterThan(40),
+        reason: "l'annonce est collée en haut au lieu d'occuper l'écran",
+      );
+      // Et centré, donc autant d'air au-dessus qu'en dessous.
+      expect(hautDuBloc, closeTo(800 - basDuBloc, 4));
+
       await stopGame(tester);
     });
   });
