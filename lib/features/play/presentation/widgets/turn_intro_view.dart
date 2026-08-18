@@ -30,89 +30,110 @@ class TurnIntroView extends ConsumerWidget {
     const encre = AppColors.ink;
     final voile = AppColors.inkSoft;
 
-    // Centré tant que ça tient, défilant dès que ça déborde — `SPEC.md`
-    // n'accepte que ces deux états, et cet écran ne faisait ni l'un ni
-    // l'autre : 132 px sous le bord sur un 360 × 640, 454 px avec le texte
-    // agrandi par le système, et « C'est parti » avec eux.
+    // L'annonce défile, l'action reste collée en bas — la convention du
+    // dépôt, écrite dans `SetupScaffold` et suivie par le podium, le bilan de
+    // tour et le bilan de manche. Elle vaut doublement ici : c'est l'écran qui
+    // existe pour que le téléphone change de mains, et celui qui le reçoit
+    // n'était pas en train de regarder. Un bouton qu'il faut d'abord trouver
+    // en faisant défiler n'est pas un bouton.
     //
-    // Le `minHeight` est ce qui préserve le centrage : sans lui la colonne se
-    // colle en haut du défilement dès qu'il y a de la place, et l'annonce
-    // n'occupe plus l'écran. La colonne n'a aucun enfant flexible, donc elle
-    // peut se mesurer sous une contrainte de hauteur infinie.
-    return LayoutBuilder(
-      builder: (context, contraintes) => SingleChildScrollView(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minHeight: contraintes.maxHeight),
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  l10n.roundStep(game.roundIndex + 1, game.rounds.length),
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: voile,
-                    letterSpacing: 1.5,
-                    fontWeight: FontWeight.w600,
+    // L'écran ne faisait avant ni l'un ni l'autre de ce que `SPEC.md` accepte
+    // — tenir, ou défiler : 132 px sous le bord sur un 360 × 640, 454 px avec
+    // le texte agrandi par le système, et « C'est parti » avec eux.
+    //
+    // Le `minHeight` est ce qui préserve le centrage : sans lui le texte se
+    // colle en haut dès qu'il y a de la place, et l'annonce n'occupe plus
+    // l'écran. Il tient parce que la colonne n'a aucun enfant flexible et peut
+    // donc se mesurer sous une hauteur infinie — y ajouter un `Expanded` ou un
+    // `Spacer` ferait lever `RenderFlex` dès la première mise en page.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, contraintes) => SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: contraintes.maxHeight),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(32, 32, 32, 16),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        l10n.roundStep(game.roundIndex + 1, game.rounds.length),
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: voile,
+                          letterSpacing: 1.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        game.round.label(l10n),
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.displaySmall?.copyWith(
+                          color: encre,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        game.round.rule(l10n),
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: voile,
+                        ),
+                      ),
+                      const SizedBox(height: 40),
+                      Text(
+                        l10n.turnIntroTeam(game.activeTeam.name),
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: encre,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        l10n.turnIntroPassPhone,
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: voile,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  game.round.label(l10n),
+              ),
+            ),
+          ),
+        ),
+        // Le compte à rebours prend exactement la place du bouton : ce qui
+        // bouge à l'écran est ce qui a changé, et rien d'autre.
+        Padding(
+          padding: const EdgeInsets.fromLTRB(32, 0, 32, 32),
+          child: countdown == null
+              ? ActionZone(
+                  label: l10n.actionStartTurn,
+                  background: AppColors.deep,
+                  foreground: Colors.white,
+                  onPressed: ref
+                      .read(playControllerProvider.notifier)
+                      .startTurn,
+                )
+              : Text(
+                  l10n.gameSecondsLeft(countdown),
                   textAlign: TextAlign.center,
-                  style: theme.textTheme.displaySmall?.copyWith(
-                    color: encre,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  game.round.rule(l10n),
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.titleMedium?.copyWith(color: voile),
-                ),
-                const SizedBox(height: 40),
-                Text(
-                  l10n.turnIntroTeam(game.activeTeam.name),
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.headlineMedium?.copyWith(
+                  style: theme.textTheme.displayLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: encre,
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  l10n.turnIntroPassPhone,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.titleMedium?.copyWith(color: voile),
-                ),
-                const SizedBox(height: 48),
-                if (countdown == null)
-                  ActionZone(
-                    label: l10n.actionStartTurn,
-                    background: AppColors.deep,
-                    foreground: Colors.white,
-                    onPressed: ref
-                        .read(playControllerProvider.notifier)
-                        .startTurn,
-                  )
-                else
-                  Text(
-                    l10n.gameSecondsLeft(countdown),
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.displayLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: encre,
-                    ),
-                  ),
-              ],
-            ),
-          ),
         ),
-      ),
+      ],
     );
   }
 }

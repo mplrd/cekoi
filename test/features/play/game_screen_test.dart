@@ -222,11 +222,14 @@ void main() {
         // `SPEC.md` : un écran doit tenir, ou défiler. Celui-ci ne faisait ni
         // l'un ni l'autre — il débordait de 132 px sur un 360 × 640, et de
         // 454 px avec le texte agrandi, emportant « C'est parti » sous le bord.
-        // C'est l'écran vu à chaque tour, et le seul de `play/` qui ne défilait
-        // pas.
+        // C'est l'écran vu à chaque tour.
         //
         // Trouvé en tapant sur « Lancer la partie » depuis un test de
         // géométrie de la configuration : rien ici ne le couvrait.
+        //
+        // Et rien ne couvre encore `tie_break_view.dart`, qui ne défile pas
+        // davantage et déborde au-delà de cinq équipes à égalité, alors que
+        // R8.1 en promet dix. Ce n'est pas traité ici.
         await pumpScreen(tester, taille: taille, echelleTexte: echelle);
 
         // Un débordement de `RenderFlex` remonte comme exception de test.
@@ -264,21 +267,34 @@ void main() {
       // défilement ne déborde jamais — mais l'annonce se colle en haut, et
       // les quatre tests de géométrie restent verts. C'est le seul qui rougit
       // si on retire la contrainte.
-      await pumpScreen(tester, taille: const Size(360, 800));
+      //
+      // Sur l'écran haut par défaut, et non sur un 360 × 800 où l'espace libre
+      // se compte en dizaines de pixels : la marge de détection y serait du
+      // même ordre que la tolérance, et une règle de manche rallongée d'une
+      // ligne suffirait à faire rougir le test pour une autre raison.
+      await pumpScreen(tester);
 
-      final entete = find.text(l10n.roundStep(2, 3));
-      final bouton = find.widgetWithText(ActionZone, l10n.actionStartTurn);
-      final hautDuBloc = tester.getRect(entete).top;
-      final basDuBloc = tester.getRect(bouton).bottom;
+      // Tout est dérivé de la géométrie rendue : la zone défilante, ses
+      // marges, et les deux extrémités du bloc de texte.
+      final zone = tester.getRect(find.byType(SingleChildScrollView));
+      final entete = tester.getRect(find.text(l10n.roundStep(2, 3)));
+      final pied = tester.getRect(find.text(l10n.turnIntroPassPhone));
 
-      // Collé en haut, le bloc commencerait exactement a la marge de 32.
+      const margeHaute = 32.0;
+      const margeBasse = 16.0;
+      final airAuDessus = entete.top - (zone.top + margeHaute);
+      final airEnDessous = (zone.bottom - margeBasse) - pied.bottom;
+
       expect(
-        hautDuBloc,
-        greaterThan(40),
-        reason: "l'annonce est collée en haut au lieu d'occuper l'écran",
+        airAuDessus,
+        greaterThan(50),
+        reason: "l'annonce est collée en haut au lieu d'occuper la zone",
       );
-      // Et centré, donc autant d'air au-dessus qu'en dessous.
-      expect(hautDuBloc, closeTo(800 - basDuBloc, 4));
+      expect(
+        airAuDessus,
+        closeTo(airEnDessous, 4),
+        reason: "l'annonce n'est pas centrée dans la zone qui lui reste",
+      );
 
       await stopGame(tester);
     });
