@@ -330,6 +330,9 @@ void main() {
 
     for (final (libelle, taille, echelle) in const [
       ('un ecran courant', Size(360, 800), 1.0),
+      // La combinaison la plus probable sur le terrain : un telephone
+      // ordinaire chez quelqu un qui a grossi la police du systeme.
+      ('un ecran courant au texte agrandi', Size(360, 800), 1.3),
       ('un petit ecran', Size(360, 640), 1.0),
       ('un petit ecran au texte agrandi', Size(360, 640), 1.3),
     ]) {
@@ -352,6 +355,13 @@ void main() {
             FilledButton,
             l10n.tieBreakWinner(id),
           );
+          // `ensureVisible` n'est pas l'assertion, et ne protege de rien :
+          // sans `Scrollable` ancetre il ne leve pas, il ne fait rien. Ce qui
+          // attrape un retour a la colonne non defilante, c'est l'exception
+          // de `RenderFlex` ci-dessus et la mesure ci-dessous — une colonne
+          // qui deborde positionne quand meme ses enfants au-dela du bord, et
+          // `getRect` lit la transformee, pas le rognage.
+          //
           // `pump` et non `pumpAndSettle` : l'ecran de jeu anime en
           // permanence, rien ne s'y stabilise jamais. C'est la convention de
           // tous les tests de `play/`.
@@ -393,10 +403,24 @@ void main() {
         find.widgetWithText(OutlinedButton, l10n.actionTieBreakRestart),
       );
 
-      const margeHaute = 48.0;
-      const margeBasse = 24.0;
-      final airAuDessus = titre.top - (zone.top + margeHaute);
-      final airEnDessous = (zone.bottom - margeBasse) - pied.bottom;
+      // Les marges sont lues sur le widget, pas recopiees : les reecrire ici
+      // ferait rougir « le departage n'est pas centre » a la premiere retouche
+      // du `padding`, alors que la mise en page serait restee parfaitement
+      // centree.
+      final marges = tester
+          .widget<Padding>(
+            find
+                .descendant(
+                  of: find.byType(SingleChildScrollView),
+                  matching: find.byType(Padding),
+                )
+                .first,
+          )
+          .padding
+          .resolve(TextDirection.ltr);
+
+      final airAuDessus = titre.top - (zone.top + marges.top);
+      final airEnDessous = (zone.bottom - marges.bottom) - pied.bottom;
 
       expect(
         airAuDessus,

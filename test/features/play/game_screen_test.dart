@@ -226,10 +226,6 @@ void main() {
         //
         // Trouvé en tapant sur « Lancer la partie » depuis un test de
         // géométrie de la configuration : rien ici ne le couvrait.
-        //
-        // Et rien ne couvre encore `tie_break_view.dart`, qui ne défile pas
-        // davantage et déborde au-delà de cinq équipes à égalité, alors que
-        // R8.1 en promet dix. Ce n'est pas traité ici.
         await pumpScreen(tester, taille: taille, echelleTexte: echelle);
 
         // Un débordement de `RenderFlex` remonte comme exception de test.
@@ -280,10 +276,23 @@ void main() {
       final entete = tester.getRect(find.text(l10n.roundStep(2, 3)));
       final pied = tester.getRect(find.text(l10n.turnIntroPassPhone));
 
-      const margeHaute = 32.0;
-      const margeBasse = 16.0;
-      final airAuDessus = entete.top - (zone.top + margeHaute);
-      final airEnDessous = (zone.bottom - margeBasse) - pied.bottom;
+      // Les marges sont lues sur le widget, pas recopiées : les réécrire ici
+      // ferait rougir « l'annonce n'est pas centrée » à la première retouche
+      // du `padding`, alors que la mise en page serait restée centrée.
+      final marges = tester
+          .widget<Padding>(
+            find
+                .descendant(
+                  of: find.byType(SingleChildScrollView),
+                  matching: find.byType(Padding),
+                )
+                .first,
+          )
+          .padding
+          .resolve(TextDirection.ltr);
+
+      final airAuDessus = entete.top - (zone.top + marges.top);
+      final airEnDessous = (zone.bottom - marges.bottom) - pied.bottom;
 
       expect(
         airAuDessus,

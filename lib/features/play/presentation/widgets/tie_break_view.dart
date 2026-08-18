@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:cekoi/app/theme/app_colors.dart';
 import 'package:cekoi/domain/engine/game_state.dart';
 import 'package:cekoi/features/play/presentation/play_controller.dart';
@@ -32,10 +34,11 @@ class TieBreakView extends ConsumerWidget {
     // d'entre eux sous le bord et R5.3 ne peut plus être tranchée, donc la
     // partie ne peut plus se terminer.
     //
-    // Il débordait de 44 px dès dix équipes sur un 360 × 800 courant, à taille
-    // de texte normale — la colonne à hauteur fixe ne pouvait pas rétrécir
-    // au-delà de son `Expanded`, qui tombait à zéro et laissait le reste
-    // passer sous le bord.
+    // Il débordait de 44 px dès dix équipes sur un 360 × 800 courant à taille
+    // de texte normale, et de 184 px sur le même écran avec le texte agrandi
+    // par le système — mesuré, pas estimé. La colonne à hauteur fixe ne
+    // pouvait pas rétrécir au-delà de son `Expanded`, qui tombait à zéro et
+    // laissait tout le reste passer sous le bord.
     //
     // Rien n'est épinglé ici, contrairement à l'annonce du tour : les actions
     // sont en nombre variable, on ne peut pas coller dix boutons en bas. Tout
@@ -67,25 +70,34 @@ class TieBreakView extends ConsumerWidget {
                     color: AppColors.ink.withValues(alpha: 0.75),
                   ),
                 ),
-                // La carte prend la place disponible sans la réclamer : un
-                // `Expanded` est impossible dans un défilement, et c'était lui
-                // qui absorbait le débordement jusqu'à ne plus pouvoir. Le
-                // plafond la garde imposante sans lui laisser chasser les
-                // boutons de l'écran ; `scaleDown` fait le reste.
+                // La carte prend la place qu'il lui faut, et pas davantage :
+                // un `Expanded` est impossible dans un défilement, et c'était
+                // lui qui absorbait le débordement jusqu'à ne plus pouvoir.
+                //
+                // Pas de `Center` ici, et c'est délibéré : un `Align` sans
+                // `heightFactor` remplit toute la hauteur qu'on lui autorise,
+                // ce qui transformerait le plafond en réservation — 320 px
+                // gelés pour une ligne de 52 px sur un 360 × 800, autant de
+                // moins pour les boutons. Sans lui, la boîte se règle sur le
+                // texte, `FittedBox` centrant déjà ce qu'il rétrécit.
+                //
+                // Le plafond ne borne donc que les textes très longs, et le
+                // `math.max` le garde au-dessus du plancher : sous 240 px de
+                // hauteur utile — fenêtrage libre, le portrait étant verrouillé
+                // sur téléphone — les deux se croiseraient et `BoxConstraints`
+                // lèverait sur des contraintes non normalisées.
                 ConstrainedBox(
                   constraints: BoxConstraints(
                     minHeight: 96,
-                    maxHeight: contraintes.maxHeight * 0.4,
+                    maxHeight: math.max(96, contraintes.maxHeight * 0.4),
                   ),
-                  child: Center(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        card?.text ?? '',
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.displayMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      card?.text ?? '',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.displayMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
