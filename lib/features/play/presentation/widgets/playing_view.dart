@@ -11,8 +11,9 @@ import 'package:cekoi/features/play/presentation/widgets/game_card_face.dart';
 import 'package:cekoi/features/play/presentation/widgets/round_labels.dart';
 import 'package:cekoi/features/play/presentation/widgets/turn_timer_ring.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
+import 'package:cekoi/services/feedback/feedback.dart';
+import 'package:cekoi/services/feedback/game_feedback.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// L'écran de jeu : chrono, carte, deux actions. Rien d'autre.
@@ -41,10 +42,7 @@ class PlayingView extends ConsumerWidget {
     // Le narrateur regarde la carte, pas le chrono : il doit sentir la fin
     // arriver sans lever les yeux.
     //
-    // Le son est celui du système plutôt qu'un fichier : il suit le volume et
-    // le mode silencieux de l'appareil, ce qu'un asset joué à plein régime au
-    // milieu d'un repas ne ferait pas. Un son dessiné pourra le remplacer.
-    // Lu dans le `build` et non dans l'écouteur : la lecture en base est
+    // Lus dans le `build` et non dans l'écouteur : la lecture en base est
     // asynchrone, et un provider instancié au moment du premier bip répondrait
     // par ses valeurs par défaut — le son coupé sonnerait une fois quand même.
     //
@@ -52,6 +50,7 @@ class PlayingView extends ConsumerWidget {
     // vibration est justement ce qu'on veut au restaurant, et l'inverse aussi
     // — la vibration seule agace celui qui tient le téléphone.
     final reglages = ref.watch(currentPreferencesProvider);
+    final feedback = ref.watch(gameFeedbackProvider);
 
     ref.listen(
       currentGameProvider.select(
@@ -62,10 +61,10 @@ class PlayingView extends ConsumerWidget {
         if (apres >= TurnTimerRing.urgentBelow.inSeconds) return;
 
         if (reglages.hapticsEnabled) {
-          unawaited(HapticFeedback.lightImpact());
+          unawaited(feedback.vibrate(GameSound.tick));
         }
         if (reglages.soundEnabled) {
-          unawaited(SystemSound.play(SystemSoundType.click));
+          unawaited(feedback.play(GameSound.tick));
         }
       },
     );

@@ -22,7 +22,6 @@
 /// lance quand on veut regarder.
 library;
 
-import 'dart:async';
 import 'dart:io';
 
 import 'package:cekoi/app/app.dart';
@@ -49,6 +48,8 @@ import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:cekoi/services/ads/ad_service.dart';
 import 'package:cekoi/services/ads/ads.dart';
 import 'package:cekoi/services/ads/consent.dart';
+import 'package:cekoi/services/feedback/feedback.dart';
+import 'package:cekoi/services/feedback/game_feedback.dart';
 import 'package:cekoi/services/purchases/purchases.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -217,6 +218,7 @@ void main() {
           deckSeedingProvider.overrideWith((ref) async => const SeedReport()),
           seedSourceProvider.overrideWithValue(() => 42),
           screenAwakeProvider.overrideWithValue(fakeScreenAwake()),
+          gameFeedbackProvider.overrideWithValue(const SilentGameFeedback()),
           consentGatewayProvider.overrideWithValue(
             fakeConsentGateway(
               const ConsentState(canRequestAds: true, canChangeChoice: true),
@@ -269,16 +271,17 @@ void main() {
     await shoot(tester, '04-reglages');
 
     await tapText(tester, l10n.actionContinue);
+    // Dernière étape : c'est d'ici que part la partie, le bouton de lancement
+    // est au pied de l'écran.
     await shoot(tester, '05-equipes');
-
-    await tapText(tester, l10n.actionContinue);
-    await shoot(tester, '06-recapitulatif');
   });
 
   testWidgets('les réglages de l application', (tester) async {
-    // Le seul écran dont l'apparence dépend de ce que le joueur possède :
-    // l'offre d'achat s'efface une fois payée. Le banc l'accorde consentement
-    // et formulaire disponibles, donc la carte de choix publicitaire est là.
+    // L'apparence de cet écran dépend de ce que le joueur possède : l'offre
+    // d'achat s'efface une fois payée. Le banc n'accorde jamais la version
+    // complète, donc l'offre est là — comme la mention de publicité de
+    // `05-equipes`, qui suit la même possession. Consentement et formulaire
+    // sont accordés, donc la carte de choix publicitaire est là aussi.
     await installCatalogue();
     await pumpApp(tester);
 
@@ -286,24 +289,11 @@ void main() {
     await shoot(tester, '15-reglages');
   });
 
-  testWidgets('l écran de lancement de partie', (tester) async {
-    // Ce que la table lit pendant que la pub charge. Il n'apparaît que
-    // pendant ce chargement : sans un interstitiel qui prend son temps, le
-    // banc le traverserait sans rien capturer.
-    await installCatalogue();
-    await pumpApp(
-      tester,
-      interstitiel: ({required loadTimeout}) => Completer<bool>().future,
-    );
-
-    await tapText(tester, l10n.homePlay);
-    await tapText(tester, l10n.modeFamily);
-    await tapText(tester, l10n.actionContinue);
-    await tapText(tester, l10n.actionContinue);
-    await tapText(tester, l10n.actionContinue);
-    await tapText(tester, l10n.actionStartGame);
-    await shoot(tester, '16-lancement');
-  });
+  // Il a existé ici deux aperçus, `06-recapitulatif` et `16-lancement` : le
+  // récapitulatif de la configuration, et l'écran intercalé qui portait
+  // l'interstitiel. Les deux écrans ont été retirés — le premier n'apprenait
+  // rien à qui venait de tout choisir, le second redisait ce que l'annonce du
+  // tour affiche juste après.
 
   testWidgets('mes catégories', (tester) async {
     await installCatalogue();
@@ -387,6 +377,7 @@ void main() {
             appDatabaseProvider.overrideWithValue(db),
             monotonicClockProvider.overrideWithValue(clock.read),
             screenAwakeProvider.overrideWithValue(fakeScreenAwake()),
+            gameFeedbackProvider.overrideWithValue(const SilentGameFeedback()),
           ],
           child: MaterialApp.router(
             locale: const Locale('fr'),

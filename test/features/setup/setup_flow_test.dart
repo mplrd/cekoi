@@ -22,6 +22,8 @@ import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:cekoi/services/ads/ad_service.dart';
 import 'package:cekoi/services/ads/ads.dart';
 import 'package:cekoi/services/ads/consent.dart';
+import 'package:cekoi/services/feedback/feedback.dart';
+import 'package:cekoi/services/feedback/game_feedback.dart';
 import 'package:cekoi/services/purchases/purchases.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
@@ -32,7 +34,7 @@ import '../../support/providers.dart';
 
 /// Parcours de configuration de bout en bout, sur une base en mémoire.
 ///
-/// C'est le livrable du lot : cinq étapes, et un paquet réellement tiré au
+/// C'est le livrable du lot : quatre étapes, et un paquet réellement tiré au
 /// bout. Le reste des écrans est couvert par les tests du domaine — on ne
 /// teste pas ici la mise en page, mais le chemin critique.
 void main() {
@@ -132,6 +134,7 @@ void main() {
           deckSeedingProvider.overrideWith((ref) async => const SeedReport()),
           seedSourceProvider.overrideWithValue(() => 42),
           screenAwakeProvider.overrideWithValue(fakeScreenAwake()),
+          gameFeedbackProvider.overrideWithValue(const SilentGameFeedback()),
           currentPreferencesProvider.overrideWithValue(fakePreferences()),
           consentGatewayProvider.overrideWithValue(
             passerelle ?? fakeConsentGateway(),
@@ -191,7 +194,7 @@ void main() {
     }
   }
 
-  testWidgets('les cinq étapes mènent à un paquet tiré', (tester) async {
+  testWidgets('les quatre étapes mènent à un paquet tiré', (tester) async {
     await installDeck('animaux');
     await installDeck('metiers', minAge: MinAge.ten);
     await pumpApp(tester);
@@ -210,15 +213,13 @@ void main() {
     expect(find.text(l10n.setupSettingsTitle), findsOneWidget);
     await tapText(tester, l10n.actionContinue);
 
-    // 4 — les équipes : deux par défaut, sans rien taper (R8.3)
+    // 4 — les équipes : deux par défaut, sans rien taper (R8.3). Derniere
+    // etape, et c'est d'ici que part la partie : le recapitulatif qui
+    // suivait n'apprenait rien a qui venait de tout choisir.
     expect(find.text(l10n.setupTeamsTitle), findsOneWidget);
     expect(find.text(l10n.teamDefaultName(1)), findsOneWidget);
     expect(find.text(l10n.teamDefaultName(2)), findsOneWidget);
-    await tapText(tester, l10n.actionContinue);
 
-    // 5 — le récapitulatif
-    expect(find.text(l10n.setupSummaryTitle), findsOneWidget);
-    expect(find.text(l10n.summaryMode), findsOneWidget);
     await tapText(tester, l10n.actionStartGame);
 
     // Le paquet est tiré, au volume par défaut de R6.1.
@@ -260,7 +261,6 @@ void main() {
 
     await tapText(tester, l10n.actionContinue);
     await tapText(tester, l10n.actionContinue);
-    await tapText(tester, l10n.actionContinue);
     await tapText(tester, l10n.actionStartGame);
 
     expect(
@@ -283,7 +283,6 @@ void main() {
     await tapText(tester, l10n.modeFamily);
     await tapText(tester, l10n.actionContinue);
     await tapText(tester, l10n.actionContinue);
-    await tapText(tester, l10n.actionContinue);
     await tapText(tester, l10n.actionStartGame);
 
     expect(launchedGame(tester).deck, hasLength(GameConfig.defaultCardCount));
@@ -300,52 +299,22 @@ void main() {
       await tapText(tester, l10n.modeFamily);
       await tapText(tester, l10n.actionContinue);
       await tapText(tester, l10n.actionContinue);
-      await tapText(tester, l10n.actionContinue);
       await tapText(tester, l10n.actionStartGame);
 
       expect(launchedGame(tester).deck, hasLength(GameConfig.defaultCardCount));
       expect(
         find.text(l10n.turnIntroTeam(l10n.teamDefaultName(1))),
         findsOneWidget,
-        reason: 'l ecran de lancement doit passer la main a la partie',
+        reason: 'le bouton de lancement doit passer la main a la partie',
       );
     });
 
-    testWidgets(
-      'l ecran de lancement dit quoi faire, et rappelle la manche 1',
-      (
-        tester,
-      ) async {
-        // Le temps mort est reel — le groupe s installe et se passe le
-        // telephone. Le texte est une consigne, pas un habillage de pub.
-        await installDeck('animaux', easy: 15, medium: 15, hard: 15);
-        await pumpApp(
-          tester,
-          passerelle: fakeConsentGateway(_accorde),
-          interstitiel: _SlowInterstitial().call,
-        );
-
-        await tapText(tester, l10n.homePlay);
-        await tapText(tester, l10n.modeFamily);
-        await tapText(tester, l10n.actionContinue);
-        await tapText(tester, l10n.actionContinue);
-        await tapText(tester, l10n.actionContinue);
-        await tester.tap(find.text(l10n.actionStartGame));
-        await tester.pump();
-        await tester.pump();
-
-        expect(find.text(l10n.launchSettleIn), findsOneWidget);
-        expect(find.text(l10n.roundRuleFree), findsOneWidget);
-      },
-    );
-
-    testWidgets('le retour est ferme pendant le chargement de la pub', (
+    testWidgets('pendant le chargement, le bouton tourne et rien ne bouge', (
       tester,
     ) async {
-      // Sans cela, un retour pendant les trois secondes ramene au
-      // recapitulatif et la pub s affiche par-dessus un ecran de
-      // configuration : MONETISATION.md l interdit nommement, et le quota
-      // serait consomme pour une pub que personne n a demandee.
+      // La pub n'a plus d'ecran a elle : elle recouvre la derniere etape, qui
+      // reste donc a l'ecran le temps du chargement. Sans etat d'attente, le
+      // bouton paraitrait inerte et on le taperait deux fois.
       await installDeck('animaux', easy: 15, medium: 15, hard: 15);
       await pumpApp(
         tester,
@@ -357,15 +326,63 @@ void main() {
       await tapText(tester, l10n.modeFamily);
       await tapText(tester, l10n.actionContinue);
       await tapText(tester, l10n.actionContinue);
+      await tester.tap(find.text(l10n.actionStartGame));
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text(l10n.setupTeamsTitle), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(FilledButton),
+          matching: find.byType(CircularProgressIndicator),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+        isNull,
+        reason: 'un second tap relancerait un tirage et une seconde pub',
+      );
+      expect(
+        find.text(l10n.turnIntroTeam(l10n.teamDefaultName(1))),
+        findsNothing,
+        reason: 'la partie ne s ouvre qu au retour de la pub',
+      );
+    });
+
+    testWidgets('le retour est ferme pendant le chargement de la pub', (
+      tester,
+    ) async {
+      // Sans cela, un retour pendant les trois secondes ramene a l'etape
+      // precedente et la pub s affiche par-dessus un ecran de configuration :
+      // MONETISATION.md l interdit nommement, et le quota serait consomme
+      // pour une pub que personne n a demandee.
+      await installDeck('animaux', easy: 15, medium: 15, hard: 15);
+      await pumpApp(
+        tester,
+        passerelle: fakeConsentGateway(_accorde),
+        interstitiel: _SlowInterstitial().call,
+      );
+
+      await tapText(tester, l10n.homePlay);
+      await tapText(tester, l10n.modeFamily);
       await tapText(tester, l10n.actionContinue);
-      await tapText(tester, l10n.actionStartGame);
-      expect(find.text(l10n.launchSettleIn), findsOneWidget);
+      await tapText(tester, l10n.actionContinue);
+      await tester.tap(find.text(l10n.actionStartGame));
+      await tester.pump();
+      await tester.pump();
 
       await tester.state<NavigatorState>(find.byType(Navigator)).maybePop();
-      await tester.pumpAndSettle();
+      // `pump` et non `pumpAndSettle` : l'indicateur du bouton tourne tant que
+      // la pub charge, et rien ne se stabiliserait jamais.
+      await tester.pump();
+      await tester.pump();
 
-      expect(find.text(l10n.launchSettleIn), findsOneWidget);
-      expect(find.text(l10n.setupSummaryTitle), findsNothing);
+      expect(
+        find.text(l10n.setupTeamsTitle),
+        findsOneWidget,
+        reason: 'on ne quitte pas la derniere etape tant que la pub charge',
+      );
     });
 
     testWidgets('une pub qui explose laisse la partie demarrer', (
@@ -374,6 +391,10 @@ void main() {
       await installDeck('animaux', easy: 15, medium: 15, hard: 15);
       await pumpApp(
         tester,
+        // Sans consentement accorde, le portillon sort avant d appeler `show`
+        // et l interstitiel qui explose n est jamais invoque : le test
+        // passerait sans rien avoir teste.
+        passerelle: fakeConsentGateway(_accorde),
         interstitiel: ({required loadTimeout}) async =>
             throw StateError('SDK absent'),
       );
@@ -382,18 +403,25 @@ void main() {
       await tapText(tester, l10n.modeFamily);
       await tapText(tester, l10n.actionContinue);
       await tapText(tester, l10n.actionContinue);
-      await tapText(tester, l10n.actionContinue);
       await tapText(tester, l10n.actionStartGame);
 
       expect(launchedGame(tester).deck, hasLength(GameConfig.defaultCardCount));
+
+      // Le paquet est ecrit **avant** l await de la pub : s en contenter
+      // laisserait le test vert alors que la partie ne s ouvrirait jamais.
+      expect(
+        find.text(l10n.turnIntroTeam(l10n.teamDefaultName(1))),
+        findsOneWidget,
+        reason: 'une pub qui explose ne doit pas retenir la partie',
+      );
     });
 
-    testWidgets('l ecran de lancement ne reste pas dans la pile', (
+    testWidgets('le retour depuis la partie ramene aux equipes', (
       tester,
     ) async {
-      // Le retour depuis la partie ramene au recapitulatif tant que le premier
-      // tour n a pas commence : repasser par l ecran de lancement relancerait
-      // une pub, et ferait clignoter un ecran que personne n a demande.
+      // Tant que le premier tour n a pas commence, le retour reste libre. Il
+      // n y a plus d ecran intercale a retraverser — et donc plus de pub
+      // relancee au passage.
       await installDeck('animaux', easy: 15, medium: 15, hard: 15);
       await pumpApp(tester);
 
@@ -401,14 +429,16 @@ void main() {
       await tapText(tester, l10n.modeFamily);
       await tapText(tester, l10n.actionContinue);
       await tapText(tester, l10n.actionContinue);
-      await tapText(tester, l10n.actionContinue);
       await tapText(tester, l10n.actionStartGame);
 
       tester.state<NavigatorState>(find.byType(Navigator)).pop();
       await tester.pumpAndSettle();
 
-      expect(find.text(l10n.setupSummaryTitle), findsOneWidget);
-      expect(find.text(l10n.launchSettleIn), findsNothing);
+      expect(find.text(l10n.setupTeamsTitle), findsOneWidget);
+      expect(
+        find.text(l10n.turnIntroTeam(l10n.teamDefaultName(1))),
+        findsNothing,
+      );
     });
   });
 
@@ -436,7 +466,11 @@ void main() {
       await tapText(tester, l10n.modeFamily);
       await tapText(tester, l10n.actionContinue);
       await tapText(tester, l10n.actionContinue);
-      await tapText(tester, l10n.actionContinue);
+
+      // La mention de publicite suit la meme possession que l interstitiel :
+      // payer eteint les deux.
+      expect(find.text(l10n.launchAdNotice), findsNothing);
+
       await tapText(tester, l10n.actionStartGame);
 
       expect(interstitiels, 0);
@@ -462,11 +496,112 @@ void main() {
       await tapText(tester, l10n.modeFamily);
       await tapText(tester, l10n.actionContinue);
       await tapText(tester, l10n.actionContinue);
-      await tapText(tester, l10n.actionContinue);
+
+      // Le temoin de la mention, en plus de celui du compteur : sans lui, une
+      // condition qui la tairait pour tout le monde resterait verte.
+      expect(find.text(l10n.launchAdNotice), findsOneWidget);
+
       await tapText(tester, l10n.actionStartGame);
 
       expect(interstitiels, 1);
     });
+
+    testWidgets('consentement refuse, la mention reste affichee', (
+      tester,
+    ) async {
+      // L arbitrage de l utilisateur, et le seul test qui le verrouille : la
+      // mention ne depend **que** de la possession. Remettre le consentement
+      // dans la condition — ce qui parait plus honnete au premier abord —
+      // rend ce test rouge et lui seul.
+      //
+      // La raison : un refus de consentement empeche de charger une pub a cet
+      // instant, il ne retire pas la publicite du produit. Taire la mention
+      // sur cette base ferait croire a qui n a pas paye qu il en est
+      // debarrasse, alors qu il en verra a la prochaine partie ou le
+      // chargement aboutira.
+      await installDeck('animaux', easy: 15, medium: 15, hard: 15);
+
+      var interstitiels = 0;
+      await pumpApp(
+        tester,
+        passerelle: fakeConsentGateway(_refuse),
+        interstitiel: ({required loadTimeout}) async {
+          interstitiels++;
+          return true;
+        },
+      );
+
+      await tapText(tester, l10n.homePlay);
+      await tapText(tester, l10n.modeFamily);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionContinue);
+
+      expect(find.text(l10n.launchAdNotice), findsOneWidget);
+
+      await tapText(tester, l10n.actionStartGame);
+
+      // Et la coherence de l ensemble : la mention est la, la pub ne part pas.
+      expect(interstitiels, 0);
+      expect(launchedGame(tester).deck, hasLength(GameConfig.defaultCardCount));
+    });
+  });
+
+  group('le pied de la derniere etape ne deborde pas', () {
+    // L ecran qui portait le bouton avait ses propres tests de geometrie ;
+    // ils ont ete supprimes avec lui, et la surface a demenage sur un ecran
+    // qui n en avait aucun. Ce qui les avait fait ecrire est un debordement
+    // reel de 223 px, et le pied de page porte desormais jusqu a deux lignes
+    // de texte en plus du bouton.
+    for (final (libelle, taille, echelle) in const [
+      // La geometrie Android la plus repandue, a l echelle par defaut.
+      ('un ecran courant', Size(360, 800), 1.0),
+      // Rien ne borne `textScaler` dans l application : le reglage systeme
+      // s applique en entier, et c est lui qui fait deborder les pieds de page.
+      ('un texte agrandi', Size(360, 800), 1.3),
+      // Une hauteur utile courte.
+      ('un petit ecran', Size(360, 640), 1.0),
+      // Le cumul des deux, soit le pire cas reellement atteignable.
+      ('un petit ecran au texte agrandi', Size(360, 640), 1.3),
+    ]) {
+      testWidgets('avec ses deux avertissements, sur $libelle', (tester) async {
+        // Le pire contenu : la mention de publicite **et** l avertissement de
+        // vivier tronque, qui sont cumulables. 16 cartes pour 30 demandees
+        // declenche le second (R6.2) ; ne rien acheter garde la premiere.
+        // `launchImpossible` est exclusif des deux, il ne s ajoute jamais.
+        await installDeck('animaux', easy: 6, medium: 6, hard: 4);
+        await pumpApp(tester, taille: taille, echelleTexte: echelle);
+
+        await tapText(tester, l10n.homePlay);
+        await tapText(tester, l10n.modeFamily);
+        await tapText(tester, l10n.actionContinue);
+        await tapText(tester, l10n.actionContinue);
+
+        // Le pied porte bien les deux, sans quoi le test ne mesurerait pas le
+        // cas qu il pretend mesurer.
+        expect(find.text(l10n.launchAdNotice), findsOneWidget);
+        expect(find.text(l10n.launchTruncated(16)), findsOneWidget);
+
+        // Un debordement de `RenderFlex` remonte comme exception de test.
+        expect(tester.takeException(), isNull);
+
+        // Et le bouton reste entierement a l ecran, et actif. Le pied est hors
+        // de la zone defilante : s il sort par le bas, il devient intapable et
+        // rien ne permet de le ramener. On ne tape pas ici — ca menerait a
+        // l annonce du tour, dont la geometrie est l affaire des tests de
+        // `play/`, et un debordement la-bas ferait rougir ce test-ci sans que
+        // le pied de page y soit pour quoi que ce soit.
+        final bouton = find.widgetWithText(FilledButton, l10n.actionStartGame);
+        final rect = tester.getRect(bouton);
+
+        expect(rect.top, greaterThanOrEqualTo(0.0));
+        expect(
+          rect.bottom,
+          lessThanOrEqualTo(taille.height),
+          reason: 'le bouton de lancement sort par le bas de l ecran',
+        );
+        expect(tester.widget<FilledButton>(bouton).onPressed, isNotNull);
+      });
+    }
   });
 
   group('une categorie premium se debloque', () {
@@ -549,7 +684,6 @@ void main() {
     await setTeamCount(tester, 3);
     await tester.enterText(find.byType(TextField).at(1), 'Les Zèbres');
     await tester.pumpAndSettle();
-    await tapText(tester, l10n.actionContinue);
     await tapText(tester, l10n.actionStartGame);
 
     expect(
@@ -626,7 +760,6 @@ void main() {
       reason: "le champ montre ce que la partie emportera, pas ce qu'on a tapé",
     );
 
-    await tapText(tester, l10n.actionContinue);
     await tapText(tester, l10n.actionStartGame);
 
     // « Les Verts » n'a jamais été coupé, lui : R8.4 garde les noms des
@@ -690,9 +823,9 @@ void main() {
       await tapText(tester, l10n.adultConfirmAccept);
 
       // R7.10 : l'étape 2 de ce mode est le choix du vivier, au même rang que
-      // les catégories en Famille — cinq étapes des deux côtés.
+      // les catégories en Famille — quatre étapes des deux côtés.
       expect(find.text(l10n.setupPoolTitle), findsOneWidget);
-      expect(find.text(l10n.setupStep(2, 5)), findsOneWidget);
+      expect(find.text(l10n.setupStep(2, 4)), findsOneWidget);
 
       await tapText(tester, l10n.adultPoolAll);
       expect(find.text(l10n.setupSettingsTitle), findsOneWidget);
@@ -729,7 +862,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text(l10n.setupPoolTitle), findsOneWidget);
-      expect(find.text(l10n.setupStep(2, 5)), findsOneWidget);
+      expect(find.text(l10n.setupStep(2, 4)), findsOneWidget);
 
       // Et revenir n'a pas défait la présélection de R7.9.
       expect(
@@ -881,7 +1014,6 @@ void main() {
       expect(container.read(setupControllerProvider).adultOnly, isTrue);
 
       await tapText(tester, l10n.actionContinue);
-      await tapText(tester, l10n.actionContinue);
       await tapText(tester, l10n.actionStartGame);
 
       final tirees = launchedGame(tester).deck;
@@ -893,7 +1025,7 @@ void main() {
       );
     });
 
-    testWidgets('le mode Famille garde ses cinq étapes', (tester) async {
+    testWidgets('le mode Famille garde ses quatre étapes', (tester) async {
       // Rien d'autre ne fixe la longueur du parcours familial : raccourcir
       // `setupStepsFor` laisserait toute la suite verte.
       await installDeck('animaux');
@@ -903,7 +1035,7 @@ void main() {
       await tapText(tester, l10n.modeFamily);
 
       expect(find.text(l10n.setupDecksTitle), findsOneWidget);
-      expect(find.text(l10n.setupStep(2, 5)), findsOneWidget);
+      expect(find.text(l10n.setupStep(2, 4)), findsOneWidget);
     });
 
     testWidgets('une categorie decochee ne revient pas seule', (tester) async {
@@ -960,27 +1092,31 @@ void main() {
     expect(button.onPressed, isNull);
   });
 
-  /// Traverse les étapes 1 à 4 jusqu'au récapitulatif, avec [deck] coché à la
-  /// main et deux équipes — soit 24 cartes demandées (R6.1).
-  Future<void> goToSummary(WidgetTester tester, String deck) async {
+  /// Traverse la configuration jusqu'à la dernière étape, celle d'où part la
+  /// partie.
+  ///
+  /// Rien à cocher en chemin : depuis R7.9 on arrive à l'étape 2 avec tout
+  /// coché, et les appelants n'installent qu'une catégorie. Le volume demandé
+  /// est donc celui de R6.1, [GameConfig.defaultCardCount], qui ne dépend plus
+  /// du nombre d'équipes.
+  Future<void> goToLaunch(WidgetTester tester) async {
     await tapText(tester, l10n.homePlay);
     await tapText(tester, l10n.modeFamily);
     await tapText(tester, l10n.actionContinue);
     await tapText(tester, l10n.actionContinue);
-    await tapText(tester, l10n.actionContinue);
-    expect(find.text(l10n.setupSummaryTitle), findsOneWidget);
+    expect(find.text(l10n.setupTeamsTitle), findsOneWidget);
   }
 
   group('R6.2 — un vivier trop petit est annoncé avant de démarrer', () {
-    testWidgets('le récapitulatif dit avec combien de cartes on jouera', (
+    testWidgets('la dernière étape dit avec combien de cartes on jouera', (
       tester,
     ) async {
-      // 16 cartes pour 24 demandées : au-dessus du plancher de 12, donc la
+      // 16 cartes pour 30 demandées : au-dessus du plancher de 12, donc la
       // partie se lance — mais pas avec ce qui était demandé, et R6.2 exige
       // que ce soit dit et non découvert en jouant.
       await installDeck('animaux', easy: 6, medium: 6, hard: 4);
       await pumpApp(tester);
-      await goToSummary(tester, 'animaux');
+      await goToLaunch(tester);
 
       expect(find.text(l10n.launchTruncated(16)), findsOneWidget);
 
@@ -1002,7 +1138,7 @@ void main() {
       // passerait le test précédent.
       await installDeck('animaux');
       await pumpApp(tester);
-      await goToSummary(tester, 'animaux');
+      await goToLaunch(tester);
 
       expect(find.textContaining(l10n.launchTruncated(30)), findsNothing);
       await tapText(tester, l10n.actionStartGame);
@@ -1060,15 +1196,22 @@ class _MuteGateway implements ConsentGateway {
 /// Un consentement accorde, pour les tests qui veulent atteindre la pub.
 ///
 /// Sans lui le portillon s arrete sur « pas de reponse, pas de pub » et rend
-/// la main tout de suite : l ecran de lancement est remplace avant d avoir ete
-/// vu, et un test qui regarde deux frames trop tot passe pour de mauvaises
-/// raisons.
+/// la main tout de suite : la partie s ouvre avant que le bouton ait eu le
+/// temps de tourner, et un test qui regarde deux frames trop tot passe pour de
+/// mauvaises raisons.
 const _accorde = ConsentState(canRequestAds: true, canChangeChoice: true);
+
+/// Un consentement refuse, le formulaire restant joignable.
+///
+/// Aucune pub ne peut etre chargee dans cet etat. C est exactement pour ca
+/// qu il sert : il separe « pas de pub maintenant » de « pas de pub dans ce
+/// produit », qui est la seule chose que la mention de publicite regarde.
+const _refuse = ConsentState(canChangeChoice: true);
 
 /// Un interstitiel qui met du temps a repondre.
 ///
-/// Sert a observer l ecran de lancement pendant que la pub charge : sans lui,
-/// l ecran est traverse en une frame et rien n est visible.
+/// Sert a observer le bouton pendant que la pub charge : sans lui, l attente
+/// tient en une frame et rien n est visible.
 class _SlowInterstitial {
   Future<bool> call({required Duration loadTimeout}) =>
       Completer<bool>().future;

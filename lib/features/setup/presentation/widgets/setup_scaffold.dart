@@ -12,7 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// chaque écran : `SPEC.md` demande de pouvoir revenir à chaque niveau, et
 /// cinq implémentations finiraient par diverger.
 ///
-/// Le rang et le total se calculent depuis le mode en cours : cinq étapes des
+/// Le rang et le total se calculent depuis le mode en cours : quatre étapes des
 /// deux côtés, mais pas les mêmes — la deuxième est les catégories en Famille,
 /// l'étendue du vivier en Sans filtre (R7.10). Aucun écran ne connaît son
 /// numéro : il déclare quelle étape il est.
@@ -40,11 +40,11 @@ class SetupScaffold extends ConsumerWidget {
 
     final parcours = setupStepsFor(ref.watch(setupControllerProvider).mode);
     // Garde-fou : un écran hors du parcours de son mode ne devrait pas exister
-    // — chaque mode a ses cinq étapes et ne traverse que les siennes. Si ça
+    // — chaque mode a ses quatre étapes et ne traverse que les siennes. Si ça
     // arrivait quand même, on cherche le parcours **qui contient cette étape**
     // plutôt qu'un repli arbitraire : chaque étape n'appartient qu'à un seul,
     // donc le rang affiché reste celui de l'écran. Un repli sur le parcours
-    // familial aurait annoncé « Étape 1 sur 5 » sur l'écran du vivier — un
+    // familial aurait annoncé « Étape 1 sur 4 » sur l'écran du vivier — un
     // rang que rien ne justifie, et le point plein sur la mauvaise étape.
     final etapes = parcours.contains(step)
         ? parcours
@@ -91,7 +91,7 @@ class SetupScaffold extends ConsumerWidget {
                       ),
                       const SizedBox(width: 12),
                       const Spacer(),
-                      // Cinq points valent mieux qu'une barre : on compte les
+                      // Quatre points valent mieux qu'une barre : on compte les
                       // étapes restantes d'un coup d'œil, ce qu'un pourcentage
                       // ne dit pas. L'étape courante est un trait plein dans
                       // le teal des actions, les franchies des points d'encre.

@@ -16,7 +16,9 @@ import 'package:cekoi/features/play/presentation/game_screen.dart';
 import 'package:cekoi/features/play/presentation/widgets/action_zone.dart';
 import 'package:cekoi/features/play/presentation/widgets/game_card_face.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
+import 'package:cekoi/services/feedback/feedback.dart';
 import 'package:flutter/material.dart';
+// `JSONMethodCodec` et `MethodCall`, pour simuler le retour système.
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -53,16 +55,11 @@ void main() {
   late FakeClock clock;
   late ProviderContainer container;
 
-  /// Appels natifs déclenchés par l'écran, par nom de méthode.
+  /// Ce que l'écran a demandé au son et à la vibration.
   ///
-  /// Le son et la vibration passent par le canal `flutter/platform`, sans
-  /// effet observable dans l'arbre de widgets : sans les compter, leur
-  /// suppression ne ferait rougir aucun test.
-  late List<String> platformCalls;
-
-  /// Les mêmes appels, argument compris : « HapticFeedback.vibrate » ne dit
-  /// pas s'il s'agit du tic léger du décompte ou du choc franc du buzzer.
-  late List<String> platformDetails;
+  /// Ni l'un ni l'autre n'a d'effet observable dans l'arbre de widgets : sans
+  /// ce témoin, les supprimer ne ferait rougir aucun test.
+  late RecordingFeedback feedback;
   late GoRouter routeur;
 
   setUpAll(() async {
@@ -70,22 +67,7 @@ void main() {
   });
 
   setUp(() {
-    platformCalls = [];
-    platformDetails = [];
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(SystemChannels.platform, (call) async {
-          platformCalls.add(call.method);
-          // Avec l'argument : c'est lui qui distingue le tic du décompte du
-          // buzzer de fin de tour. Sur la seule méthode, les deux se
-          // confondent — `HapticFeedback.vibrate` dans les deux cas.
-          platformDetails.add('${call.method}:${call.arguments}');
-          return null;
-        });
-  });
-
-  tearDown(() {
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(SystemChannels.platform, null);
+    feedback = RecordingFeedback();
   });
 
   /// Monte l'écran de jeu sur une partie donnée.
@@ -116,6 +98,7 @@ void main() {
           currentPreferencesProvider.overrideWithValue(
             reglages ?? AppPreferences.defaults,
           ),
+          gameFeedbackProvider.overrideWithValue(feedback),
         ],
         // Routeur minimal plutôt qu'un simple `home` : quitter la partie
         // ramène à l'accueil, et sans routeur dans le contexte l'écran lève
@@ -528,20 +511,17 @@ void main() {
       await startTurn(tester);
 
       await clock.advance(tester, const Duration(seconds: 2));
-      platformCalls.clear();
+      feedback.calls.clear();
       expect(partie().remaining, const Duration(seconds: 10));
 
       await clock.advance(tester, const Duration(seconds: 3));
 
       expect(
-        platformCalls.where((m) => m == 'SystemSound.play'),
-        hasLength(3),
+        feedback.compte('son:tick'),
+        3,
         reason: 'Une fois par seconde, pas une fois par tic',
       );
-      expect(
-        platformCalls.where((m) => m == 'HapticFeedback.vibrate'),
-        hasLength(3),
-      );
+      expect(feedback.compte('vibration:tick'), 3);
       await stopGame(tester);
     });
 
@@ -556,13 +536,13 @@ void main() {
       await startTurn(tester);
 
       await clock.advance(tester, const Duration(seconds: 2));
-      platformCalls.clear();
+      feedback.calls.clear();
       await clock.advance(tester, const Duration(seconds: 3));
 
-      expect(platformCalls.where((m) => m == 'SystemSound.play'), isEmpty);
+      expect(feedback.compte('son:tick'), 0);
       expect(
-        platformCalls.where((m) => m == 'HapticFeedback.vibrate'),
-        hasLength(3),
+        feedback.compte('vibration:tick'),
+        3,
         reason: 'les deux réglages sont indépendants',
       );
       await stopGame(tester);
@@ -577,14 +557,11 @@ void main() {
       await startTurn(tester);
 
       await clock.advance(tester, const Duration(seconds: 2));
-      platformCalls.clear();
+      feedback.calls.clear();
       await clock.advance(tester, const Duration(seconds: 3));
 
-      expect(platformCalls.where((m) => m == 'SystemSound.play'), hasLength(3));
-      expect(
-        platformCalls.where((m) => m == 'HapticFeedback.vibrate'),
-        isEmpty,
-      );
+      expect(feedback.compte('son:tick'), 3);
+      expect(feedback.compte('vibration:tick'), 0);
       await stopGame(tester);
     });
 
@@ -600,15 +577,10 @@ void main() {
       await startTurn(tester);
 
       await clock.advance(tester, const Duration(seconds: 2));
-      platformCalls.clear();
+      feedback.calls.clear();
       await clock.advance(tester, const Duration(seconds: 3));
 
-      expect(
-        platformCalls.where(
-          (m) => m == 'SystemSound.play' || m == 'HapticFeedback.vibrate',
-        ),
-        isEmpty,
-      );
+      expect(feedback.calls, isEmpty);
       await stopGame(tester);
     });
 
@@ -618,14 +590,12 @@ void main() {
         game: testGame(turnDuration: const Duration(seconds: 60)),
       );
       await startTurn(tester);
-      platformCalls.clear();
+      feedback.calls.clear();
 
       await clock.advance(tester, const Duration(seconds: 5));
 
       expect(
-        platformCalls.where(
-          (m) => m == 'SystemSound.play' || m == 'HapticFeedback.vibrate',
-        ),
+        feedback.calls,
         isEmpty,
         reason: 'Sonner pendant tout le tour rendrait le signal inutile',
       );
@@ -634,8 +604,8 @@ void main() {
   });
 
   group('R3.6, R3.6 bis — la fin du tour se signale, et se raconte', () {
-    /// Le liseret de la zone nommée, ou `null` s'il n'y en a pas.
-    BorderSide? liseretDe(WidgetTester tester, String label) {
+    /// Le fond de la zone nommée. C'est lui qui bat (R3.6 bis).
+    Color? fondDe(WidgetTester tester, String label) {
       final boite = tester.widget<DecoratedBox>(
         find
             .descendant(
@@ -644,7 +614,7 @@ void main() {
             )
             .first,
       );
-      return (boite.decoration as BoxDecoration).border?.top;
+      return (boite.decoration as BoxDecoration).color;
     }
 
     /// Joue jusqu'au buzzer, sans jamais trancher de carte.
@@ -654,7 +624,7 @@ void main() {
         game: testGame(turnDuration: const Duration(seconds: 12)),
       );
       await startTurn(tester);
-      platformDetails.clear();
+      feedback.calls.clear();
       await clock.advance(tester, const Duration(seconds: 12));
     }
 
@@ -667,13 +637,14 @@ void main() {
       await jusquAuBuzzer(tester);
 
       expect(partie().phase, GamePhase.turnSummary);
+      expect(feedback.calls, contains('son:buzzer'));
+      expect(feedback.calls, contains('vibration:buzzer'));
       expect(
-        platformDetails,
-        contains('SystemSound.play:SystemSoundType.alert'),
-      );
-      expect(
-        platformDetails,
-        contains('HapticFeedback.vibrate:HapticFeedbackType.heavyImpact'),
+        feedback.compte('son:tick'),
+        9,
+        reason:
+            'le tic va de 9 à 1 : le zéro appartient au buzzer, seul, '
+            'sinon les deux sons se superposent et se brouillent',
       );
     });
 
@@ -682,7 +653,7 @@ void main() {
     ) async {
       await pumpScreen(tester, game: testGame(cardCount: 2));
       await startTurn(tester);
-      platformDetails.clear();
+      feedback.calls.clear();
 
       await tester.tap(find.text(l10n.actionFound));
       await tester.pump();
@@ -692,8 +663,8 @@ void main() {
       expect(partie().phase, GamePhase.turnSummary);
       expect(partie().pile, isEmpty);
       expect(
-        platformDetails,
-        isNot(contains('SystemSound.play:SystemSoundType.alert')),
+        feedback.calls,
+        isNot(contains('son:buzzer')),
         reason: 'la dernière carte trouvée est une manche gagnée (R4.1)',
       );
     });
@@ -705,17 +676,11 @@ void main() {
         reglages: const AppPreferences(soundEnabled: false),
       );
       await startTurn(tester);
-      platformDetails.clear();
+      feedback.calls.clear();
       await clock.advance(tester, const Duration(seconds: 12));
 
-      expect(
-        platformDetails,
-        isNot(contains('SystemSound.play:SystemSoundType.alert')),
-      );
-      expect(
-        platformDetails,
-        contains('HapticFeedback.vibrate:HapticFeedbackType.heavyImpact'),
-      );
+      expect(feedback.calls, isNot(contains('son:buzzer')));
+      expect(feedback.calls, contains('vibration:buzzer'));
     });
 
     testWidgets('la carte du buzzer est nommée au récapitulatif', (
@@ -767,11 +732,11 @@ void main() {
       },
     );
 
-    testWidgets('le liseret d urgence apparait, et il bat vraiment', (
+    testWidgets('la zone bat vraiment, et seulement sur la fin', (
       tester,
     ) async {
       // Le test precedent ne verifie que la circulation du booleen : retirer
-      // le liseret ou le `repeat` le laissait vert. C'est pourtant la moitie
+      // le battement ou le `repeat` le laissait vert. C'est pourtant la moitie
       // visible de R3.6 bis.
       await pumpScreen(
         tester,
@@ -780,19 +745,28 @@ void main() {
       await startTurn(tester);
 
       await clock.advance(tester, const Duration(seconds: 8));
-      expect(liseretDe(tester, l10n.actionFound), isNull, reason: '4 s');
-
-      await clock.advance(tester, const Duration(seconds: 1));
-      final avant = liseretDe(tester, l10n.actionFound);
-      expect(avant, isNotNull, reason: '3 s');
+      final repos = fondDe(tester, l10n.actionFound);
+      expect(repos, AppColors.deep, reason: '4 s : la zone est au repos');
 
       await tester.pump(const Duration(milliseconds: 250));
-      final apres = liseretDe(tester, l10n.actionFound);
-
       expect(
-        apres!.width,
-        isNot(avant!.width),
-        reason: 'un liseret fixe ne se remarque pas : il doit battre',
+        fondDe(tester, l10n.actionFound),
+        repos,
+        reason: 'au repos, la couleur ne bouge pas d une image a l autre',
+      );
+
+      // Sous trois secondes. Le battement part de sa valeur basse, qui est la
+      // couleur de repos : c'est un quart de seconde plus tard qu'il se voit.
+      await clock.advance(tester, const Duration(seconds: 1));
+      await tester.pump(const Duration(milliseconds: 250));
+      final haut = fondDe(tester, l10n.actionFound);
+      expect(haut, isNot(repos), reason: '3 s : la zone s est eclaircie');
+
+      await tester.pump(const Duration(milliseconds: 250));
+      expect(
+        fondDe(tester, l10n.actionFound),
+        isNot(haut),
+        reason: 'une couleur fixe ne se remarque pas : elle doit battre',
       );
       await stopGame(tester);
     });
@@ -817,11 +791,20 @@ void main() {
 
       expect(partie().pile, hasLength(1));
       expect(partie().canPass, isFalse, reason: 'R3.4');
-      expect(liseretDe(tester, l10n.actionFound), isNotNull);
+
+      final passeAvant = fondDe(tester, l10n.actionPass);
+      final trouveAvant = fondDe(tester, l10n.actionFound);
+      await tester.pump(const Duration(milliseconds: 250));
+
       expect(
-        liseretDe(tester, l10n.actionPass)?.color,
-        isNot(AppColors.urgent),
-        reason: 'la zone verrouillee ne doit pas etre le point le plus criard',
+        fondDe(tester, l10n.actionPass),
+        passeAvant,
+        reason: 'la zone verrouillee par R3.4 appelle un tap qu elle refuse',
+      );
+      expect(
+        fondDe(tester, l10n.actionFound),
+        isNot(trouveAvant),
+        reason: 'temoin : dans le meme intervalle, la zone active a bouge',
       );
       await stopGame(tester);
     });
@@ -833,19 +816,11 @@ void main() {
         reglages: const AppPreferences(hapticsEnabled: false),
       );
       await startTurn(tester);
-      platformDetails.clear();
+      feedback.calls.clear();
       await clock.advance(tester, const Duration(seconds: 12));
 
-      expect(
-        platformDetails,
-        contains('SystemSound.play:SystemSoundType.alert'),
-      );
-      expect(
-        platformDetails,
-        isNot(
-          contains('HapticFeedback.vibrate:HapticFeedbackType.heavyImpact'),
-        ),
-      );
+      expect(feedback.calls, contains('son:buzzer'));
+      expect(feedback.calls, isNot(contains('vibration:buzzer')));
     });
 
     testWidgets('R9.1 — une partie reprise en recapitulatif ne buzze pas', (
@@ -867,8 +842,8 @@ void main() {
       expect(partie().turnEndedOnTime, isTrue);
       expect(find.text(l10n.turnSummaryAtBuzzer), findsOneWidget);
       expect(
-        platformDetails,
-        isNot(contains('SystemSound.play:SystemSoundType.alert')),
+        feedback.calls,
+        isNot(contains('son:buzzer')),
         reason: 'la partie est adoptee, elle n a pas bascule sous nos yeux',
       );
     });

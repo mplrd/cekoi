@@ -28,9 +28,10 @@ table**, un téléphone qu'on se passe, avec du bruit et de l'agitation. Concrè
 
 ## Parcours de configuration
 
-**Cinq étapes des deux côtés**, avec une barre de progression et un retour possible à chaque
-niveau. Seule la deuxième change de nature selon le mode (R7.10). L'objectif est de pouvoir
-enchaîner en moins d'une minute quand on relance une partie identique.
+**Quatre étapes des deux côtés** (R7.10), avec une barre de progression et un retour possible à
+chaque niveau. Seule la deuxième change de nature selon le mode. La partie part du pied de la
+quatrième, il n'y a pas d'étape de plus entre la configuration et le jeu. L'objectif est de
+pouvoir enchaîner en moins d'une minute quand on relance une partie identique.
 
 ### 1. Choix du mode
 
@@ -115,13 +116,31 @@ du début de partie, alors que le groupe s'était déjà réparti de vive voix a
 prénom soit tapé. Qui narre se décide à la table, et l'écran d'annonce se contente de nommer
 l'équipe (R3.1).
 
-### 5. Récapitulatif
+### Le lancement, au pied de l'étape 4
 
-Mode, catégories, réglages, équipes. Un bouton **Lancer la partie**.
+**La partie part de l'écran des équipes.** Il n'y a pas d'écran de plus entre la configuration
+et le jeu.
 
-C'est ici que se déclenche l'interstitiel publicitaire (voir `MONETISATION.md`) : pendant que
-la pub tourne, l'écran affiche « Installez-vous, la partie commence » avec le rappel des
-règles de la manche 1. Le temps mort est réel, on ne le fabrique pas.
+Il y en a eu deux, et les deux ont été retirés après essai en partie réelle. Un
+**récapitulatif** — mode, catégories, durée, équipes — qui n'apprenait rien à qui venait de
+tout choisir : « le récap qui liste les catégories sélectionnées, je m'en fiche ». Puis un
+écran **« Installez-vous, la partie commence »** pour porter la publicité, qui redisait ce que
+l'annonce du tour affiche immédiatement après, et qu'on traversait même quand aucune pub ne
+sortait — c'est-à-dire presque toujours.
+
+L'interstitiel se déclenche donc au tap sur **Lancer la partie** (voir `MONETISATION.md`). Une
+pub interstitielle est un plein écran : elle recouvre ce qui est dessous et n'a besoin
+d'aucune page à elle. Le temps mort est réel — le groupe s'installe et se passe le téléphone —
+on ne le fabrique pas.
+
+Une ligne discrète au-dessus du bouton prévient qu'une courte publicité précède la partie.
+Elle ne dépend que de ce que le joueur possède : la version complète retire la publicité, tout
+le monde la voit. Le consentement refusé et le plafond de fréquence décident du chargement
+d'une pub à un instant donné, pas de ce qui a été acheté — s'y fier ferait taire la mention à
+qui verra quand même des pubs à la partie suivante.
+
+Le bouton tourne le temps du chargement, trois secondes au pire, et le retour est fermé pendant
+ce temps-là — sans quoi la pub s'afficherait par-dessus une étape de configuration.
 
 **Le retour reste libre jusqu'au clic sur « C'est parti » de la manche 1.** Tant que le premier
 tour n'a pas commencé, il n'y a qu'un paquet tiré, qu'un nouveau tirage remplacera : on

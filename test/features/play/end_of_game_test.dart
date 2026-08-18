@@ -15,6 +15,8 @@ import 'package:cekoi/features/play/presentation/game_screen.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:cekoi/services/ads/ads.dart';
 import 'package:cekoi/services/ads/consent.dart';
+import 'package:cekoi/services/feedback/feedback.dart';
+import 'package:cekoi/services/feedback/game_feedback.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -97,6 +99,7 @@ void main() {
           appDatabaseProvider.overrideWithValue(db),
           seedSourceProvider.overrideWithValue(() => 7),
           screenAwakeProvider.overrideWithValue(fakeScreenAwake()),
+          gameFeedbackProvider.overrideWithValue(const SilentGameFeedback()),
           currentPreferencesProvider.overrideWithValue(fakePreferences()),
           // Consentement accordé, exprès : sans lui le portillon s'arrête
           // avant la pub, et le test ne prouverait plus rien — il resterait

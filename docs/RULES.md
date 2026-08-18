@@ -277,7 +277,7 @@ une décision de contenu de même nature que celle des catégories, elle se pren
 rang, sur un écran de la même forme, et pas dans une boîte de dialogue accrochée à l'étape
 précédente.
 
-Le parcours compte donc **cinq étapes des deux côtés**, avec la même numérotation. Un mode ne
+Le parcours compte donc **quatre étapes des deux côtés**, avec la même numérotation. Un mode ne
 traverse jamais l'étape de l'autre : la présélection de R7.9 est portée par l'écran de
 l'étape 2 du mode en cours, quel qu'il soit.
 

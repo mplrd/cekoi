@@ -8,6 +8,14 @@ environment:
   sdk: ^3.12.2
 
 dependencies:
+  # Les sons du jeu, joués depuis un asset sur le canal média.
+  #
+  # Et non `SystemSound.play`, qui a été un faux ami : sur Android il passe par
+  # la couche de retour tactile, que l'interrupteur « sons des touches » éteint
+  # — il l'est chez beaucoup de monde, et le tic n'a donc jamais sonné. Pire,
+  # `SystemSoundType.alert` est documenté par Flutter comme **ignoré sur
+  # Android et iOS** : le buzzer ne pouvait pas exister.
+  audioplayers: ^6.8.1
   cupertino_icons: ^1.0.8
 
   # Base locale. sqlite3 3.x embarque lui-même les binaires natifs via les
@@ -45,6 +53,11 @@ dependencies:
   path_provider: ^2.1.6
   riverpod_annotation: 4.0.3
   sqlite3: ^3.5.1
+
+  # La vibration du buzzer. Même raison que pour le son : `HapticFeedback`
+  # demande un retour tactile au système, que le réglage « vibration au
+  # toucher » coupe. Le service Vibrator, lui, répond toujours.
+  vibration: ^3.2.0
   wakelock_plus: ^1.7.0
 
 dev_dependencies:
@@ -86,6 +99,10 @@ flutter:
   generate: true
 
   assets:
+    # Fabriqués par `python tool/make_sounds.py`, versionnés parce qu'ils sont
+    # du contenu livré : le script est là pour les régler, pas pour les
+    # produire au build.
+    - assets/audio/
     - assets/decks/
     # Le seul fichier de marque que l'application lit : le dessin détouré, sans
     # son fond corail — il se pose ainsi sur le fond pastel de l'application au
@@ -96,11 +113,16 @@ flutter:
 
 # Icônes de lanceur, générées depuis le logo par `dart run flutter_launcher_icons`.
 #
-# Le premier plan Android est le logo **réduit à 70 %** sur du transparent :
-# une icône adaptative est rognée par le lanceur, parfois en cercle, et un logo
-# à fond perdu y perdrait ses coins — la bulle et le « 1 » sont justement dans
-# les coins. Le fond uni reprend exactement le corail du logo, si bien que la
-# jointure entre les deux ne se voit pas.
+# Le premier plan Android est fabriqué par `python tool/make_icons.py` : le
+# dessin détouré, sur du transparent, sans son fond corail. Il ne porte aucune
+# marge — c'est `mipmap-anydpi-v26/ic_launcher.xml` qui applique le retrait de
+# 16 % de l'icône adaptative, et ajouter la nôtre par-dessus rapetissait le
+# dessin d'un tiers. Le fond uni reprend exactement le corail du logo, si bien
+# que la jointure entre les deux ne se voit pas.
+#
+# L'écran de démarrage d'Android 12, lui, consomme le drawable **brut** : il a
+# donc son propre fichier, `splash_icon`, que le même script produit avec la
+# marge des deux tiers qu'attend le masque du système.
 flutter_launcher_icons:
   image_path: assets/branding/logo.png
   android: true
