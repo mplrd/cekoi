@@ -835,12 +835,17 @@
 
   "settingsAdConsentAllowed": "Publicités autorisées",
   "@settingsAdConsentAllowed": {
-    "description": "Sous-titre de l'entrée de consentement quand la réponse donnée au formulaire permet les publicités. Pas « personnalisées » : le SDK ne distingue pas les deux, et l'annoncer serait inventer une précision qu'on n'a pas."
+    "description": "Sous-titre de l'entrée de consentement quand la réponse donnée au formulaire permet les publicités. Pas « personnalisées » : l'API du SDK n'expose que canRequestAds et ne distingue pas les deux, et l'annoncer serait inventer une précision qu'on n'a pas."
+  },
+
+  "settingsAdConsentAllowedFullVersion": "Publicités autorisées, mais la version complète les retire.",
+  "@settingsAdConsentAllowedFullVersion": {
+    "description": "Même cas, chez un joueur qui a acheté la version complète. Sans la seconde moitié, l'écran le remercierait de son achat deux sections plus haut puis lui annoncerait des publicités, alors que l'offre promettait « Plus aucune publicité »."
   },
 
   "settingsAdConsentRefused": "Publicités refusées",
   "@settingsAdConsentRefused": {
-    "description": "Sous-titre de l'entrée de consentement quand aucune publicité ne peut être demandée. Formulé au passif, sans désigner qui refuse : le cas courant est le refus du joueur, mais un SDK qui n'a pas démarré aboutit au même état."
+    "description": "Sous-titre de l'entrée de consentement quand aucune publicité ne peut être demandée. Formulé au passif, sans désigner qui refuse : le cas courant est le refus du joueur, mais un SDK qui n'a pas démarré — ou un formulaire qui a échoué avant d'être montré — aboutit au même état."
   },
 
   "settingsAdConsentLoading": "Choix publicitaire en cours de chargement.",

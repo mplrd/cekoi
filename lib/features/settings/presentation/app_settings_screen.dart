@@ -100,6 +100,7 @@ class AppSettingsScreen extends ConsumerWidget {
                   when value.canChangeChoice =>
                 _ConsentTile(
                   allowed: value.canRequestAds,
+                  showsAds: ownership.showsAds,
                   onTap: () => unawaited(
                     ref.read(adConsentProvider.notifier).changeChoice(),
                   ),
@@ -245,6 +246,29 @@ class _SectionTitle extends StatelessWidget {
   }
 }
 
+/// La réponse en cours, telle qu'elle se lit dans les réglages.
+///
+/// Trois cas et non deux : dire « Publicités autorisées » à qui a acheté la
+/// version complète le contredirait deux sections plus haut, où le même écran
+/// le remercie de l'avoir achetée — et l'offre lui promettait « Plus aucune
+/// publicité ». Son consentement reste vrai et modifiable, il ne décide juste
+/// plus de rien.
+///
+/// « Refusées » couvre les deux autres cas sans les distinguer, et c'est
+/// voulu : le participe décrit un état sans désigner qui refuse. Le cas courant
+/// est le refus du joueur, mais un SDK qui ne démarre pas — ou un formulaire
+/// qui échoue avant d'avoir été montré — aboutit au même endroit, et la phrase
+/// y reste vraie.
+String _consentStatus(
+  AppLocalizations l10n, {
+  required bool allowed,
+  required bool showsAds,
+}) => switch ((allowed, showsAds)) {
+  (false, _) => l10n.settingsAdConsentRefused,
+  (true, true) => l10n.settingsAdConsentAllowed,
+  (true, false) => l10n.settingsAdConsentAllowedFullVersion,
+};
+
 /// L'entrée qui rouvre le formulaire de consentement, et dit où on en est.
 ///
 /// Sur sa carte blanche, comme les catégories et les lignes du récapitulatif
@@ -257,10 +281,17 @@ class _SectionTitle extends StatelessWidget {
 /// réponse. Le titre reste le nom du réglage, le chevron l'invitation à le
 /// changer.
 class _ConsentTile extends StatelessWidget {
-  const _ConsentTile({required this.allowed, required this.onTap});
+  const _ConsentTile({
+    required this.allowed,
+    required this.showsAds,
+    required this.onTap,
+  });
 
   /// La réponse en cours autorise les publicités.
   final bool allowed;
+
+  /// L'application a encore le droit d'en montrer une.
+  final bool showsAds;
 
   final VoidCallback onTap;
 
@@ -275,9 +306,7 @@ class _ConsentTile extends StatelessWidget {
         leading: const Icon(Icons.privacy_tip_outlined),
         title: Text(l10n.settingsAdConsent),
         subtitle: Text(
-          allowed
-              ? l10n.settingsAdConsentAllowed
-              : l10n.settingsAdConsentRefused,
+          _consentStatus(l10n, allowed: allowed, showsAds: showsAds),
         ),
         trailing: const Icon(Icons.chevron_right),
       ),

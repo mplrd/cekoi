@@ -254,7 +254,13 @@ confidentialité.
 La ligne du consentement porte la réponse en cours en sous-titre — « Publicités autorisées »
 ou « Publicités refusées » — comme tout réglage porte sa valeur. Sans elle, rouvrir le
 formulaire du CMP était le seul moyen de savoir ce qu'on avait répondu. Jamais
-« personnalisées » : le SDK ne distingue pas les deux.
+« personnalisées » : l'API du SDK n'expose que le droit de demander une pub, pas la
+distinction.
+
+Un troisième cas chez qui a acheté : « Publicités autorisées, mais la version complète les
+retire. » L'écran le remercie de son achat deux sections plus haut, et l'offre lui promettait
+« Plus aucune publicité » — lui annoncer des publicités au-dessous serait se contredire. Son
+consentement reste affiché et modifiable, il ne décide simplement plus de rien.
 
 **Pas de choix de thème.** L'application a un seul visage : le corail pastel du logo, en
 clair, quelle que soit la préférence du système. Un thème sombre serait une seconde
