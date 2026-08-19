@@ -1,6 +1,7 @@
 import 'package:cekoi/services/ads/ad_sdk.dart';
 import 'package:cekoi/services/ads/consent.dart';
 import 'package:cekoi/services/ads/ump_consent_gateway.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
@@ -16,7 +17,7 @@ class _StubConsentInformation implements ConsentInformation {
     this.muet = false,
   });
 
-  final bool ads;
+  bool ads;
   final PrivacyOptionsRequirementStatus privacyOptions;
 
   /// Reproduit le vrai défaut du plugin : `requestConsentInfoUpdate` est un
@@ -55,6 +56,22 @@ class _StubConsentInformation implements ConsentInformation {
   Future<void> reset() async {}
 }
 
+/// Le canal natif de l'UMP.
+///
+/// `ConsentForm` n'expose que des méthodes statiques, sans instance
+/// injectable : contrairement à `ConsentInformation`, on ne peut pas le
+/// remplacer. Passer par le canal est le seul moyen de piloter un formulaire
+/// depuis un test — et c'est pour ça que ce chemin n'était couvert par rien.
+const _umpChannel = MethodChannel('plugins.flutter.io/google_mobile_ads/ump');
+
+/// Cette méthode-là n'aboutit **qu'au rejet du formulaire**, pas à son
+/// affichage : côté natif, le résultat est renvoyé quand le joueur a répondu.
+const _afficheLeFormulaire =
+    'UserMessagingPlatform#loadAndShowConsentFormIfRequired';
+
+/// Idem pour le formulaire rouvert depuis les réglages.
+const _rouvreLeFormulaire = 'UserMessagingPlatform#showPrivacyOptionsForm';
+
 void main() {
   late ConsentInformation original;
 
@@ -63,7 +80,11 @@ void main() {
     original = ConsentInformation.instance;
   });
 
-  tearDown(() => ConsentInformation.instance = original);
+  tearDown(() {
+    ConsentInformation.instance = original;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(_umpChannel, null);
+  });
 
   group('traduction de l’état UMP', () {
     test('un formulaire requis rend le choix modifiable', () {
@@ -122,6 +143,42 @@ void main() {
       expect(state, ConsentState.none);
     });
 
+    test(
+      'la réponse du joueur est prise en compte, même lue lentement',
+      () async {
+        // Le vrai parcours : le formulaire s'affiche, le joueur **lit** — c'est
+        // un mur de texte réglementaire —, puis accepte. Tant qu'il n'a pas
+        // répondu, l'UMP dit non ; il ne dit oui qu'au moment du rejet du
+        // formulaire.
+        final ump = _StubConsentInformation(
+          privacyOptions: PrivacyOptionsRequirementStatus.required,
+        );
+        ConsentInformation.instance = ump;
+
+        const lecture = Duration(milliseconds: 200);
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(_umpChannel, (call) async {
+              if (call.method == _afficheLeFormulaire) {
+                await Future<void>.delayed(lecture);
+                ump.ads = true; // le joueur vient d'accepter
+              }
+              return null;
+            });
+
+        final state = await UmpConsentGateway(
+          deadline: const Duration(milliseconds: 50),
+        ).gather();
+
+        expect(
+          state.canRequestAds,
+          isTrue,
+          reason:
+              'Le joueur a accepté : son choix ne peut pas être perdu parce '
+              "qu'il a mis plus de temps à lire que le délai de garde.",
+        );
+      },
+    );
+
     test('un UMP qui explose éteint la pub, sans relancer', () async {
       ConsentInformation.instance = _ExplodingConsentInformation();
 
@@ -130,6 +187,40 @@ void main() {
       ).gather();
 
       expect(state, ConsentState.none);
+    });
+  });
+
+  group('changeChoice()', () {
+    test('un retrait de consentement lu lentement est bien retenu', () async {
+      // Le sens qui compte le plus : le joueur avait accepté, il revient dans
+      // les réglages et refuse. Perdre cette réponse-là laisserait le SDK
+      // servir des publicités à quelqu'un qui vient de les refuser.
+      final ump = _StubConsentInformation(
+        ads: true,
+        privacyOptions: PrivacyOptionsRequirementStatus.required,
+      );
+      ConsentInformation.instance = ump;
+
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(_umpChannel, (call) async {
+            if (call.method == _rouvreLeFormulaire) {
+              await Future<void>.delayed(const Duration(milliseconds: 200));
+              ump.ads = false; // le joueur vient de retirer son consentement
+            }
+            return null;
+          });
+
+      final state = await UmpConsentGateway(
+        deadline: const Duration(milliseconds: 50),
+      ).changeChoice();
+
+      expect(
+        state.canRequestAds,
+        isFalse,
+        reason:
+            'Le joueur a retiré son consentement : le lire lentement ne '
+            'peut pas laisser la publicité allumée.',
+      );
     });
   });
 
