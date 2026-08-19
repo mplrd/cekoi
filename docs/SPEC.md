@@ -262,6 +262,12 @@ retire. » L'écran le remercie de son achat deux sections plus haut, et l'offre
 « Plus aucune publicité » — lui annoncer des publicités au-dessous serait se contredire. Son
 consentement reste affiché et modifiable, il ne décide simplement plus de rien.
 
+Le statut est une **région vive**, pour être annoncé quand il change. Le temps que le
+formulaire réponde, la ligne est remplacée par une attente, donc détruite, et le focus part
+avec elle : sans ça, un joueur aveugle entend « chargement » puis plus rien, et c'est le seul à
+qui l'état affiché ne parvient pas. Une région vive reste muette si le lecteur d'écran est déjà
+en train de dire autre chose — c'est ce qui la rend inoffensive à l'ouverture de l'écran.
+
 **Pas de choix de thème.** L'application a un seul visage : le corail pastel du logo, en
 clair, quelle que soit la préférence du système. Un thème sombre serait une seconde
 interface à dessiner et à vérifier, pour un jeu qu'on sort le soir entre amis avec la

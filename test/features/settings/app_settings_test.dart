@@ -216,6 +216,35 @@ void main() {
     expect(find.text(l10n.settingsAdConsentAllowed), findsNothing);
   });
 
+  testWidgets(
+    'le statut est une région vive, pour être annoncé quand il change',
+    (tester) async {
+      // Pendant l'appel, la tuile est remplacée par l'attente, donc détruite,
+      // et le focus part avec elle : sans région vive, un joueur aveugle
+      // entend « chargement » puis plus rien, et l'état ne lui parvient pas.
+      final semantique = tester.ensureSemantics();
+
+      await pumpSettings(
+        tester,
+        const ConsentState(canRequestAds: true, canChangeChoice: true),
+        apresChangement: const ConsentState(canChangeChoice: true),
+      );
+
+      await tapConsent(tester);
+
+      expect(find.text(l10n.settingsAdConsentRefused), findsOneWidget);
+      expect(
+        tester.getSemantics(find.text(l10n.settingsAdConsentRefused)),
+        isSemantics(isLiveRegion: true),
+      );
+
+      // Libérée dans le corps et non par `addTearDown` : la fin de test refuse
+      // les poignées encore vivantes, et elle vérifie avant les nettoyages
+      // différés.
+      semantique.dispose();
+    },
+  );
+
   testWidgets("hors zone réglementée, l'écran le dit au lieu de rester vide", (
     tester,
   ) async {

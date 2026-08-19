@@ -305,8 +305,23 @@ class _ConsentTile extends StatelessWidget {
         onTap: onTap,
         leading: const Icon(Icons.privacy_tip_outlined),
         title: Text(l10n.settingsAdConsent),
-        subtitle: Text(
-          _consentStatus(l10n, allowed: allowed, showsAds: showsAds),
+        // Région vive : le temps que le formulaire réponde, cette tuile est
+        // remplacée par l'attente, donc détruite, et le lecteur d'écran perd
+        // le focus avec elle. Sans ça, un joueur aveugle entend « chargement »
+        // puis plus rien — l'état que cet écran affiche est justement celui
+        // qu'il ne peut pas retrouver d'un coup d'œil.
+        //
+        // Ni `SemanticsService.announce`, déprécié depuis 3.35 parce qu'Android
+        // a déprécié le mécanisme sous-jacent — TalkBack y vide sa file pour
+        // lire le message —, ni une annonce à la main : le framework renvoie
+        // vers la région vive, qui reste muette quand le lecteur d'écran est
+        // déjà en train de dire autre chose. C'est ce qui la rend inoffensive
+        // à l'ouverture des réglages.
+        subtitle: Semantics(
+          liveRegion: true,
+          child: Text(
+            _consentStatus(l10n, allowed: allowed, showsAds: showsAds),
+          ),
         ),
         trailing: const Icon(Icons.chevron_right),
       ),
