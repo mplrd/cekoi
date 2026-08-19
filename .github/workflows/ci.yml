@@ -120,6 +120,19 @@ jobs:
       - name: Build Android non signé
         run: flutter build apk --debug
 
+      # R8 ne tourne qu'en release, et c'est le plugin Gradle de Flutter qui
+      # l'active — pas une option du dépôt. Sans ce job, aucune configuration
+      # de `android/app/proguard-rules.pro` n'est jamais évaluée : une règle
+      # mal écrite ne se découvre qu'au build de publication.
+      #
+      # Honnêteté sur ce que ce job **ne** couvre **pas** : R8 ne casse pas le
+      # build, il casse l'exécution. Le crash au démarrage du 19 août — un
+      # constructeur retiré à une base Room, voir `docs/ROADMAP.md` — sortait
+      # d'un build parfaitement vert. Seul `tool/fumee.py`, qui lance
+      # l'application sur un vrai téléphone, l'attrape.
+      - name: Build Android de release
+        run: flutter build apk --release
+
   # Branché dès le lot 1 volontairement : une CI iOS ajoutée tardivement fait
   # remonter d'un coup pods, permissions et signature au pire moment.
   # Voir docs/ROADMAP.md, lot 1.
