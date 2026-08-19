@@ -251,6 +251,23 @@ Sons, retour haptique, langue, gestion du consentement publicitaire (obligatoire
 accessible à tout moment), restauration des achats, mentions légales et politique de
 confidentialité.
 
+La ligne du consentement porte la réponse en cours en sous-titre — « Publicités autorisées »
+ou « Publicités refusées » — comme tout réglage porte sa valeur. Sans elle, rouvrir le
+formulaire du CMP était le seul moyen de savoir ce qu'on avait répondu. Jamais
+« personnalisées » : l'API du SDK n'expose que le droit de demander une pub, pas la
+distinction.
+
+Un troisième cas chez qui a acheté : « Publicités autorisées, mais la version complète les
+retire. » L'écran le remercie de son achat deux sections plus haut, et l'offre lui promettait
+« Plus aucune publicité » — lui annoncer des publicités au-dessous serait se contredire. Son
+consentement reste affiché et modifiable, il ne décide simplement plus de rien.
+
+Le statut est une **région vive**, pour être annoncé quand il change. Le temps que le
+formulaire réponde, la ligne est remplacée par une attente, donc détruite, et le focus part
+avec elle : sans ça, un joueur aveugle entend « chargement » puis plus rien, et c'est le seul à
+qui l'état affiché ne parvient pas. Une région vive reste muette si le lecteur d'écran est déjà
+en train de dire autre chose — c'est ce qui la rend inoffensive à l'ouverture de l'écran.
+
 **Pas de choix de thème.** L'application a un seul visage : le corail pastel du logo, en
 clair, quelle que soit la préférence du système. Un thème sombre serait une seconde
 interface à dessiner et à vérifier, pour un jeu qu'on sort le soir entre amis avec la

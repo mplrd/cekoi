@@ -99,6 +99,8 @@ class AppSettingsScreen extends ConsumerWidget {
               AsyncData<ConsentState>(:final value)
                   when value.canChangeChoice =>
                 _ConsentTile(
+                  allowed: value.canRequestAds,
+                  showsAds: ownership.showsAds,
                   onTap: () => unawaited(
                     ref.read(adConsentProvider.notifier).changeChoice(),
                   ),
@@ -244,13 +246,52 @@ class _SectionTitle extends StatelessWidget {
   }
 }
 
-/// L'entrée qui rouvre le formulaire de consentement.
+/// La réponse en cours, telle qu'elle se lit dans les réglages.
+///
+/// Trois cas et non deux : dire « Publicités autorisées » à qui a acheté la
+/// version complète le contredirait deux sections plus haut, où le même écran
+/// le remercie de l'avoir achetée — et l'offre lui promettait « Plus aucune
+/// publicité ». Son consentement reste vrai et modifiable, il ne décide juste
+/// plus de rien.
+///
+/// « Refusées » couvre les deux autres cas sans les distinguer, et c'est
+/// voulu : le participe décrit un état sans désigner qui refuse. Le cas courant
+/// est le refus du joueur, mais un SDK qui ne démarre pas — ou un formulaire
+/// qui échoue avant d'avoir été montré — aboutit au même endroit, et la phrase
+/// y reste vraie.
+String _consentStatus(
+  AppLocalizations l10n, {
+  required bool allowed,
+  required bool showsAds,
+}) => switch ((allowed, showsAds)) {
+  (false, _) => l10n.settingsAdConsentRefused,
+  (true, true) => l10n.settingsAdConsentAllowed,
+  (true, false) => l10n.settingsAdConsentAllowedFullVersion,
+};
+
+/// L'entrée qui rouvre le formulaire de consentement, et dit où on en est.
 ///
 /// Sur sa carte blanche, comme les catégories et les lignes du récapitulatif
 /// de tour : une liste posée à même le fond serait le seul endroit de
 /// l'application à flotter.
+///
+/// Le sous-titre porte la réponse en cours, comme n'importe quel réglage porte
+/// sa valeur — la ligne rouvrait le formulaire sans jamais dire ce qu'on avait
+/// répondu, et rouvrir un formulaire pour lire son propre choix n'est pas une
+/// réponse. Le titre reste le nom du réglage, le chevron l'invitation à le
+/// changer.
 class _ConsentTile extends StatelessWidget {
-  const _ConsentTile({required this.onTap});
+  const _ConsentTile({
+    required this.allowed,
+    required this.showsAds,
+    required this.onTap,
+  });
+
+  /// La réponse en cours autorise les publicités.
+  final bool allowed;
+
+  /// L'application a encore le droit d'en montrer une.
+  final bool showsAds;
 
   final VoidCallback onTap;
 
@@ -264,7 +305,24 @@ class _ConsentTile extends StatelessWidget {
         onTap: onTap,
         leading: const Icon(Icons.privacy_tip_outlined),
         title: Text(l10n.settingsAdConsent),
-        subtitle: Text(l10n.settingsAdConsentHint),
+        // Région vive : le temps que le formulaire réponde, cette tuile est
+        // remplacée par l'attente, donc détruite, et le lecteur d'écran perd
+        // le focus avec elle. Sans ça, un joueur aveugle entend « chargement »
+        // puis plus rien — l'état que cet écran affiche est justement celui
+        // qu'il ne peut pas retrouver d'un coup d'œil.
+        //
+        // Ni `SemanticsService.announce`, déprécié depuis 3.35 parce qu'Android
+        // a déprécié le mécanisme sous-jacent — TalkBack y vide sa file pour
+        // lire le message —, ni une annonce à la main : le framework renvoie
+        // vers la région vive, qui reste muette quand le lecteur d'écran est
+        // déjà en train de dire autre chose. C'est ce qui la rend inoffensive
+        // à l'ouverture des réglages.
+        subtitle: Semantics(
+          liveRegion: true,
+          child: Text(
+            _consentStatus(l10n, allowed: allowed, showsAds: showsAds),
+          ),
+        ),
         trailing: const Icon(Icons.chevron_right),
       ),
     );
