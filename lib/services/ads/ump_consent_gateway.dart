@@ -54,10 +54,16 @@ class UmpConsentGateway implements ConsentGateway {
 
   /// Au-delà, on considère que le CMP ne répondra pas.
   ///
-  /// Large exprès : c'est un garde-fou contre une absence de réponse, pas une
-  /// limite de patience. Un formulaire ouvert attend le joueur aussi longtemps
-  /// qu'il le faut — l'attente commence à l'appel, pas à l'affichage, mais dix
-  /// secondes couvrent le chargement sans jamais couper une lecture.
+  /// **Ne borne que ce qui n'attend pas le joueur** : l'interrogation de
+  /// l'UMP et la lecture de l'état final. Les deux étapes qui affichent un
+  /// formulaire n'en ont pas, et c'est délibéré — voir `_showFormIfRequired`.
+  ///
+  /// La version précédente bornait tout, et prétendait dans ce commentaire
+  /// « couvrir le chargement sans jamais couper une lecture ». C'était faux :
+  /// le compte à rebours partait à l'appel, formulaire affiché ou non. Passé
+  /// dix secondes, la passerelle lisait l'état pendant que le formulaire était
+  /// encore à l'écran, concluait au refus, et n'y revenait jamais. Le joueur
+  /// acceptait ensuite dans le vide.
   final Duration deadline;
 
   @override
@@ -104,6 +110,19 @@ class UmpConsentGateway implements ConsentGateway {
   ///
   /// L'UMP rappelle l'écouteur immédiatement quand aucun formulaire n'est
   /// requis : ce n'est pas une attente pour les utilisateurs hors zone.
+  ///
+  /// **Sans délai de garde, contrairement au reste.** Ce que cette étape
+  /// attend n'est pas un SDK, c'est une personne en train de lire un mur de
+  /// texte réglementaire, et dix secondes n'y suffisent pas. Borner ici
+  /// revenait à conclure au refus pendant que le formulaire était affiché,
+  /// puis à ignorer la réponse.
+  ///
+  /// Le risque que le délai couvrait ailleurs ne se pose pas ici : la méthode
+  /// du plugin rend un vrai `Future`, et `onError` est branché dessus. Un
+  /// canal absent, une `PlatformException`, un formulaire qui refuse de
+  /// s'afficher — tous terminent l'attente. Le seul cas restant est « le
+  /// formulaire est à l'écran et personne n'a encore répondu », qui n'est pas
+  /// une panne mais le fonctionnement normal.
   Future<void> _showFormIfRequired() {
     final done = Completer<void>();
     unawaited(
@@ -111,10 +130,16 @@ class UmpConsentGateway implements ConsentGateway {
         (_) => _finish(done),
       ).onError((_, _) => _finish(done)),
     );
-    return _bounded(done);
+    return done.future;
   }
 
   /// Rouvre le formulaire depuis les réglages, et attend la réponse.
+  ///
+  /// Sans délai de garde, pour la même raison que `_showFormIfRequired` — et
+  /// le sens de la panne y était pire. Un joueur qui **retire** son
+  /// consentement lentement voyait la passerelle relire l'ancien état, le
+  /// trouver favorable, et laisser le SDK servir des publicités jusqu'au
+  /// prochain lancement, alors qu'il venait de les refuser.
   Future<void> _showPrivacyOptions() {
     final done = Completer<void>();
     unawaited(
@@ -122,7 +147,7 @@ class UmpConsentGateway implements ConsentGateway {
         (_) => _finish(done),
       ).onError((_, _) => _finish(done)),
     );
-    return _bounded(done);
+    return done.future;
   }
 
   /// Lit l'état final auprès de l'UMP.
