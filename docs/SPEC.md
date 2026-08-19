@@ -26,6 +26,12 @@ table**, un téléphone qu'on se passe, avec du bruit et de l'agitation. Concrè
   reste variable — un 360 × 640 existe, et le texte agrandi par le système s'applique en
   entier. Un écran doit tenir, ou défiler.
 
+  **Où va l'action, quand l'écran défile :** collée en bas et hors du défilement quand elle est
+  unique — c'est ce que fait `SetupScaffold`, et ce qui garantit que le bouton reste sous le
+  pouce. Mais quand le nombre d'actions dépend du nombre d'équipes, on ne peut pas les épingler
+  toutes : elles défilent alors avec le contenu, comme sur le départage. La règle est que rien
+  d'indispensable ne soit inatteignable, pas que tout soit épinglé.
+
 ## Parcours de configuration
 
 **Quatre étapes des deux côtés** (R7.10), avec une barre de progression et un retour possible à

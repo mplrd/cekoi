@@ -87,10 +87,23 @@ void main() {
     }
   }
 
-  Future<void> pumpScreen(WidgetTester tester, GameState game) async {
-    tester.view.physicalSize = const Size(1000, 2400);
+  Future<void> pumpScreen(
+    WidgetTester tester,
+    GameState game, {
+
+    /// La géométrie de l'appareil. Par défaut un écran très haut, pour que la
+    /// mise en page ne soit jamais ce qui fait échouer un test de contenu.
+    Size? taille,
+
+    /// L'agrandissement du texte par le système. Rien ne le borne dans
+    /// l'application : le réglage s'applique en entier.
+    double echelleTexte = 1,
+  }) async {
+    tester.view.physicalSize = taille ?? const Size(1000, 2400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
+    tester.platformDispatcher.textScaleFactorTestValue = echelleTexte;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
 
     await tester.pumpWidget(
       ProviderScope(
@@ -296,6 +309,130 @@ void main() {
       expect(partie().phase, GamePhase.tieBreak);
       expect(find.text(premiere), findsNothing);
       expect(find.text(partie().tieBreakCard!.text), findsOneWidget);
+      await stopGame(tester);
+    });
+
+    /// Dix équipes à égalité — le plafond que R8.1 promet utilisable.
+    ///
+    /// Cas extrême mais atteignable : une partie où personne n'a rien trouvé
+    /// met toutes les équipes à zéro, donc toutes à égalité.
+    GameState tenWayTie() {
+      final game = testGame(cardCount: 12, teamCount: 10);
+      return game.copyWith(
+        phase: GamePhase.tieBreak,
+        roundIndex: game.rounds.length - 1,
+        pile: const [],
+        turn: null,
+        tieBreakTeamIds: [for (var i = 1; i <= 10; i++) 'team-$i'],
+        tieBreakReserve: testCards(4, prefix: 'reserve'),
+      );
+    }
+
+    for (final (libelle, taille, echelle) in const [
+      ('un ecran courant', Size(360, 800), 1.0),
+      // La combinaison la plus probable sur le terrain : un telephone
+      // ordinaire chez quelqu un qui a grossi la police du systeme.
+      ('un ecran courant au texte agrandi', Size(360, 800), 1.3),
+      ('un petit ecran', Size(360, 640), 1.0),
+      ('un petit ecran au texte agrandi', Size(360, 640), 1.3),
+    ]) {
+      testWidgets('R8.1 — dix equipes a egalite tiennent sur $libelle', (
+        tester,
+      ) async {
+        // R8.1 promet l'interface utilisable jusqu'a dix equipes. Ici, un
+        // bouton de vainqueur sous le bord n'est pas un defaut cosmetique :
+        // R5.3 ne peut plus etre tranchee, donc la partie ne peut plus se
+        // terminer. Il n'y a aucune autre sortie que ces boutons.
+        final game = tenWayTie();
+        await pumpScreen(tester, game, taille: taille, echelleTexte: echelle);
+
+        // Un debordement de `RenderFlex` remonte comme exception de test.
+        expect(tester.takeException(), isNull);
+
+        // Chaque equipe reste designable, quitte a faire defiler.
+        for (final id in game.tieBreakTeamIds) {
+          final bouton = find.widgetWithText(
+            FilledButton,
+            l10n.tieBreakWinner(id),
+          );
+          // `ensureVisible` n'est pas l'assertion, et ne protege de rien :
+          // sans `Scrollable` ancetre il ne leve pas, il ne fait rien. Ce qui
+          // attrape un retour a la colonne non defilante, c'est l'exception
+          // de `RenderFlex` ci-dessus et la mesure ci-dessous — une colonne
+          // qui deborde positionne quand meme ses enfants au-dela du bord, et
+          // `getRect` lit la transformee, pas le rognage.
+          //
+          // `pump` et non `pumpAndSettle` : l'ecran de jeu anime en
+          // permanence, rien ne s'y stabilise jamais. C'est la convention de
+          // tous les tests de `play/`.
+          await tester.ensureVisible(bouton);
+          await tester.pump();
+
+          final rect = tester.getRect(bouton);
+          expect(rect.top, greaterThanOrEqualTo(0.0));
+          expect(
+            rect.bottom,
+            lessThanOrEqualTo(taille.height),
+            reason: 'le bouton de $id sort de l ecran',
+          );
+        }
+
+        // Et la partie se termine reellement : un bouton visible mais inerte
+        // ne vaudrait pas mieux qu'un bouton sous le bord.
+        await tester.tap(
+          find.widgetWithText(FilledButton, l10n.tieBreakWinner('team-10')),
+        );
+        await tester.pump();
+
+        expect(partie().phase, GamePhase.finished);
+        expect(partie().winnerIds, ['team-10']);
+        await stopGame(tester);
+      });
+    }
+
+    testWidgets('a trois equipes, le depart reste centre', (tester) async {
+      // Le temoin du `minHeight` : sans lui l'ecran cesse de deborder — un
+      // defilement ne deborde jamais — mais tout se colle en haut, et les
+      // trois tests de geometrie restent verts. C'est le seul qui rougit si
+      // on retire la contrainte.
+      await pumpScreen(tester, threeWayTie());
+
+      final zone = tester.getRect(find.byType(SingleChildScrollView));
+      final titre = tester.getRect(find.text(l10n.tieBreakTitle));
+      final pied = tester.getRect(
+        find.widgetWithText(OutlinedButton, l10n.actionTieBreakRestart),
+      );
+
+      // Les marges sont lues sur le widget, pas recopiees : les reecrire ici
+      // ferait rougir « le departage n'est pas centre » a la premiere retouche
+      // du `padding`, alors que la mise en page serait restee parfaitement
+      // centree.
+      final marges = tester
+          .widget<Padding>(
+            find
+                .descendant(
+                  of: find.byType(SingleChildScrollView),
+                  matching: find.byType(Padding),
+                )
+                .first,
+          )
+          .padding
+          .resolve(TextDirection.ltr);
+
+      final airAuDessus = titre.top - (zone.top + marges.top);
+      final airEnDessous = (zone.bottom - marges.bottom) - pied.bottom;
+
+      expect(
+        airAuDessus,
+        greaterThan(50),
+        reason: 'le departage est colle en haut au lieu d occuper l ecran',
+      );
+      expect(
+        airAuDessus,
+        closeTo(airEnDessous, 4),
+        reason: "le departage n'est pas centre",
+      );
+
       await stopGame(tester);
     });
   });
