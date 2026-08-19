@@ -99,6 +99,7 @@ class AppSettingsScreen extends ConsumerWidget {
               AsyncData<ConsentState>(:final value)
                   when value.canChangeChoice =>
                 _ConsentTile(
+                  allowed: value.canRequestAds,
                   onTap: () => unawaited(
                     ref.read(adConsentProvider.notifier).changeChoice(),
                   ),
@@ -244,13 +245,22 @@ class _SectionTitle extends StatelessWidget {
   }
 }
 
-/// L'entrée qui rouvre le formulaire de consentement.
+/// L'entrée qui rouvre le formulaire de consentement, et dit où on en est.
 ///
 /// Sur sa carte blanche, comme les catégories et les lignes du récapitulatif
 /// de tour : une liste posée à même le fond serait le seul endroit de
 /// l'application à flotter.
+///
+/// Le sous-titre porte la réponse en cours, comme n'importe quel réglage porte
+/// sa valeur — la ligne rouvrait le formulaire sans jamais dire ce qu'on avait
+/// répondu, et rouvrir un formulaire pour lire son propre choix n'est pas une
+/// réponse. Le titre reste le nom du réglage, le chevron l'invitation à le
+/// changer.
 class _ConsentTile extends StatelessWidget {
-  const _ConsentTile({required this.onTap});
+  const _ConsentTile({required this.allowed, required this.onTap});
+
+  /// La réponse en cours autorise les publicités.
+  final bool allowed;
 
   final VoidCallback onTap;
 
@@ -264,7 +274,11 @@ class _ConsentTile extends StatelessWidget {
         onTap: onTap,
         leading: const Icon(Icons.privacy_tip_outlined),
         title: Text(l10n.settingsAdConsent),
-        subtitle: Text(l10n.settingsAdConsentHint),
+        subtitle: Text(
+          allowed
+              ? l10n.settingsAdConsentAllowed
+              : l10n.settingsAdConsentRefused,
+        ),
         trailing: const Icon(Icons.chevron_right),
       ),
     );

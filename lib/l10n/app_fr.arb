@@ -833,9 +833,14 @@
     "description": "Entrée des réglages qui rouvre le formulaire de consentement du CMP."
   },
 
-  "settingsAdConsentHint": "Modifier mon consentement aux publicités personnalisées.",
-  "@settingsAdConsentHint": {
-    "description": "Sous-titre de l'entrée de consentement, dans les réglages."
+  "settingsAdConsentAllowed": "Publicités autorisées",
+  "@settingsAdConsentAllowed": {
+    "description": "Sous-titre de l'entrée de consentement quand la réponse donnée au formulaire permet les publicités. Pas « personnalisées » : le SDK ne distingue pas les deux, et l'annoncer serait inventer une précision qu'on n'a pas."
+  },
+
+  "settingsAdConsentRefused": "Publicités refusées",
+  "@settingsAdConsentRefused": {
+    "description": "Sous-titre de l'entrée de consentement quand aucune publicité ne peut être demandée. Formulé au passif, sans désigner qui refuse : le cas courant est le refus du joueur, mais un SDK qui n'a pas démarré aboutit au même état."
   },
 
   "settingsAdConsentLoading": "Choix publicitaire en cours de chargement.",

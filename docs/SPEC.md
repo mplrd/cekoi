@@ -251,6 +251,11 @@ Sons, retour haptique, langue, gestion du consentement publicitaire (obligatoire
 accessible à tout moment), restauration des achats, mentions légales et politique de
 confidentialité.
 
+La ligne du consentement porte la réponse en cours en sous-titre — « Publicités autorisées »
+ou « Publicités refusées » — comme tout réglage porte sa valeur. Sans elle, rouvrir le
+formulaire du CMP était le seul moyen de savoir ce qu'on avait répondu. Jamais
+« personnalisées » : le SDK ne distingue pas les deux.
+
 **Pas de choix de thème.** L'application a un seul visage : le corail pastel du logo, en
 clair, quelle que soit la préférence du système. Un thème sombre serait une seconde
 interface à dessiner et à vérifier, pour un jeu qu'on sort le soir entre amis avec la
