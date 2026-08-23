@@ -171,13 +171,35 @@ def main() -> None:
             + trace_de_crash(serie)
         )
 
+    # L'écran éteint fausse tout ce qui suit : rien n'est composé, le compteur
+    # de frames reste à zéro et l'activité n'est pas « resumed ». Le dire, et
+    # non le confondre avec une panne — c'est l'erreur que ce script a commise
+    # la première fois qu'il a tourné.
+    if not ecran_allume(serie):
+        echouer(
+            "l'écran du téléphone est éteint : le processus survit, mais ni le "
+            "rendu ni le premier plan ne sont vérifiables. Déverrouiller "
+            "l'appareil et relancer."
+        )
+
+    frames = frames_rendues(serie)
+    if frames == 0:
+        echouer(
+            "le processus vit et l'écran est allumé, mais aucune frame n'a été "
+            "rendue — Flutter n'a jamais dessiné. Écran noir."
+        )
+
     if not activite_au_premier_plan(serie):
         echouer(
             "le processus vit, mais l'activité n'est pas au premier plan — "
-            "écran noir ou activité jamais reprise."
+            "activité jamais reprise, ou recouverte."
         )
 
-    print(f"\n[OK] L'application démarre et tient {SECONDES_DE_SURVIE} s au premier plan.")
+    print()
+    print(
+        f"[OK] L'application démarre, dessine ({frames} frames) et tient "
+        f"{SECONDES_DE_SURVIE} s au premier plan."
+    )
     print("     Ce test ne dit rien de plus : il reste à jouer une partie.")
 
 
