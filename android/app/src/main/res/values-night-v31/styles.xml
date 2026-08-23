@@ -1,28 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Depuis Android 12 (API 31), le systeme impose son propre ecran de
-     demarrage et ignore `windowBackground` des qu il ne s agit pas d une
-     couleur unie. Notre `layer-list` n en est pas une : sans ce fichier, tout
-     le travail de branding de `launch_background.xml` reste sans effet sur
-     les telephones actuels, et le flash blanc revient.
+<!-- Le jumeau sombre de `values-v31/styles.xml`, qui porte l explication du
+     choix de `splash_icon`. Les deux ne doivent differer que par le theme
+     parent — `tool/test_ressources_android.py` le verifie.
 
-     Ce fichier est le jumeau de `values-v31/styles.xml`, qui porte
-     l explication complete du choix de `splash_icon`. Il n en differe que par
-     le theme parent.
-
-     **Le meme drawable que la variante claire, et c est le fond de l affaire.**
-     La correction du 17 aout — le systeme consomme ce drawable brut, donc un
-     fichier sans marge y est rogne, la bulle, la carte « 1 » et les jambes du
-     coureur passant a la trappe — n avait ete appliquee qu ici a la variante
-     claire. Celle-ci est restee sur `ic_launcher_foreground`, qui n a pas de
-     marge, et le splash est reste rogne pour qui a le theme sombre. Comme le
-     telephone de test est en bascule automatique, le defaut ne se voyait que
-     le soir, ce qui l a fait passer pour une regression du build du jour.
-
-     L application n a qu un seul visage, clair, quel que soit le reglage du
-     systeme : ces deux fichiers n ont aucune raison de diverger sur autre
-     chose que le parent. -->
+     **Pourquoi ce fichier doit exister.** Le qualificatif de mode nuit passe
+     avant le niveau d API dans l ordre de precedence des ressources. Si
+     `values-night/styles.xml` existe et que celui-ci disparait, un appareil en
+     API 31+ et en theme sombre resout `LaunchTheme` vers `values-night`, qui
+     ne declare aucun attribut de splash : l icone disparait alors entierement
+     de l ecran de demarrage. Les deux fichiers `night` vont ensemble ; en
+     supprimer un seul regresse en silence. -->
 <resources>
     <style name="LaunchTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowBackground">@color/launch_background</item>
         <item name="android:windowSplashScreenBackground">@color/launch_background</item>
         <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_icon</item>
     </style>
