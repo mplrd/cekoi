@@ -47,6 +47,21 @@ branché, donc il ne peut pas vivre dans la CI en l'état — **c'est une étape
 faire avant de livrer un artefact à qui que ce soit.** Ne pas la sauter était censé aller de
 soi ; ça n'a pas suffi.
 
+Une deuxième classe de règles est tombée à la même revue, par le même mécanisme et depuis
+la même dépendance : `androidx.work.InputMerger` perdait aussi son constructeur. Là, rien ne
+plante — WorkManager journalise « Could not create Input Merger » et marque la tâche en
+échec, si bien que le ping hors-ligne du SDK publicitaire ne partait jamais, en silence. La
+leçon vaut mieux que la règle : le motif à chercher est **une règle `-keep` qui ne nomme
+aucun membre**, et `build/app/outputs/mapping/release/usage.txt` les liste toutes.
+
+**Le `-Xmx8G` d'`android/gradle.properties` est plus gros que le runner de CI.** Le dépôt
+étant privé, `ubuntu-latest` donne 2 cœurs et 7 Go : mettre R8 dans la CI avec un tas
+versionné plus large que la machine expose à un « Gradle build daemon disappeared » qui n'a
+rien à voir avec la PR en cours. Le job pose donc `GRADLE_OPTS` de son côté. La règle reste
+celle qui avait été écrite après l'incident mémoire de la machine de développement :
+**l'ajustement de `jvmargs` est machine-locale**, il se pose dans `~/.gradle/gradle.properties`
+ou dans l'environnement du job, jamais dans le fichier versionné.
+
 Reste ouvert : faire tourner ce test sur un émulateur en CI, sur `main` seulement, comme le
 job iOS. C'est un arbitrage de minutes — un runner avec émulateur est lent, et le dépôt est
 privé.
