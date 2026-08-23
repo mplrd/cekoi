@@ -41,14 +41,19 @@ ConsentState consentStateFrom({
 /// de parcours, et lui seul — un formulaire qui échoue à s'afficher n'annule
 /// pas un consentement déjà donné lors d'un lancement précédent.
 ///
-/// **Chaque étape est bornée dans le temps.** Ce n'est pas de la prudence
-/// décorative : `UserMessagingChannel.requestConsentInfoUpdate` est un `void
-/// async` qui n'attrape que `PlatformException`, si bien qu'une
-/// `MissingPluginException` s'échappe sans appeler ni l'écouteur de succès ni
-/// celui d'échec. Sans délai de garde, la réponse ne vient jamais, et ce n'est
-/// pas la partie qui en souffre — personne ne l'attend — mais l'écran de
-/// réglages, qui resterait sur son indicateur de chargement à vie. L'entrée
-/// légalement obligatoire deviendrait définitivement injoignable.
+/// **Ce qui attend une machine est borné ; ce qui attend une personne ne
+/// l'est pas.** L'interrogation de l'UMP et la lecture de l'état ont un délai
+/// de garde, parce que `UserMessagingChannel.requestConsentInfoUpdate` est un
+/// `void async` qui n'attrape que `PlatformException` : une
+/// `MissingPluginException` s'y échappe sans appeler ni l'écouteur de succès
+/// ni celui d'échec, et la réponse ne viendrait jamais. Les deux étapes qui
+/// affichent un formulaire, elles, n'en ont pas — voir `_showFormIfRequired`.
+///
+/// Ce qu'un blocage coûterait, si le natif violait son contrat : rien à la
+/// partie, que personne ne fait attendre, mais l'entrée de consentement des
+/// réglages resterait sur son indicateur de chargement pour cette session.
+/// Elle revient au lancement suivant, `gather()` étant rejoué. C'est le prix
+/// assumé pour ne plus jamais inventer une réponse à la place du joueur.
 class UmpConsentGateway implements ConsentGateway {
   UmpConsentGateway({this.deadline = const Duration(seconds: 10)});
 

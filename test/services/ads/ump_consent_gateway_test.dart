@@ -62,9 +62,17 @@ class _StubConsentInformation implements ConsentInformation {
 /// injectable : contrairement à `ConsentInformation`, on ne peut pas le
 /// remplacer. Passer par le canal est le seul moyen de piloter un formulaire
 /// depuis un test — et c'est pour ça que ce chemin n'était couvert par rien.
+/// Le codec est celui par défaut, là où le plugin emploie
+/// `StandardMethodCodec(UserMessagingCodec())` : `UserMessagingCodec`
+/// n'est pas exporté par le barrel du paquet, et aller le chercher dans
+/// `src/` déclencherait `implementation_imports`. Sans conséquence tant que
+/// les appels portent des arguments nuls et que le faux renvoie `null`, ce
+/// que les deux codecs encodent à l'identique. La limite à connaître : ce
+/// faux ne peut pas **renvoyer** un `FormError`, et doit modéliser l'échec
+/// en lançant une `PlatformException` — ce que fait aussi le natif.
 const _umpChannel = MethodChannel('plugins.flutter.io/google_mobile_ads/ump');
 
-/// Cette méthode-là n'aboutit **qu'au rejet du formulaire**, pas à son
+/// Cette méthode-là n'aboutit **qu'à la fermeture du formulaire**, pas à son
 /// affichage : côté natif, le résultat est renvoyé quand le joueur a répondu.
 const _afficheLeFormulaire =
     'UserMessagingPlatform#loadAndShowConsentFormIfRequired';
@@ -187,6 +195,46 @@ void main() {
       ).gather();
 
       expect(state, ConsentState.none);
+    });
+
+    // Les deux tests qui suivent épinglent ce qui porte le correctif. Le délai
+    // de garde retiré, la seule chose qui empêche `gather()` de rester
+    // suspendu à vie est le `.onError` branché sur les méthodes de formulaire.
+    // Le retirer ne fait pas rougir les autres tests : il les **fige** jusqu'au
+    // délai du lanceur, ce qui est un bien plus mauvais mode d'échec qu'une
+    // assertion. D'où le `.timeout` explicite, et un `deadline` volontairement
+    // trop grand pour pouvoir sauver le test s'il servait encore de filet.
+    test(
+      "un formulaire qui échoue termine l'attente, sans délai de garde",
+      () async {
+        ConsentInformation.instance = _StubConsentInformation();
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+            .setMockMethodCallHandler(_umpChannel, (call) async {
+              throw PlatformException(
+                code: '3',
+                message: 'formulaire indisponible',
+              );
+            });
+
+        final state = await UmpConsentGateway(
+          deadline: const Duration(seconds: 30),
+        ).gather().timeout(const Duration(seconds: 2));
+
+        expect(state.canRequestAds, isFalse);
+      },
+    );
+
+    test("un canal absent termine l'attente, sans délai de garde", () async {
+      // Aucun faux enregistré : `invokeMethod` lève une
+      // `MissingPluginException`, que le plugin n'attrape pas — elle ressort
+      // par le `Future`, donc par `onError`.
+      ConsentInformation.instance = _StubConsentInformation();
+
+      final state = await UmpConsentGateway(
+        deadline: const Duration(seconds: 30),
+      ).gather().timeout(const Duration(seconds: 2));
+
+      expect(state.canRequestAds, isFalse);
     });
   });
 
