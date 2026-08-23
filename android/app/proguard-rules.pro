@@ -35,3 +35,22 @@
 # celle que Room embarque lui-même depuis la 2.4, et elle couvrira la prochaine
 # dépendance qui traînera sa propre base Room sans qu'on ait à repasser ici.
 -keep class * extends androidx.room.RoomDatabase { <init>(); }
+
+# Même mécanisme, même dépendance, autre classe : `androidx.work.InputMerger`.
+#
+# Trouvé en revue, en relisant `usage.txt` plutôt que le code : R8 a aussi
+# retiré le constructeur sans argument d'`InputMerger`,
+# `OverwritingInputMerger` et `ArrayCreatingInputMerger`. La règle que
+# work-runtime 2.7.0 embarque, `-keep class * extends androidx.work.InputMerger`,
+# ne nomme pas ses membres non plus. Contrairement aux workers — couverts, eux,
+# par une règle qui nomme `<init>(Context, WorkerParameters)` — rien ne
+# rattrape ce constructeur-là.
+#
+# La panne est silencieuse, et c'est pour ça qu'elle méritait une règle plutôt
+# qu'une ligne dans un fichier de dette : `WorkerWrapper` instancie
+# `OverwritingInputMerger` **par son nom de classe** pour toute tâche unique.
+# Sans constructeur, l'instanciation échoue, WorkManager journalise
+# « Could not create Input Merger » et marque la tâche en échec. Rien ne
+# plante ; c'est simplement le ping hors-ligne du SDK publicitaire qui ne
+# partira jamais.
+-keep class * extends androidx.work.InputMerger { <init>(); }
