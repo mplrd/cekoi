@@ -120,6 +120,33 @@ jobs:
       - name: Build Android non signé
         run: flutter build apk --debug
 
+      # R8 ne tourne qu'en release, et c'est le plugin Gradle de Flutter qui
+      # l'active — pas une option du dépôt. Sans ce job, aucune configuration
+      # de `android/app/proguard-rules.pro` n'est jamais évaluée : une règle
+      # mal écrite ne se découvre qu'au build de publication.
+      #
+      # Honnêteté sur ce que ce job **ne** couvre **pas** : R8 ne casse pas le
+      # build, il casse l'exécution. Le crash au démarrage du 19 août — un
+      # constructeur retiré à une base Room, voir `docs/ROADMAP.md` — sortait
+      # d'un build parfaitement vert. Seul `tool/fumee.py`, qui lance
+      # l'application sur un vrai téléphone, l'attrape.
+      #
+      # `GRADLE_OPTS` : `android/gradle.properties` versionne `-Xmx8G`, et le
+      # dépôt étant privé, `ubuntu-latest` n'a que 7 Go. Le démon démarrerait
+      # — c'est de la réservation virtuelle — mais un tas de R8 qui monte se
+      # ferait trancher par l'OOM-killer, et le symptôme est un « Gradle build
+      # daemon disappeared unexpectedly » sans rapport avec la PR en cours.
+      # L'ajustement se pose ici, pas dans le fichier versionné.
+      #
+      # `--target-platform` : R8 ne dépend pas de l'ABI, et c'est lui qu'on
+      # vient exercer. Compiler l'AOT pour les trois architectures sur deux
+      # cœurs triplerait le job sans rien prouver de plus. Le job de debug
+      # au-dessus, lui, les construit toutes.
+      - name: Build Android de release
+        env:
+          GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx4g
+        run: flutter build apk --release --target-platform android-arm64
+
   # Branché dès le lot 1 volontairement : une CI iOS ajoutée tardivement fait
   # remonter d'un coup pods, permissions et signature au pire moment.
   # Voir docs/ROADMAP.md, lot 1.

@@ -25,3 +25,5 @@
 - [ ] `lib/domain/` n'importe toujours pas `package:flutter`
 - [ ] Aucune chaîne affichable en dur — tout passe par les ARB de `lib/l10n/`
 - [ ] Revue de l'agent `flutter-reviewer` passée et remarques traitées
+- [ ] `python tool/fumee.py` vert **si la PR touche à Android, à Gradle ou aux règles R8** —
+      rien d'autre n'exerce un build de release

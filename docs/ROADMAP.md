@@ -24,19 +24,47 @@ artefacts sortent signés de la vraie clé (`ADMINISTRATIF.md`). Sans lui, on re
 de debug pour que `flutter run --release` reste possible, en le signalant ; incomplet, le build
 s'arrête plutôt que de retomber en silence.
 
-**Le build de release ne passe pas sur la machine de développement**, et pas davantage sur
-`develop` sans ce câblage — ce n'est donc pas lui qui l'a cassé. `flutter build apk --release`
-meurt en R8 sur une allocation de 12 Mo, avec 2 Go de RAM libre et 39 Mo de fichier d'échange
-disponible sur 63 Go : c'est un état machine, pas une propriété du dépôt, et rien ne dit qu'il
-échouerait sur une machine reposée. Si le cas se répète, l'ajustement de `jvmargs` est
-machine-locale et se pose dans `~/.gradle/gradle.properties`, pas dans le fichier versionné.
+**Le premier build de release exercé a planté au lancement**, le 19 août, exactement de la
+façon que le paragraphe précédent annonçait. L'application mourait sur l'appui de l'icône,
+avant qu'une ligne de Dart ne tourne :
 
-Ce que cet épisode montre en revanche, et qui tient du dépôt : **aucun build de release n'est
-couvert**. La CI ne construit qu'en debug — `flutter build apk --debug` et
-`flutter build ios --no-codesign --debug` dans `ci.yml` —, donc R8 ne tourne nulle part
-automatiquement, et personne ne s'en apercevrait. Deux SDK natifs sont en jeu, et R8 casse
-typiquement ce qui passe par la réflexion : la première release construite sera aussi la
-première à être exercée. À couvrir avant la publication, pas pendant.
+    java.lang.RuntimeException: Unable to get provider androidx.startup.InitializationProvider
+    Caused by: java.lang.RuntimeException: Failed to create an instance of androidx.work.impl.WorkDatabase
+
+R8, en mode complet — le défaut depuis AGP 8 —, avait retiré le constructeur sans argument
+de `WorkDatabase_Impl`, que Room instancie par réflexion. La base n'est pas la nôtre : elle
+arrive par google_mobile_ads → play-services-ads → work-runtime → room-runtime 2.2.5, dont
+les règles embarquées gardent la classe sans nommer ses membres. WorkManager s'initialisant
+depuis un `ContentProvider`, la panne est au démarrage du processus. Corrigé par
+`android/app/proguard-rules.pro`, avec la règle que Room embarque lui-même depuis la 2.4.
+
+Ce qui reste vrai du diagnostic : **rien n'exerce automatiquement un build de release**. La
+CI construit désormais l'APK de release, donc R8 tourne et un échec de build se voit — mais
+R8 ne casse pas le build, il casse l'exécution, et ce job n'aurait pas attrapé ce crash-là.
+Le seul contrôle qui l'attrape est `python tool/fumee.py` : il construit, installe, lance sur
+un vrai téléphone et vérifie que le processus tient debout et dessine. Il demande un appareil
+branché, donc il ne peut pas vivre dans la CI en l'état — **c'est une étape de la main, à
+faire avant de livrer un artefact à qui que ce soit.** Ne pas la sauter était censé aller de
+soi ; ça n'a pas suffi.
+
+Une deuxième classe de règles est tombée à la même revue, par le même mécanisme et depuis
+la même dépendance : `androidx.work.InputMerger` perdait aussi son constructeur. Là, rien ne
+plante — WorkManager journalise « Could not create Input Merger » et marque la tâche en
+échec, si bien que le ping hors-ligne du SDK publicitaire ne partait jamais, en silence. La
+leçon vaut mieux que la règle : le motif à chercher est **une règle `-keep` qui ne nomme
+aucun membre**, et `build/app/outputs/mapping/release/usage.txt` les liste toutes.
+
+**Le `-Xmx8G` d'`android/gradle.properties` est plus gros que le runner de CI.** Le dépôt
+étant privé, `ubuntu-latest` donne 2 cœurs et 7 Go : mettre R8 dans la CI avec un tas
+versionné plus large que la machine expose à un « Gradle build daemon disappeared » qui n'a
+rien à voir avec la PR en cours. Le job pose donc `GRADLE_OPTS` de son côté. La règle reste
+celle qui avait été écrite après l'incident mémoire de la machine de développement :
+**l'ajustement de `jvmargs` est machine-locale**, il se pose dans `~/.gradle/gradle.properties`
+ou dans l'environnement du job, jamais dans le fichier versionné.
+
+Reste ouvert : faire tourner ce test sur un émulateur en CI, sur `main` seulement, comme le
+job iOS. C'est un arbitrage de minutes — un runner avec émulateur est lent, et le dépôt est
+privé.
 
 Ce qui reste ouvert et ne dépend pas d'un lot :
 

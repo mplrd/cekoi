@@ -47,7 +47,15 @@ flutter test                                                # tests domaine + wi
 flutter test tool/apercus/apercu.dart --update-goldens       # banc de rendu : un PNG par écran
 flutter analyze
 flutter run
+
+python tool/fumee.py    # AVANT de livrer un APK : construit, installe, lance sur le téléphone
 ```
+
+`tool/fumee.py` n'est pas optionnel avant de donner un artefact à quelqu'un. R8 ne tourne
+qu'en release, et il ne casse pas la compilation — il casse l'**exécution** : la CI construit
+la release, donc elle voit une règle mal écrite, mais elle ne voit rien de ce qui ne se
+manifeste qu'au lancement. Un APK de release qu'on n'a pas lancé soi-même n'est pas un APK
+vérifié.
 
 `dart format` n'est pas un confort : la CI lance `--set-exit-if-changed` et rougit sur un
 fichier écrit à la main. `flutter analyze` ne le voit pas.
