@@ -10,6 +10,7 @@ Ne réimplémente pas ce qui est déjà décidé. Avant de coder, lis le documen
 
 | Document | Quand le lire |
 |---|---|
+| `docs/REPRISE.md` | **En premier, à chaque reprise.** Où on en est, ce qui bloque, ce qui attend un arbitrage. |
 | `docs/RULES.md` | **Toute** logique de gameplay. C'est la source de vérité des règles, y compris les cas limites. |
 | `docs/ARCHITECTURE.md` | Structure du code, modèle de données, packages, conventions de couches. |
 | `docs/SPEC.md` | Parcours utilisateur, écrans, comportements attendus. |
@@ -17,6 +18,11 @@ Ne réimplémente pas ce qui est déjà décidé. Avant de coder, lis le documen
 | `docs/CONTENU.md` | Guide de rédaction des cartes, destiné à l'auteure du contenu. Format de livraison attendu. |
 | `docs/ROADMAP.md` | Ce qui est dans la v1 et ce qui est explicitement repoussé. |
 | `docs/ADMINISTRATIF.md` | Comptes, validations et arbitrages hors code. À relire avant toute question de délai ou de publication. |
+
+`docs/REPRISE.md` est **la source** de l'état du projet ; l'artefact publié sur claude.ai n'en
+est qu'un rendu, et ne se modifie jamais à la main. Il a vécu hors du dépôt jusqu'au 24 août :
+personne ne le relisait, aucune revue ne le voyait, et il s'est périmé deux sessions de suite
+sans que rien ne le signale.
 
 ## Règles d'or
 
@@ -115,7 +121,10 @@ Cycle d'une unité de travail :
 4. `gh pr create --base develop`, en remplissant honnêtement la section
    *Ce que je n'ai pas fait* du template.
 5. CI verte + revue propre → merge dans `develop`.
-6. La remontée de `develop` vers `main` est un arbitrage humain, jamais automatique.
+6. Si l'unité change l'état du projet — un blocage levé, un trou de couverture ouvert, un
+   arbitrage à rendre —, mettre `docs/REPRISE.md` à jour **dans la même PR**, puis republier
+   l'artefact depuis lui.
+7. La remontée de `develop` vers `main` est un arbitrage humain, jamais automatique.
 
 Le code généré (`*.g.dart`, `*.freezed.dart`) n'est pas versionné : après tout clone ou tout
 changement de branche qui touche une classe générée, relancer `build_runner`.
