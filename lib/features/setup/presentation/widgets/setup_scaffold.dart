@@ -61,89 +61,175 @@ class SetupScaffold extends ConsumerWidget {
     // blanc. Deux surfaces, deux couleurs, une bordure arrondie qui laissait
     // des encoches dans les coins hauts — l'écran avait l'air coupé en deux.
     // Ici l'en-tête n'est plus une surface, juste le haut de la page.
+    // Aucune partie fixe ne peut affamer les autres.
+    //
+    // L'en-tete et le pied etaient tous deux a hauteur naturelle, et tous deux
+    // grandissent avec le reglage systeme — le pied surtout, puisque deux des
+    // cinq ecrans y posent une colonne d'avis en plus du bouton. Le `Expanded`
+    // du milieu absorbe jusqu'a zero, puis c'est la somme des deux qui deborde
+    // et l'action qui passe sous le bord. Mesure avant : 89 px de debordement
+    // a x2,5 sur un 360 x 640 avec le pied de l'etape des equipes, celui qui
+    // porte « Lancer la partie ».
+    //
+    // Chacun est donc borne a une part de la hauteur et defile au besoin. Les
+    // deux plafonds laissent toujours de la place a la liste, et a x1 aucun
+    // des deux ne les approche : le rendu ordinaire est inchange.
     return Scaffold(
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          SafeArea(
-            bottom: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    children: [
-                      const BackButton(color: AppColors.ink),
-                      // Le libellé cède avant les points : sur une petite
-                      // largeur, savoir combien d'étapes restent vaut mieux
-                      // que de les compter en toutes lettres.
-                      Flexible(
-                        child: Text(
-                          l10n.setupStep(rang, stepCount),
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.labelLarge?.copyWith(
-                            color: AppColors.inkSoft,
-                            letterSpacing: 1.2,
-                            fontWeight: FontWeight.w700,
-                          ),
+      body: LayoutBuilder(
+        builder: (context, contraintes) => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: contraintes.maxHeight * _partDeLEnTete,
+              ),
+              child: SingleChildScrollView(
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          children: [
+                            const BackButton(color: AppColors.ink),
+                            // Le libellé cède avant les points : sur une petite
+                            // largeur, savoir combien d'étapes restent vaut
+                            // mieux que de les compter en toutes lettres.
+                            Flexible(
+                              child: Text(
+                                l10n.setupStep(rang, stepCount),
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.labelLarge?.copyWith(
+                                  color: AppColors.inkSoft,
+                                  letterSpacing: 1.2,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            const Spacer(),
+                            // Quatre points valent mieux qu'une barre : on
+                            // compte les étapes restantes d'un coup d'œil, ce
+                            // qu'un pourcentage ne dit pas. L'étape courante
+                            // est un trait plein dans le teal des actions, les
+                            // franchies des points d'encre.
+                            for (var i = 1; i <= stepCount; i++)
+                              Container(
+                                width: i == rang ? 22 : 8,
+                                height: 8,
+                                margin: const EdgeInsets.only(left: 5),
+                                decoration: BoxDecoration(
+                                  color: switch (i) {
+                                    _ when i == rang => AppColors.deep,
+                                    _ when i < rang => AppColors.ink,
+                                    _ => AppColors.ink.withValues(alpha: 0.22),
+                                  },
+                                  borderRadius: const BorderRadius.all(
+                                    Radius.circular(4),
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      const Spacer(),
-                      // Quatre points valent mieux qu'une barre : on compte les
-                      // étapes restantes d'un coup d'œil, ce qu'un pourcentage
-                      // ne dit pas. L'étape courante est un trait plein dans
-                      // le teal des actions, les franchies des points d'encre.
-                      for (var i = 1; i <= stepCount; i++)
-                        Container(
-                          width: i == rang ? 22 : 8,
-                          height: 8,
-                          margin: const EdgeInsets.only(left: 5),
-                          decoration: BoxDecoration(
-                            color: switch (i) {
-                              _ when i == rang => AppColors.deep,
-                              _ when i < rang => AppColors.ink,
-                              _ => AppColors.ink.withValues(alpha: 0.22),
-                            },
-                            borderRadius: const BorderRadius.all(
-                              Radius.circular(4),
+                        const SizedBox(height: 4),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: _Titre(
+                            title,
+                            theme.textTheme.displaySmall?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.ink,
+                              letterSpacing: -0.5,
+                              height: 1.1,
                             ),
                           ),
                         ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: Text(
-                      title,
-                      style: theme.textTheme.displaySmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.ink,
-                        letterSpacing: -0.5,
-                        height: 1.1,
-                      ),
+                      ],
                     ),
                   ),
-                ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: SafeArea(top: false, bottom: false, child: child),
-          ),
-          if (footer != null)
-            SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
-                child: footer,
-              ),
+            const SizedBox(height: 16),
+            Expanded(
+              child: SafeArea(top: false, bottom: false, child: child),
             ),
-        ],
+            if (footer != null)
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: contraintes.maxHeight * _partDuPied,
+                ),
+                child: SingleChildScrollView(
+                  child: SafeArea(
+                    top: false,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
+                      child: footer,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
+    );
+  }
+
+  /// Les deux plafonds. Leur somme laisse un dixieme de la hauteur a la liste,
+  /// meme quand l'en-tete et le pied reclament tout ce qu'ils peuvent.
+  static const double _partDeLEnTete = 0.35;
+  static const double _partDuPied = 0.55;
+}
+
+/// Le titre de l'étape, ramené dans la largeur quand un seul mot n'y tient
+/// plus.
+///
+/// Borner l'agrandissement à une constante ne suffisait pas : le problème est
+/// un **rapport**, pas un seuil. À ×2, « Combien » réclame 355 px sur une
+/// ligne qui en fait 312 — donc même borné, le titre de l'étape des équipes
+/// restait coupé. Et sur un écran plus large, la même borne rabotait pour
+/// rien.
+///
+/// Ici on ne réduit que quand ça dépasse, et que d'autant qu'il faut : le
+/// réglage de l'utilisateur est respecté partout où il tient. Le repli et le
+/// défilement ne peuvent rien pour un mot plus large que l'écran, c'est la
+/// seule raison de toucher à l'échelle.
+class _Titre extends StatelessWidget {
+  const _Titre(this.texte, this.style);
+
+  final String texte;
+  final TextStyle? style;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, contraintes) {
+        final peintre = TextPainter(
+          text: TextSpan(text: texte, style: style),
+          textDirection: Directionality.of(context),
+          textScaler: MediaQuery.textScalerOf(context),
+        )..layout();
+        final insecable = peintre.minIntrinsicWidth;
+        peintre.dispose();
+
+        if (insecable <= contraintes.maxWidth) {
+          return Text(texte, style: style);
+        }
+
+        // Le bloc est composé à la largeur qu'exige son mot le plus large,
+        // puis ramené à celle qu'on a : le rapport est exactement celui qui
+        // manquait, et le titre garde son repli sur plusieurs lignes.
+        return FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: SizedBox(
+            width: insecable,
+            child: Text(texte, style: style),
+          ),
+        );
+      },
     );
   }
 }

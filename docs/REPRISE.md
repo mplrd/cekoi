@@ -27,7 +27,8 @@ reste dans `ROADMAP.md`, les démarches dans `ADMINISTRATIF.md`, les règles dan
 |---|---|
 | Lots | 6 sur 8 faits ; le 5 (contenu) et le 8 (publication) sont en cours |
 | Cartes | 529 sur les 1 200 visées, réparties sur 21 catégories |
-| Écrans à risque de débordement | 3, non couverts par un test |
+| Écrans à risque de débordement | 0 — les trois sont corrigés, testés jusqu'à ×3,1 |
+| Longueur des cartes personnalisées | **non bornée à la saisie** — un mot long est rogné |
 | Géométrie des icônes | dans la **zone sûre documentée** des deux côtés, verrouillée par un test |
 | iOS | **jamais exécuté**, et compilé seulement vers `main` ou sur étiquette `ios` |
 | Build de release | construit par la CI et vérifié à la main ; **aucune partie complète jouée dessus** |
@@ -36,14 +37,14 @@ reste dans `ROADMAP.md`, les démarches dans `ADMINISTRATIF.md`, les règles dan
 
 ## Ce qui ne dépend de personne
 
-### 1. Trois écrans peuvent mettre une action hors d'atteinte
+### 1. Rien ne borne la longueur d'une carte personnalisée
 
-Inchangé depuis le 19 août ; le détail et le tableau des seuils sont dans `ROADMAP.md`. En
-résumé : `turn_summary_view`, `setup_scaffold` et `score_table` sont bâtis sur la même
-structure — en-tête fixe, action épinglée, `Expanded` au milieu qui absorbe le débordement
-jusqu'à tomber à zéro. Aucun test ne mesure de géométrie dessus, et la recette ne les
-trouvera pas : il faut avoir agrandi le texte dans les réglages du système, ce que font
-justement ceux qui en ont besoin. `score_table` est le pire, il se dégrade en silence.
+Trouvé par le contrôle de géométrie le jour où il est entré : un mot unique de 33 caractères
+est rogné dans le récapitulatif de tour **à taille de texte normale**. `CONTENU.md` cadre le
+contenu officiel à 30 caractères, mais c'est une consigne de rédaction — aucun `maxLength` ni
+`inputFormatters` n'existe sur les champs de saisie. Le contrôle est à poser à la saisie et
+non à l'affichage : un texte tronqué à l'écran reste une carte qu'on ne peut pas faire
+deviner. Le détail est dans `ROADMAP.md`.
 
 ### 2. Le contenu des pages légales
 
@@ -135,6 +136,7 @@ Les PR de la série, du 19 au 24 août.
 | #44 | `docs/REPRISE.md` entre dans le dépôt et devient la source de l'état du projet ; l'artefact n'en est plus qu'un rendu. Corrige au passage quatre faits faux, dont « iOS est compilé à chaque commit ». |
 | #45 | Le point de reprise cesse d'épingler le SHA du commit qui le contient — il était faux dès son merge. |
 | #46 | Les icônes tiennent dans la zone sûre que le système garantit. `make_icons.py` mesure le rayon du dessin au lieu de sa boîte, recadre sur la boîte opaque avant de mesurer, et remesure son résultat avant de l'écrire. Amène `tool/test_geometrie_icones.py`, qui rejoue le calcul depuis `logo_mark.png` et borne les cinq densités des deux côtés. |
+| #47 | Les trois écrans qui pouvaient mettre une action hors d'atteinte sont corrigés, et mesurés plutôt qu'estimés. Amène `test/support/geometrie.dart`, qui voit ce qu'aucune exception ne signale — un texte plus large que sa boîte — et refuse de conclure sans les vraies polices. |
 
 **Deux de ces défauts ont exactement la même forme :** une correction appliquée à un endroit
 sur deux. Les deux fonctions jamais appelées du test de fumée, et les deux variantes de

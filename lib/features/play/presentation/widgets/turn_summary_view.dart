@@ -28,83 +28,105 @@ class TurnSummaryView extends ConsumerWidget {
     // du jeu, et les lignes sont des cartes blanches posées dessus.
     const encre = AppColors.ink;
 
+    // Tout défile, sauf l'action.
+    //
+    // L'en-tête était fixe, et il grandit avec le réglage système : quatre
+    // textes dont deux titres, plus le bloc de la carte au buzzer. Mesuré sur
+    // un 360 × 640 : 70 px de débordement à ×2, 462 px à ×2,5, et à chaque
+    // fois le bouton de validation sous le bord — c'est-à-dire un tour qu'on
+    // ne peut plus clore, alors que R3.6 existe justement pour corriger ce
+    // qu'on a mal tranché.
+    //
+    // Le `Expanded` d'avant ne protégeait rien : il absorbe jusqu'à zéro, puis
+    // c'est la somme des parties fixes qui déborde. Ici la seule partie fixe
+    // est l'action, et elle est bornée.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                l10n.turnSummaryTitle,
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: encre,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                l10n.gameTeamScore(
-                  game.activeTeam.name,
-                  game.scoreOf(game.activeTeam.id),
-                ),
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: encre.withValues(alpha: 0.85),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                l10n.turnSummaryScore(turn?.score ?? 0),
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  color: encre,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              if (results.isNotEmpty) ...[
-                const SizedBox(height: 4),
-                Text(
-                  l10n.turnSummaryHint,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: encre.withValues(alpha: 0.75),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-        // La carte qui était à l'écran quand le chrono est tombé.
-        //
-        // Au-dessus de la liste et non dedans : elle n'a pas été tranchée,
-        // elle ne se corrige donc pas et ne compte pas. La mêler aux lignes
-        // corrigeables laisserait croire le contraire.
-        if (game.cardAtBuzzer case final auBuzzer?)
-          _AtBuzzer(text: auBuzzer.text),
         Expanded(
-          // Plus de « Aucune carte vue pendant ce tour ».
-          //
-          // Le message était devenu inatteignable, et faux avant de l'être :
-          // un récapitulatif sans ligne veut dire que le tour est tombé au
-          // chrono sans qu'on tranche, donc qu'une carte était à l'écran — le
-          // bloc du dessus vient de la nommer. C'est le cas du narrateur bloqué
-          // sur sa première carte, celui où l'écran doit être le plus clair, et
-          // il annonçait justement qu'il n'y avait rien à voir.
           child: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            // Explicite : `padding: null` fait consommer a `ScrollView` le
+            // padding vertical du `MediaQuery`. `GameScreen` enveloppe deja
+            // cette vue dans un `SafeArea`, donc il est nul aujourd hui et
+            // rien ne bouge — mais hors `SafeArea`, avec une encoche, l
+            // en-tete descendrait de la hauteur de l encoche sans que ni le
+            // banc d apercus ni les tests ne le voient.
+            padding: EdgeInsets.zero,
             children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.turnSummaryTitle,
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: encre,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      l10n.gameTeamScore(
+                        game.activeTeam.name,
+                        game.scoreOf(game.activeTeam.id),
+                      ),
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: encre.withValues(alpha: 0.85),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      l10n.turnSummaryScore(turn?.score ?? 0),
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        color: encre,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (results.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        l10n.turnSummaryHint,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: encre.withValues(alpha: 0.75),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              // La carte qui était à l'écran quand le chrono est tombé.
+              //
+              // Au-dessus des lignes et non parmi elles : elle n'a pas été
+              // tranchée, elle ne se corrige donc pas et ne compte pas. La
+              // mêler aux lignes corrigeables laisserait croire le contraire.
+              if (game.cardAtBuzzer case final auBuzzer?)
+                _AtBuzzer(text: auBuzzer.text),
+              // Plus de « Aucune carte vue pendant ce tour ».
+              //
+              // Le message était devenu inatteignable, et faux avant de
+              // l'être : un récapitulatif sans ligne veut dire que le tour est
+              // tombé au chrono sans qu'on tranche, donc qu'une carte était à
+              // l'écran — le bloc du dessus vient de la nommer. C'est le cas
+              // du narrateur bloqué sur sa première carte, celui où l'écran
+              // doit être le plus clair, et il annonçait justement qu'il n'y
+              // avait rien à voir.
               for (final result in results)
-                _ResultTile(
-                  text: game.cardById(result.cardId)?.text ?? '',
-                  outcome: result.outcome,
-                  // En manche 1 on ne passe pas (R3.9) : une carte non
-                  // devinée n'est pas « passée », elle n'a pas été
-                  // trouvée. Le mot que l'écran de jeu vient d'exclure
-                  // ne doit pas revenir au récapitulatif.
-                  allowsPass: game.round.allowsPass,
-                  onToggle: () => ref
-                      .read(playControllerProvider.notifier)
-                      .correctResult(result.cardId, _opposite(result)),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: _ResultTile(
+                    text: game.cardById(result.cardId)?.text ?? '',
+                    outcome: result.outcome,
+                    // En manche 1 on ne passe pas (R3.9) : une carte non
+                    // devinée n'est pas « passée », elle n'a pas été
+                    // trouvée. Le mot que l'écran de jeu vient d'exclure
+                    // ne doit pas revenir au récapitulatif.
+                    allowsPass: game.round.allowsPass,
+                    onToggle: () => ref
+                        .read(playControllerProvider.notifier)
+                        .correctResult(result.cardId, _opposite(result)),
+                  ),
                 ),
             ],
           ),
@@ -168,11 +190,17 @@ class _AtBuzzer extends StatelessWidget {
                     color: AppColors.main,
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    l10n.turnSummaryAtBuzzer,
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: AppColors.main,
-                      fontWeight: FontWeight.w800,
+                  // `Expanded` et non `Text` nu : ce libellé grandit avec le
+                  // réglage système et débordait la ligne de 22 px à ×2,5 sur
+                  // un 360 × 640, à côté d'une icône de taille fixe. Il se
+                  // replie, maintenant.
+                  Expanded(
+                    child: Text(
+                      l10n.turnSummaryAtBuzzer,
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: AppColors.main,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
                 ],

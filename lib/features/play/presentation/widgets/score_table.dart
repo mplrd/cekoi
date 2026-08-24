@@ -1,5 +1,9 @@
+import 'dart:math';
+
 import 'package:cekoi/app/theme/app_colors.dart';
 import 'package:cekoi/domain/engine/game_state.dart';
+import 'package:cekoi/domain/entities/team.dart';
+import 'package:cekoi/domain/rules/round.dart';
 import 'package:cekoi/features/play/presentation/widgets/round_labels.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -30,6 +34,104 @@ class ScoreTable extends StatelessWidget {
     final classees = [...game.teams]
       ..sort((a, b) => game.scoreOf(b.id).compareTo(game.scoreOf(a.id)));
 
+    return LayoutBuilder(
+      builder: (context, contraintes) => _table(
+        context,
+        l10n,
+        theme,
+        byRound,
+        classees,
+        // Les colonnes de manche cèdent avant le nom d'équipe.
+        //
+        // Elles sont en `IntrinsicColumnWidth`, donc irréductibles : quand
+        // leur somme dépasse la place, c'est la colonne du nom — la seule qui
+        // soit flexible — qui tombe à zéro. `RenderFlex` ne peint alors plus
+        // rien du tout, ni le nom ni la pastille de couleur, et `RenderTable`
+        // écrête sa boîte en peignant ses cellules par-dessus, hors de la
+        // carte blanche puis hors de l'écran. Sans exception, sans trace.
+        //
+        // Plutôt que de laisser cet enchaînement se produire, on retire le
+        // détail par manche : il reste le nom, la pastille et le total, qui
+        // est l'information dont R4.4 a besoin. Mesuré, un seul chiffre laisse
+        // toujours de la place au nom, même à ×4 sur un écran de 300.
+        detaille: _detailTient(
+          context,
+          l10n,
+          theme,
+          byRound,
+          played,
+          contraintes,
+        ),
+        played: played,
+      ),
+    );
+  }
+
+  /// La largeur qu'occuperaient les colonnes de chiffres, à l'unité près.
+  bool _detailTient(
+    BuildContext context,
+    AppLocalizations l10n,
+    ThemeData theme,
+    Map<Round, Map<String, int>> byRound,
+    List<Round> played,
+    BoxConstraints contraintes,
+  ) {
+    final echelle = MediaQuery.textScalerOf(context);
+    final chiffres = theme.textTheme.titleLarge?.copyWith(
+      fontWeight: FontWeight.w800,
+    );
+    final entetes = theme.textTheme.labelSmall;
+
+    var besoin = _largeur(l10n.scoreTotal, entetes, echelle);
+    for (final team in game.teams) {
+      besoin = max(
+        besoin,
+        _largeur('${game.scoreOf(team.id)}', chiffres, echelle),
+      );
+    }
+
+    var total = besoin;
+    for (final round in played) {
+      var colonne = _largeur(
+        l10n.scoreRoundShort(round.number),
+        entetes,
+        echelle,
+      );
+      for (final team in game.teams) {
+        final valeur = '${byRound[round]?[team.id] ?? 0}';
+        colonne = max(colonne, _largeur(valeur, chiffres, echelle));
+      }
+      total += colonne;
+    }
+
+    // 20 px de marge horizontale de chaque côté, plus la place qu'il faut au
+    // nom : la pastille, son écart, et de quoi lire trois ou quatre lettres.
+    return total + _minimumDuNom <= contraintes.maxWidth - 40;
+  }
+
+  static const double _minimumDuNom = 84;
+
+  double _largeur(String texte, TextStyle? style, TextScaler echelle) {
+    final peintre = TextPainter(
+      text: TextSpan(text: texte, style: style),
+      textDirection: TextDirection.ltr,
+      textScaler: echelle,
+    )..layout();
+    // 20 px : le `_Cell` pose 10 px de chaque côté.
+    return peintre.width + 20;
+  }
+
+  Widget _table(
+    BuildContext context,
+    AppLocalizations l10n,
+    ThemeData theme,
+    Map<Round, Map<String, int>> byRound,
+    List<Team> classees, {
+    required bool detaille,
+    required List<Round> played,
+  }) {
+    final colonnes = detaille ? played : const <Round>[];
+
     return DecoratedBox(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -45,13 +147,29 @@ class ScoreTable extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         child: Table(
-          columnWidths: const {0: FlexColumnWidth(3)},
+          // Les chiffres prennent la place qu'il leur faut, le nom prend le
+          // reste.
+          //
+          // Toutes les colonnes étaient en `FlexColumnWidth` : le tableau
+          // tenait donc toujours dans sa largeur, et c'est le contenu qui
+          // cédait. Un nombre n'a pas de point de coupure — il ne se replie
+          // pas, il se fait rogner, sans exception ni trace. Mesuré sur un
+          // 360 × 800, deux équipes, trois manches jouées : le seuil est
+          // ×1,6, où 38,9 px de colonne ne suffisent plus aux 40,8 qu'exige
+          // « 36 ». Sur un écran de 320, il tombe à ×1,3.
+          //
+          // Ces deux constantes sont volontairement `const` : `RenderTable`
+          // compare `columnWidths` par identité et relance une mesure
+          // d'intrinsèques — que Flutter documente comme coûteuse — dès que la
+          // table change d'objet.
+          columnWidths: const {0: FlexColumnWidth()},
+          defaultColumnWidth: const IntrinsicColumnWidth(),
           defaultVerticalAlignment: TableCellVerticalAlignment.middle,
           children: [
             TableRow(
               children: [
                 const SizedBox.shrink(),
-                for (final round in played)
+                for (final round in colonnes)
                   _Cell(
                     text: l10n.scoreRoundShort(round.number),
                     style: theme.textTheme.labelSmall,
@@ -92,7 +210,7 @@ class ScoreTable extends StatelessWidget {
                       ],
                     ),
                   ),
-                  for (final round in played)
+                  for (final round in colonnes)
                     _Cell(
                       text: '${byRound[round]?[team.id] ?? 0}',
                       style: theme.textTheme.bodyLarge?.copyWith(

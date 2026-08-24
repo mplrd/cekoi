@@ -116,3 +116,6 @@ test/failures/
 # `flutter test tool/apercus/apercu.dart --update-goldens`. Ils dependent de la
 # machine qui les fabrique : on les regarde, on ne les compare pas.
 tool/apercus/img/
+# Et les images de diff que le comparateur depose quand un apercu ne
+# correspond plus : ce sont des artefacts d execution, pas du contenu.
+tool/apercus/failures/
