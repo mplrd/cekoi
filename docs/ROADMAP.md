@@ -105,25 +105,39 @@ fin.
 cinq densités des deux côtés — un dessin qui rétrécit est une régression autant qu'un
 dessin qui déborde.
 
+**Les trois écrans qui pouvaient mettre une action hors d'atteinte sont couverts.** Ils
+partageaient la même ossature — en-tête fixe, `Expanded` au milieu, action épinglée en bas —
+et la même issue : le `Expanded` absorbe jusqu'à zéro, puis c'est la somme des parties fixes
+qui déborde, et l'action passe sous le bord. Rien ne le voyait, parce qu'il faut avoir agrandi
+le texte dans les réglages du système, ce que font justement ceux qui en ont besoin.
+
+Mesuré, et non plus estimé :
+
+| Fichier | Ce qui cédait | Seuil estimé | Seuil mesuré |
+|---|---|---|---|
+| `score_table.dart` | un score à deux chiffres rogné, sans exception levée | ×1,8 | **×1,8** |
+| `turn_summary_view.dart` | la correction du récapitulatif de tour (R3.6) | ×2 | **×2** sur un 360 × 640 |
+| `setup_scaffold.dart` | le pied des quatre étapes de configuration | ×2,5 | **×3** — et pas pour la raison prévue |
+
+Le troisième avait été mal diagnostiqué. Ce n'est pas la liste qui poussait : les cinq écrans
+du parcours passent une `ListView`, elle se contente de ce qu'on lui laisse. C'est le
+**titre** — à ×2,5, « Réglages » est un seul mot qui réclame 375 px sur une ligne qui en fait
+312, donc ni le repli ni le défilement n'y peuvent quoi que ce soit. Il borne désormais
+l'agrandissement à ×2, seul endroit de l'application à le faire, et la raison n'est pas la
+lisibilité mais le fait qu'un mot plus large que l'écran est coupé quoi qu'il arrive.
+
+**Ce qui manquait à l'outillage, et qui vaut mieux que les trois correctifs.** Un débordement
+de `RenderFlex` remonte comme exception ; un texte trop large pour sa boîte ne remonte rien.
+`test/support/geometrie.dart` compare donc la boîte de chaque texte au mot insécable le plus
+large, en ignorant ceux qui déclarent `ellipsis` — là, céder est un choix et ça se voit.
+
+Et il refuse de conclure sans les vraies polices : `flutter test` compose en **Ahem**, où
+chaque glyphe est un carré de la taille du corps. Mesuré, « 36 » y réclame 79,2 px contre 45,9
+en Roboto — un rapport de 1,7, assez pour inventer des débordements qui n'existent pas. C'est
+arrivé le 24 août, avant que le lien soit fait avec `tool/apercus/`, qui chargeait les vraies
+polices depuis toujours et dont le commentaire disait pourquoi.
+
 Ce qui reste ouvert et ne dépend pas d'un lot :
-
-- **Trois écrans peuvent déborder, et rien ne le voit.** Un écran qui déborde met une partie de
-  lui-même hors d'atteinte ; quand c'est une action, elle devient intouchable. Trois correctifs
-  sont partis en une semaine sur des cas trouvés par hasard, dont le départage, qui débordait
-  **à taille de texte normale** sur un 360 × 800 : plus aucun bouton pour trancher R5.3, donc
-  une partie à égalité qui ne pouvait plus se terminer, alors que R8.1 promet dix équipes.
-  Restent trois écrans bâtis sur la même structure — en-tête fixe, action épinglée, `Expanded`
-  au milieu qui absorbe jusqu'à tomber à zéro :
-
-  | Fichier | Ce qui devient inatteignable | Seuil estimé |
-  |---|---|---|
-  | `lib/features/play/presentation/widgets/turn_summary_view.dart` | la correction du récapitulatif de tour (R3.6) | ×2 d'agrandissement du texte |
-  | `lib/features/setup/presentation/widgets/setup_scaffold.dart` | le pied des quatre étapes de configuration | ×2,5 |
-  | `lib/features/play/presentation/widgets/score_table.dart` | débordement **horizontal** : un score à deux chiffres est rogné sans exception levée | ×1,8 |
-
-  Aucun test ne mesure de géométrie sur ces trois-là, et la recette ne les trouvera pas : il
-  faut avoir agrandi le texte dans les réglages du système, ce que font justement ceux qui en
-  ont besoin. Le troisième est le pire, parce qu'il se dégrade en silence.
 
 - **iOS n'a jamais tourné ailleurs qu'en compilation, et n'est même pas compilé à chaque
   commit.** Le job `ios-build` de `ci.yml` ne se déclenche que sur `main`, sur une PR qui vise

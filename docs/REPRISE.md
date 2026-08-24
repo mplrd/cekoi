@@ -27,7 +27,7 @@ reste dans `ROADMAP.md`, les démarches dans `ADMINISTRATIF.md`, les règles dan
 |---|---|
 | Lots | 6 sur 8 faits ; le 5 (contenu) et le 8 (publication) sont en cours |
 | Cartes | 529 sur les 1 200 visées, réparties sur 21 catégories |
-| Écrans à risque de débordement | 3, non couverts par un test |
+| Écrans à risque de débordement | 0 — les trois sont corrigés et couverts |
 | Géométrie des icônes | dans la **zone sûre documentée** des deux côtés, verrouillée par un test |
 | iOS | **jamais exécuté**, et compilé seulement vers `main` ou sur étiquette `ios` |
 | Build de release | construit par la CI et vérifié à la main ; **aucune partie complète jouée dessus** |
@@ -36,16 +36,7 @@ reste dans `ROADMAP.md`, les démarches dans `ADMINISTRATIF.md`, les règles dan
 
 ## Ce qui ne dépend de personne
 
-### 1. Trois écrans peuvent mettre une action hors d'atteinte
-
-Inchangé depuis le 19 août ; le détail et le tableau des seuils sont dans `ROADMAP.md`. En
-résumé : `turn_summary_view`, `setup_scaffold` et `score_table` sont bâtis sur la même
-structure — en-tête fixe, action épinglée, `Expanded` au milieu qui absorbe le débordement
-jusqu'à tomber à zéro. Aucun test ne mesure de géométrie dessus, et la recette ne les
-trouvera pas : il faut avoir agrandi le texte dans les réglages du système, ce que font
-justement ceux qui en ont besoin. `score_table` est le pire, il se dégrade en silence.
-
-### 2. Le contenu des pages légales
+### Le contenu des pages légales
 
 Quelles données partent, AdMob comme destinataire, absence de compte utilisateur, durées,
 droits : 90 % du texte ne bouge pas et s'écrit maintenant. Le bloc d'identité de l'éditeur
