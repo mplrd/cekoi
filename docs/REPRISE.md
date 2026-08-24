@@ -134,6 +134,7 @@ Les PR de la série, du 19 au 24 août.
 | #43 | Le splash ne pointe plus l'icône du lanceur en thème sombre. **Vérifié sur les ressources de l'APK, pas à l'écran** — l'appareil s'est débranché avant l'installation. Amène `tool/test_ressources_android.py`. |
 | #44 | `docs/REPRISE.md` entre dans le dépôt et devient la source de l'état du projet ; l'artefact n'en est plus qu'un rendu. Corrige au passage quatre faits faux, dont « iOS est compilé à chaque commit ». |
 | #45 | Le point de reprise cesse d'épingler le SHA du commit qui le contient — il était faux dès son merge. |
+| #46 | Les icônes tiennent dans la zone sûre que le système garantit. `make_icons.py` mesure le rayon du dessin au lieu de sa boîte, recadre sur la boîte opaque avant de mesurer, et remesure son résultat avant de l'écrire. Amène `tool/test_geometrie_icones.py`, qui rejoue le calcul depuis `logo_mark.png` et borne les cinq densités des deux côtés. |
 
 **Deux de ces défauts ont exactement la même forme :** une correction appliquée à un endroit
 sur deux. Les deux fonctions jamais appelées du test de fumée, et les deux variantes de
