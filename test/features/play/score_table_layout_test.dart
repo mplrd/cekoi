@@ -5,6 +5,7 @@ import 'package:cekoi/domain/rules/round.dart';
 import 'package:cekoi/features/play/presentation/widgets/score_table.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fixtures.dart';
@@ -85,14 +86,45 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  /// `aucunTexteRogne` ne voit pas ce cas-ci, et c'est le plus grave.
+  ///
+  /// `RenderTable` écrête sa propre boîte et peint ses cellules par-dessus :
+  /// les cellules obtiennent la largeur qu'elles demandent, donc elles ont
+  /// l'air saines, mais elles atterrissent hors de la carte blanche puis hors
+  /// de l'écran. Il faut donc comparer les positions, pas les tailles.
+  void rienNePeintHorsDuTableau(WidgetTester tester) {
+    final table = tester.renderObject<RenderBox>(find.byType(Table));
+    final zone = table.localToGlobal(Offset.zero) & table.size;
+
+    for (final p in tester.allRenderObjects.whereType<RenderParagraph>()) {
+      final boite = p.localToGlobal(Offset.zero) & p.size;
+      expect(
+        boite.left >= zone.left - 0.5 && boite.right <= zone.right + 0.5,
+        isTrue,
+        reason:
+            '« ${p.text.toPlainText()} » est peint en $boite, hors du '
+            'tableau qui occupe $zone',
+      );
+    }
+  }
+
   for (final (libelle, taille, echelle, equipes) in [
     ('un écran courant', const Size(360, 800), 1.0, 2),
     ('dix équipes', const Size(360, 800), 1.0, 10),
-    // Le seuil estimé de la dette.
+    // Le seuil mesuré du défaut : ×1,6 sur un 360, ×1,3 sur un 320.
+    ('le seuil', const Size(360, 800), 1.6, 2),
     ('un texte agrandi', const Size(360, 800), 1.8, 2),
     ('un petit écran au texte agrandi', const Size(360, 640), 1.8, 4),
-    // Le pire cas atteignable : dix équipes, petit écran, texte doublé.
-    ('le pire cas', const Size(360, 640), 2.0, 10),
+    // Le maximum du réglage système d'Android.
+    ("le maximum d'Android", const Size(360, 640), 2.0, 10),
+    // iOS va plus loin : AX4 vaut ×2,35 et AX5 ×3,1. iOS n'a jamais tourné,
+    // mais ces écrans-là existent déjà.
+    ('un iPhone SE en AX4', const Size(375, 667), 2.35, 4),
+    ('un iPhone SE en AX5', const Size(375, 667), 3.1, 4),
+    // Un 320 de large, et la taille d'affichage d'Android poussée au maximum,
+    // qui rétrécit la largeur logique sans toucher au texte.
+    ('un écran de 320 à ×3', const Size(320, 568), 3.0, 4),
+    ('un écran de 300 à ×4', const Size(300, 640), 4.0, 4),
   ]) {
     testWidgets('les scores restent entiers sur $libelle', (tester) async {
       final game = partieAvancee(teamCount: equipes);
@@ -116,6 +148,7 @@ void main() {
       // Le contrôle qui compte : aucun chiffre rogné. Le nom d'équipe, lui,
       // déclare `ellipsis` — il a le droit de céder, et ça se voit.
       aucunTexteRogne(tester);
+      rienNePeintHorsDuTableau(tester);
 
       // Et chaque total est bien à l'écran, pas seulement dans l'arbre.
       for (final team in game.teams) {

@@ -45,6 +45,13 @@ class TurnSummaryView extends ConsumerWidget {
       children: [
         Expanded(
           child: ListView(
+            // Explicite : `padding: null` fait consommer a `ScrollView` le
+            // padding vertical du `MediaQuery`. `GameScreen` enveloppe deja
+            // cette vue dans un `SafeArea`, donc il est nul aujourd hui et
+            // rien ne bouge — mais hors `SafeArea`, avec une encoche, l
+            // en-tete descendrait de la hauteur de l encoche sans que ni le
+            // banc d apercus ni les tests ne le voient.
+            padding: EdgeInsets.zero,
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),

@@ -2,6 +2,7 @@ import 'package:cekoi/app/clock.dart';
 import 'package:cekoi/app/current_game.dart';
 import 'package:cekoi/app/preferences.dart';
 import 'package:cekoi/app/screen_awake.dart';
+import 'package:cekoi/app/theme/app_theme.dart';
 import 'package:cekoi/domain/engine/game_phase.dart';
 import 'package:cekoi/domain/engine/game_state.dart';
 import 'package:cekoi/domain/engine/turn.dart';
@@ -86,11 +87,14 @@ void main() {
           gameFeedbackProvider.overrideWithValue(const SilentGameFeedback()),
           currentPreferencesProvider.overrideWithValue(fakePreferences()),
         ],
-        child: const MaterialApp(
-          locale: Locale('fr'),
+        child: MaterialApp(
+          locale: const Locale('fr'),
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          home: GameScreen(),
+          // Sans le theme, on mesure la typographie Material par defaut et
+          // non celle de l application.
+          theme: AppTheme.light(),
+          home: const GameScreen(),
         ),
       ),
     );
@@ -108,8 +112,11 @@ void main() {
     // Le seuil estimé de la dette.
     ('un texte agrandi', const Size(360, 800), 2.0, 6),
     ('un petit écran au texte agrandi', const Size(360, 640), 2.0, 3),
-    // Le pire cas : petit écran, texte au maximum courant du système.
-    ('le pire cas', const Size(360, 640), 2.5, 8),
+    // iOS pousse plus loin qu'Android : AX4 vaut ×2,35 et AX5 ×3,1.
+    ('un iPhone SE en AX4', const Size(375, 667), 2.35, 6),
+    ('un iPhone SE en AX5', const Size(375, 667), 3.1, 6),
+    ('un écran de 320 à ×3', const Size(320, 568), 3.0, 8),
+    ('le pire cas', const Size(360, 640), 3.5, 8),
   ]) {
     testWidgets('la correction reste atteignable sur $libelle', (tester) async {
       final game = recapitulatif(tranchees: tranchees);

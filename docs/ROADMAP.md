@@ -111,25 +111,33 @@ et la même issue : le `Expanded` absorbe jusqu'à zéro, puis c'est la somme de
 qui déborde, et l'action passe sous le bord. Rien ne le voyait, parce qu'il faut avoir agrandi
 le texte dans les réglages du système, ce que font justement ceux qui en ont besoin.
 
-Mesuré, et non plus estimé :
-
 | Fichier | Ce qui cédait | Seuil estimé | Seuil mesuré |
 |---|---|---|---|
-| `score_table.dart` | un score à deux chiffres rogné, sans exception levée | ×1,8 | **×1,8** |
+| `score_table.dart` | un score à deux chiffres rogné, sans exception levée | ×1,8 | **×1,6** sur un 360, ×1,3 sur un 320 |
 | `turn_summary_view.dart` | la correction du récapitulatif de tour (R3.6) | ×2 | **×2** sur un 360 × 640 |
-| `setup_scaffold.dart` | le pied des quatre étapes de configuration | ×2,5 | **×3** — et pas pour la raison prévue |
+| `setup_scaffold.dart` | le pied des quatre étapes de configuration | ×2,5 | **×2,5** avec le pied de l'étape des équipes |
 
-Le troisième avait été mal diagnostiqué. Ce n'est pas la liste qui poussait : les cinq écrans
-du parcours passent une `ListView`, elle se contente de ce qu'on lui laisse. C'est le
-**titre** — à ×2,5, « Réglages » est un seul mot qui réclame 375 px sur une ligne qui en fait
-312, donc ni le repli ni le défilement n'y peuvent quoi que ce soit. Il borne désormais
-l'agrandissement à ×2, seul endroit de l'application à le faire, et la raison n'est pas la
-lisibilité mais le fait qu'un mot plus large que l'écran est coupé quoi qu'il arrive.
+Deux estimations sur trois étaient justes. Celle du tableau des scores était optimiste d'un
+cran, et la cause du troisième avait été mal comprise : ce n'est pas la liste qui poussait —
+les cinq écrans du parcours passent une `ListView`, elle se contente de ce qu'on lui laisse —
+c'est le **titre**. À ×2, « Combien » est un seul mot qui réclame 355 px sur une ligne qui en
+fait 312 ; ni le repli ni le défilement n'y peuvent quoi que ce soit.
 
-**Ce qui manquait à l'outillage, et qui vaut mieux que les trois correctifs.** Un débordement
+**Ce que chacun est devenu.** Les colonnes de chiffres du tableau prennent la place qu'il leur
+faut, et le détail par manche disparaît quand cette place manquerait au nom d'équipe — sans
+quoi la colonne du nom tombe à zéro, où `RenderFlex` ne peint plus **rien**, pas même la
+pastille de couleur, pendant que `RenderTable` écrête sa boîte et peint ses cellules
+par-dessus, hors de la carte puis hors de l'écran. L'en-tête du récapitulatif rejoint la zone
+défilante, ne laissant de fixe que l'action. Et les deux parties fixes de l'ossature de
+configuration sont bornées à une part de la hauteur, tandis que le titre n'est réduit que
+quand un mot dépasse, et que d'autant qu'il faut — le réglage de l'utilisateur est respecté
+partout où il tient.
+
+**Ce que l'outillage n'avait pas, et qui vaut mieux que les trois correctifs.** Un débordement
 de `RenderFlex` remonte comme exception ; un texte trop large pour sa boîte ne remonte rien.
 `test/support/geometrie.dart` compare donc la boîte de chaque texte au mot insécable le plus
-large, en ignorant ceux qui déclarent `ellipsis` — là, céder est un choix et ça se voit.
+large, vérifie qu'il n'est pas coupé en hauteur, et refuse qu'un texte en `ellipsis` tombe à
+zéro — céder est un choix, disparaître n'en est pas un.
 
 Et il refuse de conclure sans les vraies polices : `flutter test` compose en **Ahem**, où
 chaque glyphe est un carré de la taille du corps. Mesuré, « 36 » y réclame 79,2 px contre 45,9
@@ -137,7 +145,19 @@ en Roboto — un rapport de 1,7, assez pour inventer des débordements qui n'exi
 arrivé le 24 août, avant que le lien soit fait avec `tool/apercus/`, qui chargeait les vraies
 polices depuis toujours et dont le commentaire disait pourquoi.
 
+**Réserve.** Ces seuils valent pour Roboto, donc pour Android, dont le réglage système plafonne
+à ×2. iOS va plus loin — AX4 vaut ×2,35 et AX5 ×3,1 — et n'a jamais été exercé. Les trois
+écrans sont désormais testés jusqu'à ×3,1 et sur 320 px de large, mais sur la police d'Android.
+
 Ce qui reste ouvert et ne dépend pas d'un lot :
+
+- **Rien ne borne la longueur d'une carte personnalisée.** Trouvé par le contrôle de géométrie
+  le jour où il est entré : un mot unique de 33 caractères est rogné dans le récapitulatif de
+  tour **à taille de texte normale** — 188,4 px de boîte pour 253,7 nécessaires. `CONTENU.md`
+  cadre le contenu officiel à 30 caractères pour un mot, mais c'est une consigne de rédaction :
+  aucun `maxLength` ni `inputFormatters` n'existe sur les champs de `lib/features/decks/`. Le
+  contrôle est à poser à la saisie, pas à l'affichage — un texte tronqué à l'écran reste une
+  carte qu'on ne peut pas faire deviner.
 
 - **iOS n'a jamais tourné ailleurs qu'en compilation, et n'est même pas compilé à chaque
   commit.** Le job `ios-build` de `ci.yml` ne se déclenche que sur `main`, sur une PR qui vise

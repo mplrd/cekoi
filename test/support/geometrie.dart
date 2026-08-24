@@ -10,11 +10,20 @@ import 'polices.dart';
 /// bruyamment : un texte trop large pour sa boîte est simplement **rogné**, et
 /// l'écran reste vert. C'est le pire des deux, parce qu'il ne se découvre
 /// qu'en regardant l'écran avec le bon réglage système.
+///
+/// Ce que ces outils **ne** voient **pas**, et qu'il faut donc couvrir
+/// autrement : un enfant peint hors de son parent. `RenderTable` écrête sa
+/// propre boîte et peint ses cellules par-dessus ; les cellules, elles,
+/// obtiennent la place qu'elles demandent, donc `aucunTexteRogne` les trouve
+/// saines. Le tableau des scores a son propre contrôle pour ça.
 
 /// Pose une taille d'écran et un agrandissement de texte pour un test.
 ///
-/// L'application ne borne pas `textScaler` : le réglage système s'applique en
-/// entier, et ceux qui l'augmentent sont justement ceux qui en ont besoin.
+/// Le réglage système s'applique en entier. Un seul endroit y touche, et
+/// encore : le titre des étapes de configuration est **ramené** dans la
+/// largeur quand un de ses mots n'y tient plus, et seulement d'autant qu'il
+/// faut. Ce n'est pas une question de lisibilité — un mot plus large que
+/// l'écran est coupé quoi qu'il arrive.
 void poserEcran(
   WidgetTester tester, {
   required Size taille,
@@ -38,13 +47,13 @@ const _epsilon = 0.5;
 /// la taille du corps. Mesuré : « 36 » réclame 45,9 px en Roboto à 39,6 points
 /// de corps, et 79,2 px en Ahem — un rapport de 1,7. Une assertion de largeur
 /// qui tourne dessus invente donc des débordements, et l'a fait le 24 août sur
-/// ce fichier même : le tableau des scores y paraissait rogné à taille de texte
-/// normale, alors qu'il ne l'est qu'à partir de ×1,8. `tool/apercus/` chargeait
+/// ce fichier même : le tableau des scores y paraissait rogné à taille de
+/// texte normale, alors que son seuil réel est ×1,6. `tool/apercus/` chargeait
 /// les vraies polices depuis toujours, et son commentaire disait pourquoi.
 ///
-/// D'où ce garde-fou : les mesures **refusent de conclure** sans les vraies
-/// polices, plutôt que de rendre un verdict qui ne veut rien dire. À appeler
-/// dans `setUpAll`, avant toute mesure.
+/// Réserve à garder en tête : le thème prend la police **de la plateforme**.
+/// Ces mesures valent donc pour Roboto, c'est-à-dire pour Android. iOS pousse
+/// l'agrandissement plus loin — AX5 vaut ×3,1 — et n'a jamais été exercé.
 Future<void> exigerLesVraiesPolices() async {
   final charge = await chargerLesVraiesPolices();
   if (!charge) {
@@ -58,30 +67,48 @@ Future<void> exigerLesVraiesPolices() async {
 
 /// Vérifie qu'aucun texte n'est coupé sans que le code l'ait demandé.
 ///
-/// La mesure est le mot **insécable** le plus large : c'est ce qu'un texte ne
-/// peut pas replier. Si sa boîte est plus étroite que lui, il est rogné, et
-/// rien ne le signale — c'est ainsi qu'un score à deux chiffres perdait son
-/// second.
+/// Trois mesures, parce qu'un texte se perd de trois façons :
 ///
-/// Les textes qui déclarent `TextOverflow.ellipsis` ou `fade` sont ignorés :
+/// * **en largeur** — sa boîte est plus étroite que son mot insécable le plus
+///   large, celui qu'il ne peut pas replier ;
+/// * **en hauteur** — sa boîte est plus courte que ce que le texte demande à
+///   cette largeur, donc les dernières lignes tombent ;
+/// * **jusqu'à disparaître** — un texte qui déclare `ellipsis` a le droit de
+///   céder, mais pas de tomber à zéro : il ne resterait alors rien, pas même
+///   les points de suspension qui disent qu'il manque quelque chose.
+///
+/// Les deux premières ignorent les textes qui déclarent `ellipsis` ou `fade` :
 /// là, la coupe est un choix, et elle laisse une marque visible. C'est toute
 /// la différence entre céder et disparaître.
 void aucunTexteRogne(WidgetTester tester) {
   final rognes = <String>[];
 
-  for (final paragraphe
-      in tester.allRenderObjects.whereType<RenderParagraph>()) {
+  for (final p in tester.allRenderObjects.whereType<RenderParagraph>()) {
+    final texte = p.text.toPlainText();
     final delibere =
-        paragraphe.overflow == TextOverflow.ellipsis ||
-        paragraphe.overflow == TextOverflow.fade;
-    if (delibere) continue;
+        p.overflow == TextOverflow.ellipsis || p.overflow == TextOverflow.fade;
 
-    final insecable = paragraphe.getMinIntrinsicWidth(double.infinity);
-    if (paragraphe.size.width + _epsilon < insecable) {
-      final texte = paragraphe.text.toPlainText();
+    if (delibere) {
+      if (p.size.width <= 0) {
+        rognes.add('« $texte » : sa boîte fait 0 px, il ne reste rien du tout');
+      }
+      continue;
+    }
+
+    final insecable = p.getMinIntrinsicWidth(double.infinity);
+    if (p.size.width + _epsilon < insecable) {
       rognes.add(
-        '« $texte » : ${paragraphe.size.width.toStringAsFixed(1)} px de large '
-        'pour ${insecable.toStringAsFixed(1)} px nécessaires',
+        '« $texte » : ${p.size.width.toStringAsFixed(1)} px de large pour '
+        '${insecable.toStringAsFixed(1)} px nécessaires',
+      );
+      continue;
+    }
+
+    final voulue = p.getMaxIntrinsicHeight(p.size.width);
+    if (p.size.height + _epsilon < voulue) {
+      rognes.add(
+        '« $texte » : ${p.size.height.toStringAsFixed(1)} px de haut pour '
+        '${voulue.toStringAsFixed(1)} px nécessaires à cette largeur',
       );
     }
   }
@@ -99,9 +126,16 @@ void aucunTexteRogne(WidgetTester tester) {
 /// « Tenir » ne veut pas dire qu'aucun bandeau ne raye l'écran : ça veut dire
 /// qu'on peut encore taper dessus. Une action poussée sous le bord par un
 /// en-tête qui a grossi est perdue, même si rien n'a levé d'exception.
+///
+/// Le test du toucher cherche **la cible** dans le chemin, et non un chemin
+/// non vide : `RenderView` s'y ajoute toujours, si bien qu'un tap au milieu
+/// d'un écran vide rend vingt-huit entrées. La première version de cette
+/// fonction se contentait de ça, ne pouvait donc pas échouer, et laissait
+/// passer un bouton entièrement recouvert.
 Future<void> resteAtteignable(WidgetTester tester, Finder cible) async {
   expect(cible, findsOneWidget, reason: "la cible a disparu de l'écran");
   await tester.ensureVisible(cible);
+  await tester.pump();
 
   final rect = tester.getRect(cible);
   final ecran = tester.view.physicalSize / tester.view.devicePixelRatio;
@@ -117,11 +151,11 @@ Future<void> resteAtteignable(WidgetTester tester, Finder cible) async {
         '${ecran.width.toStringAsFixed(0)}×${ecran.height.toStringAsFixed(0)}',
   );
 
-  // Et quelque chose doit répondre en son centre : un widget dans l'écran mais
-  // recouvert n'est pas atteignable non plus.
+  final vise = tester.renderObject(cible);
+  final chemin = tester.hitTestOnBinding(rect.center).path;
   expect(
-    tester.hitTestOnBinding(rect.center).path,
-    isNotEmpty,
-    reason: 'rien ne répond au centre de la cible',
+    chemin.any((entree) => identical(entree.target, vise)),
+    isTrue,
+    reason: 'la cible est visible, mais quelque chose la recouvre',
   );
 }
