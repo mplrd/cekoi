@@ -10,6 +10,7 @@ Ne réimplémente pas ce qui est déjà décidé. Avant de coder, lis le documen
 
 | Document | Quand le lire |
 |---|---|
+| `docs/REPRISE.md` | **En premier, à chaque reprise.** Où on en est, ce qui bloque, ce qui attend un arbitrage. |
 | `docs/RULES.md` | **Toute** logique de gameplay. C'est la source de vérité des règles, y compris les cas limites. |
 | `docs/ARCHITECTURE.md` | Structure du code, modèle de données, packages, conventions de couches. |
 | `docs/SPEC.md` | Parcours utilisateur, écrans, comportements attendus. |
@@ -17,6 +18,10 @@ Ne réimplémente pas ce qui est déjà décidé. Avant de coder, lis le documen
 | `docs/CONTENU.md` | Guide de rédaction des cartes, destiné à l'auteure du contenu. Format de livraison attendu. |
 | `docs/ROADMAP.md` | Ce qui est dans la v1 et ce qui est explicitement repoussé. |
 | `docs/ADMINISTRATIF.md` | Comptes, validations et arbitrages hors code. À relire avant toute question de délai ou de publication. |
+
+`docs/REPRISE.md` est **la source** de l'état du projet ; l'artefact publié sur claude.ai n'en
+est qu'un rendu, et ne se modifie jamais à la main. Un état qui vit hors du dépôt n'est relu
+par personne et se périme sans que rien ne le signale.
 
 ## Règles d'or
 
@@ -112,10 +117,18 @@ Cycle d'une unité de travail :
 1. `git switch develop && git pull` puis `git switch -c feature/<nom>`.
 2. Implémenter, avec les numéros de `RULES.md` dans les noms de test.
 3. Lancer l'agent `flutter-reviewer` et traiter ses remarques avant d'ouvrir la PR.
-4. `gh pr create --base develop`, en remplissant honnêtement la section
+4. Mettre `docs/REPRISE.md` à jour **dans la même branche** si — et seulement si — la PR change
+   une ligne de son tableau *En un coup d'œil*, ou ouvre ou ferme un arbitrage. Ce critère est
+   volontairement étroit : à le lire largement, chaque branche touche ce fichier et il devient
+   le point de conflit de toutes les branches parallèles, avec un *Journal* qui double
+   `git log`.
+5. `gh pr create --base develop`, en remplissant honnêtement la section
    *Ce que je n'ai pas fait* du template.
-5. CI verte + revue propre → merge dans `develop`.
-6. La remontée de `develop` vers `main` est un arbitrage humain, jamais automatique.
+6. CI verte + revue propre → merge dans `develop`.
+7. Après le merge, republier l'artefact depuis `docs/REPRISE.md` si tu as l'outil de
+   publication. Sinon, le dire dans la PR : le rendu est alors en retard sur la source, et
+   c'est au suivant de le rattraper.
+8. La remontée de `develop` vers `main` est un arbitrage humain, jamais automatique.
 
 Le code généré (`*.g.dart`, `*.freezed.dart`) n'est pas versionné : après tout clone ou tout
 changement de branche qui touche une classe générée, relancer `build_runner`.
