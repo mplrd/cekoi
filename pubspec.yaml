@@ -114,15 +114,21 @@ flutter:
 # Icônes de lanceur, générées depuis le logo par `dart run flutter_launcher_icons`.
 #
 # Le premier plan Android est fabriqué par `python tool/make_icons.py` : le
-# dessin détouré, sur du transparent, sans son fond corail. Il ne porte aucune
-# marge — c'est `mipmap-anydpi-v26/ic_launcher.xml` qui applique le retrait de
-# 16 % de l'icône adaptative, et ajouter la nôtre par-dessus rapetissait le
-# dessin d'un tiers. Le fond uni reprend exactement le corail du logo, si bien
-# que la jointure entre les deux ne se voit pas.
+# dessin détouré, sur du transparent, sans son fond corail. Le fond uni reprend
+# exactement le corail du logo, si bien que la jointure ne se voit pas.
+#
+# Sa marge est calculée sur le **rayon** du dessin, pas sur sa boîte : le
+# système masque sur un cercle, et notre dessin remplit les coins de son carré.
+# `mipmap-anydpi-v26/ic_launcher.xml` pose un retrait de 16 %, l'image atterrit
+# donc sur 73,44 dp des 108 de la couche, et le masque coupe à 36 dp de rayon.
+# `tool/test_geometrie_icones.py` verrouille les deux bouts de ce calcul.
 #
 # L'écran de démarrage d'Android 12, lui, consomme le drawable **brut** : il a
-# donc son propre fichier, `splash_icon`, que le même script produit avec la
-# marge des deux tiers qu'attend le masque du système.
+# donc son propre fichier, `splash_icon`, où le même script porte toute la
+# marge — les deux tiers centraux en diamètre, soit un tiers du côté en rayon.
+#
+# Après tout passage de `flutter_launcher_icons`, remettre le saut de ligne
+# final de `android/.../values/colors.xml`, qu'il retire au passage.
 flutter_launcher_icons:
   image_path: assets/branding/logo.png
   android: true
