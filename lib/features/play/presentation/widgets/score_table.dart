@@ -45,7 +45,25 @@ class ScoreTable extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         child: Table(
-          columnWidths: const {0: FlexColumnWidth(3)},
+          // Les chiffres prennent la place qu'il leur faut, le nom prend le
+          // reste.
+          //
+          // Toutes les colonnes étaient en `FlexColumnWidth` : le tableau
+          // tenait donc toujours dans sa largeur, et c'est le contenu qui
+          // cédait. Un nombre n'a pas de point de coupure — il ne se replie
+          // pas, il se fait rogner, sans exception ni trace. Mesuré sur un
+          // 360 × 800, deux équipes, trois manches jouées, agrandissement du
+          // texte à ×1,8 : 38,9 px par colonne pour 45,9 qu'exige « 36 » et
+          // 46,1 qu'exige l'en-tête « Total ».
+          //
+          // Le nom d'équipe, lui, déclare déjà `ellipsis` : céder est son
+          // rôle, et la pastille de couleur identifie la ligne quand il ne
+          // reste plus rien du texte.
+          columnWidths: {
+            0: const FlexColumnWidth(),
+            for (var colonne = 1; colonne <= played.length + 1; colonne++)
+              colonne: const IntrinsicColumnWidth(),
+          },
           defaultVerticalAlignment: TableCellVerticalAlignment.middle,
           children: [
             TableRow(
