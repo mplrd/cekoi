@@ -136,6 +136,7 @@ Les PR de la série, du 19 au 24 août.
 | #44 | `docs/REPRISE.md` entre dans le dépôt et devient la source de l'état du projet ; l'artefact n'en est plus qu'un rendu. Corrige au passage quatre faits faux, dont « iOS est compilé à chaque commit ». |
 | #45 | Le point de reprise cesse d'épingler le SHA du commit qui le contient — il était faux dès son merge. |
 | #46 | Les icônes tiennent dans la zone sûre que le système garantit. `make_icons.py` mesure le rayon du dessin au lieu de sa boîte, recadre sur la boîte opaque avant de mesurer, et remesure son résultat avant de l'écrire. Amène `tool/test_geometrie_icones.py`, qui rejoue le calcul depuis `logo_mark.png` et borne les cinq densités des deux côtés. |
+| #47 | Les trois écrans qui pouvaient mettre une action hors d'atteinte sont corrigés, et mesurés plutôt qu'estimés. Amène `test/support/geometrie.dart`, qui voit ce qu'aucune exception ne signale — un texte plus large que sa boîte — et refuse de conclure sans les vraies polices. |
 
 **Deux de ces défauts ont exactement la même forme :** une correction appliquée à un endroit
 sur deux. Les deux fonctions jamais appelées du test de fumée, et les deux variantes de
