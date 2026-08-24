@@ -114,15 +114,29 @@ class SetupScaffold extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 4),
+                  // Le titre suit l'agrandissement du système, mais pas
+                  // au-delà de ×2.
+                  //
+                  // C'est le seul endroit de l'application qui borne le
+                  // réglage, et la raison est qu'il ne s'agit plus de
+                  // lisibilité : à ×2,5, « Réglages » — un seul mot — réclame
+                  // 375 px sur une ligne qui en fait 312. Ni le repli ni le
+                  // défilement n'y peuvent quoi que ce soit, le mot est
+                  // simplement coupé. Un titre déjà composé en `displaySmall`
+                  // est lisible bien avant ×2 ; le corps du texte, lui, garde
+                  // le réglage entier.
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: Text(
-                      title,
-                      style: theme.textTheme.displaySmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.ink,
-                        letterSpacing: -0.5,
-                        height: 1.1,
+                    child: MediaQuery.withClampedTextScaling(
+                      maxScaleFactor: 2,
+                      child: Text(
+                        title,
+                        style: theme.textTheme.displaySmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.ink,
+                          letterSpacing: -0.5,
+                          height: 1.1,
+                        ),
                       ),
                     ),
                   ),
