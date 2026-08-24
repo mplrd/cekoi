@@ -86,32 +86,46 @@ Ce qui reste ouvert et ne dépend pas d'un lot :
   faut avoir agrandi le texte dans les réglages du système, ce que font justement ceux qui en
   ont besoin. Le troisième est le pire, parce qu'il se dégrade en silence.
 
-- **Les deux icônes débordent du cercle que masque Android.** `tool/make_icons.py` applique sa
-  marge de deux tiers au **côté** du canevas ; le système masque sur un **cercle** de deux
-  tiers de diamètre. Un carré de côté `2/3·c` déborde de 41 % au coin du cercle de rayon `c/3`
-  qu'il est censé tenir, et le dessin de Cékoi remplit justement ses coins — la bulle, la carte
-  « 1 », les jambes du coureur. Mesuré le 24 août : `splash_icon.png` porte son dessin jusqu'à
-  0,4035 du côté en rayon pour 0,3333 garantis, soit **+21 %**, et 7,6 % de ses pixels opaques
-  tombent hors du cercle ; `ic_launcher_foreground.png`, retrait de 16 % de l'icône adaptative
-  compris, monte à 0,6042 pour 0,4902, soit **+23 %** et 8,8 % dehors.
+- **Les deux icônes débordent du cercle documenté.** La cause commune tient en une phrase :
+  **la silhouette du dessin est carrée — elle remplit ses coins, la bulle, la carte « 1 », les
+  jambes du coureur — et ses deux consommateurs masquent sur un cercle.** Un carré de côté
+  `2/3·c` déborde déjà de 41 % au coin du cercle de rayon `c/3` qu'il est censé tenir. Les
+  mesures sont dans `REPRISE.md` ; ce qui suit est le mécanisme, et il n'est pas le même des
+  deux côtés.
 
-  Le cercle est ce qu'Android *garantit* ; la forme réellement découpée est décidée par
+  - **`splash_icon.png`** : `make_icons.py` porte sa marge sur le **côté** du canevas
+    (`ZONE_SURE` ne sert qu'à `cote = round(grand / ZONE_SURE)`), là où Android ne promet que
+    les deux tiers centraux **en diamètre**.
+  - **`logo_foreground.png`** : le script ne lui met **aucune marge**, délibérément — sa
+    docstring défend ce choix, le retrait de 16 % de `mipmap-anydpi-v26/ic_launcher.xml` étant
+    censé la fournir. Le raisonnement supposait un dessin tenant dans son cercle inscrit ; le
+    nôtre remplit ses coins. Accessoirement 16 % ne suffit même pas au cadrage : l'image
+    atterrit sur 73,44 dp des 108, alors que le viewport de l'icône adaptative en fait 72 —
+    il faudrait 16,67 %.
+
+  Le cercle est ce que le système *documente* ; la forme réellement découpée est décidée par
   l'appareil. Pour l'icône du lanceur, le masque est certain — c'est le mécanisme même de
-  l'icône adaptative — et seule sa forme varie : le carré arrondi observé sur le Xiaomi du
-  projet laisse tout passer, un masque circulaire décapite la bulle et tranche la carte. Pour
-  l'écran de démarrage, rien ne garantit même qu'un appareil donné masque un PNG simple. La
-  conclusion ne dépend d'aucun détail de MIUI : **tout ce qui sort du cercle tient par chance,
-  pas par conformité**, et ça vaut pour l'icône de l'application autant que pour l'écran de
-  démarrage — le correctif du 17 août (`2f8a53f`) n'atteignait donc pas son objectif affiché.
+  l'icône adaptative — et seule sa forme varie : un carré arrondi n'en coupe presque rien, un
+  masque circulaire décapite la bulle et tranche la carte. Pour l'écran de démarrage, rien ne
+  garantit même qu'un appareil donné masque un PNG simple. **Tout ce qui sort du cercle ne
+  tient donc que par la forme du masque de l'appareil** — ça vaut pour l'icône de l'application
+  autant que pour l'écran de démarrage, et le correctif du 17 août (`2f8a53f`) n'atteignait pas
+  son objectif affiché.
 
-  Le correctif mécanique est de faire porter la règle sur le cercle, soit ×0,826 pour le splash
-  et ×0,811 pour le lanceur. L'icône perd 18 % de côté : c'est un **arbitrage visuel**, ouvert
-  dans `REPRISE.md`. Tant qu'il n'est pas rendu, aucune assertion de géométrie n'est ajoutée à
-  `tool/test_ressources_android.py` — elle rougirait.
+  Le correctif n'est pas symétrique. Côté splash, une ligne suffit : porter la règle sur le
+  cercle. Côté lanceur, il faut soit donner une marge à `logo_foreground.png` — ce qui renverse
+  frontalement la décision de `2f8a53f` —, soit porter l'`inset` de `ic_launcher.xml` de 16 % à
+  ≈ 22,4 %, ou ≈ 25 % pour viser la zone sûre de 66 dp. Dans tous les cas l'icône rapetisse :
+  c'est un **arbitrage visuel**, ouvert dans `REPRISE.md`. Tant qu'il n'est pas rendu, aucune
+  assertion de géométrie n'est ajoutée à `tool/test_ressources_android.py` — elle rougirait.
 
-- **iOS n'a jamais tourné ailleurs qu'en compilation.** La CI le construit à chaque commit,
-  rien de plus. Le lot 4 écrit le cycle de vie du chrono, et c'est exactement ce qui se juge
-  sur un vrai iPhone — voir la vigilance ci-dessous.
+- **iOS n'a jamais tourné ailleurs qu'en compilation, et n'est même pas compilé à chaque
+  commit.** Le job `ios-build` de `ci.yml` ne se déclenche que sur `main`, sur une PR qui vise
+  `main`, ou si la PR porte l'étiquette `ios` — c'est un arbitrage de minutes de runner macOS,
+  mais il a une conséquence : une régression de pods, de permissions ou de signature
+  s'accumule jusqu'à la remontée vers `main`, ce que brancher la CI iOS dès le lot 1 devait
+  précisément éviter. Le lot 4 écrit le cycle de vie du chrono, et c'est exactement ce qui se
+  juge sur un vrai iPhone — voir la vigilance ci-dessous.
 - **Les deux sons du jeu sont synthétisés**, pas dessinés : `tool/make_sounds.py` fabrique un
   blip et deux coups graves à partir de quelques lignes de trigonométrie. Ils remplacent les
   sons système, qui ne sortaient sur aucun téléphone dont les *sons des touches* sont coupés

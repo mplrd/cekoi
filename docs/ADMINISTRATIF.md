@@ -196,9 +196,9 @@ Ni bloquant ni administratif, mais à ne pas redécouvrir dans six mois :
 - [ ] **Ouvrir le déblocage depuis l'étape du vivier, en mode Sans filtre.** C'est une règle de
       jeu, donc un arbitrage et non une décision technique. Aujourd'hui une catégorie adulte
       marquée premium serait invisible **et** impossible à ouvrir dans ce mode (voir la dette
-      ci-dessus). R7.10 prévoit la sortie pour le **décochage** — « un accès depuis l'étape du
-      vivier, pas un retour des catégories sur le chemin » — mais ne dit rien du **déblocage**,
-      qui est le vrai trou.
+      ci-dessus). R7.10 prévoit la sortie pour le **décochage** — « la réponse est d'ajouter un
+      accès depuis l'étape du vivier — pas de replacer les catégories sur le chemin » — mais ne
+      dit rien du **déblocage**, qui est le vrai trou.
 
       La question à trancher : étendre R7.10 à un accès qui ne montre **que** les catégories
       verrouillées du mode, sans réintroduire la grille complète que ce mode a délibérément
