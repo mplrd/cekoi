@@ -72,7 +72,12 @@ void main() {
 
   setUpAll(() async {
     l10n = await AppLocalizations.delegate.load(const Locale('fr'));
-    await chargerLesVraiesPolices();
+    final raison = await chargerLesVraiesPolices();
+    if (raison != null) {
+      // Le banc peut tourner sans, mais les PNG produits sont alors composés
+      // en Ahem : autant que celui qui les regarde le sache.
+      debugPrint('Aperçus composés en Ahem : $raison');
+    }
   });
 
   late AppDatabase db;

@@ -55,12 +55,11 @@ const _epsilon = 0.5;
 /// Ces mesures valent donc pour Roboto, c'est-à-dire pour Android. iOS pousse
 /// l'agrandissement plus loin — AX5 vaut ×3,1 — et n'a jamais été exercé.
 Future<void> exigerLesVraiesPolices() async {
-  final charge = await chargerLesVraiesPolices();
-  if (!charge) {
+  final raison = await chargerLesVraiesPolices();
+  if (raison != null) {
     fail(
-      'Les polices Roboto sont introuvables : aucune mesure de largeur ne '
-      'veut rien dire en Ahem. Vérifier FLUTTER_ROOT et '
-      r'$FLUTTER_ROOT/bin/cache/artifacts/material_fonts.',
+      'Les polices Roboto ne sont pas chargées, donc aucune mesure de largeur '
+      'ne veut rien dire : $raison.',
     );
   }
 }
