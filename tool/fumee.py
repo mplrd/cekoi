@@ -26,6 +26,13 @@ un binaire sur lequel R8 n'a jamais tourné, en affichant OK.
     python tool/fumee.py --apk chemin           # sur un artefact donné
     python tool/fumee.py --pas-de-build         # sans reconstruire
     python tool/fumee.py --pas-d-installation   # sur ce qui est déjà installé
+
+**Ne pas le mettre derrière un tube.** `python tool/fumee.py | tail` rend le
+code de sortie de `tail`, c'est-à-dire zéro, quoi qu'ait décidé ce script —
+un `[ÉCHEC]` bien affiché et un succès pour qui lit `$?`. C'est exactement le
+faux vert que tout le reste de ce fichier existe pour empêcher, et il a été
+commis le 24 août. Le rediriger vers un fichier, ou lire sa sortie telle
+quelle.
 """
 
 from __future__ import annotations

@@ -4,37 +4,66 @@
     python tool/make_icons.py
     dart run flutter_launcher_icons   # propage le premier plan aux densités
 
-Deux fichiers, parce que les deux consommateurs n'ont pas les mêmes attentes :
+Deux fichiers, parce que les deux consommateurs n'ont pas les mêmes attentes.
+Mais ils masquent tous les deux sur un **cercle**, et c'est ce qui décide de
+la marge : elle se calcule sur le rayon du dessin, jamais sur sa boîte.
 
 * `assets/branding/logo_foreground.png` — le premier plan de l'icône
-  adaptative. **Sans marge** : `mipmap-anydpi-v26/ic_launcher.xml` applique
-  déjà le retrait de 16 % de l'icône adaptative, et en ajouter une seconde
-  rapetisse le dessin d'un tiers sans que rien ne le signale.
+  adaptative, que `mipmap-anydpi-v26/ic_launcher.xml` pose avec un retrait de
+  16 %. L'image atterrit donc sur 73,44 dp des 108 de la couche.
+
+  Deux seuils s'y appliquent, et ils ne disent pas la même chose. Le masque
+  **circulaire** coupe à 36 dp de rayon, mais tous les masques ne sont pas des
+  cercles : un masque cylindre est plus étroit sur un axe. La zone que **tout**
+  masque conforme laisse voir est un cercle de 66 dp, soit 33 dp de rayon —
+  c'est celle qu'on vise, sur arbitrage du 24 août. Ce qui vit entre 66 et
+  72 dp ne dépendrait que de la forme du lanceur, et c'est précisément ce que
+  ce correctif existe pour supprimer.
 
 * `android/.../drawable-xxxhdpi/splash_icon.png` — l'icône de l'écran de
   démarrage d'Android 12, qui consomme le drawable **brut**, sans retrait.
-  Elle porte donc sa marge elle-même : le système n'affiche de façon garantie
-  que les deux tiers centraux (160 dp sur 240).
+  Elle porte toute sa marge elle-même : le système ne montre de façon garantie
+  que les deux tiers centraux **en diamètre**, soit `1/3 × côté` en rayon.
 
 Le problème que ça corrige
 --------------------------
 
-`logo_foreground.png` était le logo **à fond perdu**, fond corail compris —
-ses quatre coins étaient opaques. Sur l'icône du lanceur, ça passait : le fond
-de l'icône adaptative est ce même corail, la jointure ne se voyait pas. Mais
-`windowSplashScreenAnimatedIcon` s'en sert tel quel, et le système en masque
-le pourtour : le dessin y perdait la bulle, la carte « 1 » et les jambes du
-coureur, et le carré corail devenait un disque corail posé sur le corail du
-fond.
+Deux fois de suite, la marge a été calculée sur le mauvais objet.
+
+D'abord `logo_foreground.png` était le logo **à fond perdu**, fond corail
+compris — ses quatre coins étaient opaques. Sur l'icône du lanceur ça passait,
+le fond de l'icône adaptative étant ce même corail. Mais
+`windowSplashScreenAnimatedIcon` s'en sert tel quel : le dessin y perdait la
+bulle, la carte « 1 » et les jambes du coureur, et le carré corail devenait un
+disque corail posé sur le corail du fond.
+
+Le correctif d'alors a donné au splash une marge des deux tiers du **côté**,
+et laissé le premier plan sans marge du tout — le retrait de 16 % était censé
+suffire. Les deux raisonnements supposaient un dessin tenant dans le cercle
+inscrit de sa boîte. Le nôtre remplit ses coins : mesuré, son rayon atteignait
+0,4035 du côté sur le splash pour 0,3333 permis, et 0,6042 sur le premier plan
+pour 0,4902. Rien ne le signalait, parce que la forme réellement découpée est
+décidée par l'appareil et que le carré arrondi du téléphone de test laissait
+presque tout passer.
+
+D'où la règle appliquée ici : **mesurer le rayon du dessin, et dimensionner le
+canevas pour que ce rayon tombe exactement sur le cercle du consommateur.** Le
+script vérifie ensuite son propre résultat plutôt que de le supposer.
 
 Aucun rééchantillonnage ici : on n'ajoute que du vide. Redimensionner aurait
 fait deux interpolations successives, la nôtre puis celle de
 `flutter_launcher_icons` qui décline ensuite chaque densité. Une seule vaut
 mieux, et c'est la sienne.
+
+Une nuisance connue de l'étape suivante : `flutter_launcher_icons` réécrit
+`android/.../values/colors.xml` et lui retire son saut de ligne final. Le
+remettre avant de committer, sinon le diff porte une ligne qui n'a rien à voir
+avec le changement.
 """
 
 from __future__ import annotations
 
+import math
 import struct
 import sys
 import zlib
@@ -54,9 +83,23 @@ SPLASH = (
     / "splash_icon.png"
 )
 
-# La part du canevas que le dessin peut occuper sans risquer le masque du
-# système, pour l'écran de démarrage d'Android 12 : 160 dp sur 240.
-ZONE_SURE = 2 / 3
+# Le rayon que le dessin ne doit pas dépasser, en fraction du côté du canevas.
+#
+# Écran de démarrage : le système ne montre de façon garantie que les deux
+# tiers centraux en **diamètre**, donc un tiers en rayon.
+RAYON_SPLASH = 1 / 3
+
+# Icône adaptative : `ic_launcher.xml` pose un retrait de 16 %, l'image
+# atterrit sur 108 × 0,68 = 73,44 dp. On vise la zone sûre documentée — un
+# cercle de 66 dp, donc 33 dp de rayon — et non le couperet du masque
+# circulaire, qui est à 36 dp : entre les deux, ce qui reste visible dépend de
+# la forme du masque du lanceur.
+RAYON_PREMIER_PLAN = 33 / (108 * 0.68)
+
+# En deçà, on considère le pixel transparent. Le dessin est détouré sans
+# anticrénelage, donc le seuil ne change rien au résultat — il est là pour que
+# la mesure reste juste si un jour le dessin arrive avec un bord adouci.
+SEUIL_ALPHA = 8
 
 
 class FormatInattendu(Exception):
@@ -164,26 +207,110 @@ def centrer(
     )
 
 
+def recadrer(
+    largeur: int, hauteur: int, lignes: list[bytes]
+) -> tuple[int, int, list[bytes]]:
+    """Réduit le dessin à sa boîte opaque.
+
+    Sans ça, tout le reste se mesure depuis le centre du **canevas** source et
+    non depuis celui du dessin. Une source ré-exportée avec un peu de marge
+    transparente — ce que produit à peu près n'importe quel export depuis le
+    SVG — sortirait alors un dessin à la fois décentré et inutilement petit,
+    sans que rien ne le signale. Aujourd'hui la marque est détourée au plus
+    juste et ce recadrage ne fait rien ; il est là pour le jour où elle ne le
+    sera plus.
+    """
+    gauche, droite, haut, bas = largeur, -1, hauteur, -1
+    for y, ligne in enumerate(lignes):
+        for x in range(largeur):
+            if ligne[x * 4 + 3] > SEUIL_ALPHA:
+                gauche = min(gauche, x)
+                droite = max(droite, x)
+                haut = min(haut, y)
+                bas = max(bas, y)
+
+    if droite < 0:
+        raise FormatInattendu("le dessin est entièrement transparent")
+    if (gauche, haut, droite, bas) == (0, 0, largeur - 1, hauteur - 1):
+        return largeur, hauteur, lignes
+
+    print(
+        f"  recadré sur sa boîte opaque : "
+        f"{largeur}x{hauteur} → {droite - gauche + 1}x{bas - haut + 1}"
+    )
+    return (
+        droite - gauche + 1,
+        bas - haut + 1,
+        [ligne[gauche * 4 : (droite + 1) * 4] for ligne in lignes[haut : bas + 1]],
+    )
+
+
+def rayon_maximal(largeur: int, hauteur: int, lignes: list[bytes]) -> float:
+    """Distance, en pixels, du centre au pixel opaque le plus lointain.
+
+    C'est la seule mesure qui compte : le masque du système est un cercle, et
+    la boîte englobante du dessin ne dit rien de ce qui en sort. Un dessin qui
+    remplit les coins de sa boîte déborde de 41 % du cercle inscrit.
+    """
+    cx, cy = (largeur - 1) / 2, (hauteur - 1) / 2
+    pire = 0.0
+    for y, ligne in enumerate(lignes):
+        for x in range(largeur):
+            if ligne[x * 4 + 3] > SEUIL_ALPHA:
+                rayon = math.hypot(x - cx, y - cy)
+                pire = max(pire, rayon)
+    return pire
+
+
+def canevas_pour(
+    largeur: int, hauteur: int, lignes: list[bytes], cible: float
+) -> tuple[int, list[bytes]]:
+    """Le plus petit carré qui fait tenir le dessin dans [cible], et son contenu.
+
+    Le résultat est **remesuré**, et non déduit du calcul : quand le canevas et
+    le dessin n'ont pas la même parité, le centrage tombe sur un demi-pixel, ce
+    qui suffit à faire déborder un carré calculé au plus juste. C'est
+    exactement le genre d'écart qu'on ne voit jamais à l'œil.
+
+    Fonction pure, pour que le test puisse rejouer le calcul et comparer au
+    fichier versionné — sinon rien ne rattache l'un à l'autre.
+    """
+    rayon = rayon_maximal(largeur, hauteur, lignes)
+    cote = max(math.ceil(rayon / cible), largeur, hauteur)
+    for _ in range(4):
+        carre = centrer(largeur, hauteur, lignes, cote)
+        if rayon_maximal(cote, cote, carre) / cote <= cible:
+            return cote, carre
+        cote += 1
+    raise FormatInattendu(f"le canevas ne converge pas vers {cible}")
+
+
+def poser_dans_le_cercle(
+    chemin: Path,
+    largeur: int,
+    hauteur: int,
+    lignes: list[bytes],
+    cible: float,
+) -> None:
+    """Écrit le dessin centré sur le carré que [canevas_pour] a calculé."""
+    cote, carre = canevas_pour(largeur, hauteur, lignes, cible)
+    ecrire_png(chemin, cote, cote, carre)
+    print(
+        f"{chemin.name} : {cote}x{cote} — dessin sur "
+        f"{hauteur / cote:.1%} de la hauteur, rayon à "
+        f"{rayon_maximal(cote, cote, carre) / cote:.4f} du côté pour "
+        f"{cible:.4f} permis"
+    )
+
+
 def main() -> int:
-    largeur, hauteur, lignes = lire_png(SOURCE)
-    grand = max(largeur, hauteur)
-    print(f"{SOURCE.name} : {largeur}x{hauteur}")
+    brut_l, brut_h, brut = lire_png(SOURCE)
+    print(f"{SOURCE.name} : {brut_l}x{brut_h}")
+    largeur, hauteur, lignes = recadrer(brut_l, brut_h, brut)
+    print(f"  rayon du dessin : {rayon_maximal(largeur, hauteur, lignes):.1f} px")
 
-    # Le premier plan : le dessin au plus près des bords, la marge viendra du
-    # retrait de 16 % de l'icône adaptative.
-    ecrire_png(PREMIER_PLAN, grand, grand, centrer(largeur, hauteur, lignes, grand))
-    print(
-        f"{PREMIER_PLAN.name} : {grand}x{grand} — "
-        f"dessin sur {hauteur / grand:.0%} de la hauteur, sans marge"
-    )
-
-    # Le splash : la marge des deux tiers, portée par l'image elle-même.
-    cote = round(grand / ZONE_SURE)
-    ecrire_png(SPLASH, cote, cote, centrer(largeur, hauteur, lignes, cote))
-    print(
-        f"{SPLASH.name} : {cote}x{cote} — "
-        f"dessin sur {hauteur / cote:.0%} de la hauteur, marge du masque comprise"
-    )
+    poser_dans_le_cercle(PREMIER_PLAN, largeur, hauteur, lignes, RAYON_PREMIER_PLAN)
+    poser_dans_le_cercle(SPLASH, largeur, hauteur, lignes, RAYON_SPLASH)
 
     print("\nÀ enchaîner : dart run flutter_launcher_icons")
     return 0

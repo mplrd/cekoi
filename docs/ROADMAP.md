@@ -66,6 +66,45 @@ Reste ouvert : faire tourner ce test sur un émulateur en CI, sur `main` seuleme
 job iOS. C'est un arbitrage de minutes — un runner avec émulateur est lent, et le dépôt est
 privé.
 
+**La marge des icônes a été calculée deux fois sur le mauvais objet.** Le système masque sur
+un **cercle** ; la marge, elle, était calculée sur la **boîte** du dessin. Un carré de côté
+`2/3·c` déborde de 41 % au coin du cercle de rayon `c/3` qu'il est censé tenir, et le dessin
+de Cékoi remplit justement ses coins — la bulle, la carte « 1 », les jambes du coureur. Les
+deux consommateurs étaient touchés, par deux chemins différents : `make_icons.py` portait sa
+marge sur le côté du canevas pour `splash_icon.png`, et ne mettait **aucune** marge à
+`logo_foreground.png`, le retrait de 16 % de `mipmap-anydpi-v26/ic_launcher.xml` étant censé
+la fournir. Les deux raisonnements supposaient un dessin tenant dans le cercle inscrit de sa
+boîte.
+
+Mesuré avant correction : rayon à 0,4035 du côté pour 0,3333 permis côté splash, et 0,6042
+pour 0,4493 côté lanceur. Le correctif du 17 août (`3ebe467`), qui disait sauver la
+bulle, la carte et les jambes du coureur, n'atteignait donc pas son objectif.
+
+**Ce n'était pas visible, et ça ne pouvait pas l'être.** La forme réellement découpée est
+décidée par le lanceur de l'appareil : un carré arrondi, celui du téléphone de test, n'en
+coupe presque rien ; un masque circulaire décapite. Le cercle documenté est la seule limite
+qui ne dépende de personne — ce qui en sort ne tient que par chance.
+
+`make_icons.py` mesure désormais le **rayon** du dessin et dimensionne le canevas pour qu'il
+tombe sur le cercle du consommateur, puis remesure son propre résultat avant de l'écrire — le
+centrage tombe sur un demi-pixel quand les parités diffèrent, ce qui suffit à faire déborder
+un carré calculé au plus juste. Le dessin perd 17,4 % de côté au démarrage et 25,7 % sur
+l'icône : c'était un arbitrage visuel, rendu par Maxime le 24 août — *réduire, ne pas
+redessiner*, puis *viser la zone sûre et non le couperet*.
+
+Les deux cibles ne sont pas symétriques, et le vocabulaire compte. Pour l'écran de
+démarrage, le cercle documenté **est** le couperet : deux tiers du diamètre. Pour l'icône
+adaptative il y en a deux — le masque circulaire coupe à 36 dp de rayon, mais un masque
+plus étroit sur un axe, comme le cylindre, mord en deçà ; la zone que **tout** masque
+conforme laisse voir est un cercle de 66 dp, donc 33 dp de rayon. C'est celle qu'on vise,
+sinon la bande 66–72 dp resterait à la merci du lanceur — c'est-à-dire le défaut, en plus
+fin.
+
+`tool/test_geometrie_icones.py` verrouille les deux cibles, rejoue le calcul depuis
+`logo_mark.png` pour vérifier que les fichiers versionnés en descendent bien, et borne les
+cinq densités des deux côtés — un dessin qui rétrécit est une régression autant qu'un
+dessin qui déborde.
+
 Ce qui reste ouvert et ne dépend pas d'un lot :
 
 - **Trois écrans peuvent déborder, et rien ne le voit.** Un écran qui déborde met une partie de
@@ -85,39 +124,6 @@ Ce qui reste ouvert et ne dépend pas d'un lot :
   Aucun test ne mesure de géométrie sur ces trois-là, et la recette ne les trouvera pas : il
   faut avoir agrandi le texte dans les réglages du système, ce que font justement ceux qui en
   ont besoin. Le troisième est le pire, parce qu'il se dégrade en silence.
-
-- **Les deux icônes débordent du cercle documenté.** La cause commune tient en une phrase :
-  **la silhouette du dessin est carrée — elle remplit ses coins, la bulle, la carte « 1 », les
-  jambes du coureur — et ses deux consommateurs masquent sur un cercle.** Un carré de côté
-  `2/3·c` déborde déjà de 41 % au coin du cercle de rayon `c/3` qu'il est censé tenir. Les
-  mesures sont dans `REPRISE.md` ; ce qui suit est le mécanisme, et il n'est pas le même des
-  deux côtés.
-
-  - **`splash_icon.png`** : `make_icons.py` porte sa marge sur le **côté** du canevas
-    (`ZONE_SURE` ne sert qu'à `cote = round(grand / ZONE_SURE)`), là où Android ne promet que
-    les deux tiers centraux **en diamètre**.
-  - **`logo_foreground.png`** : le script ne lui met **aucune marge**, délibérément — sa
-    docstring défend ce choix, le retrait de 16 % de `mipmap-anydpi-v26/ic_launcher.xml` étant
-    censé la fournir. Le raisonnement supposait un dessin tenant dans son cercle inscrit ; le
-    nôtre remplit ses coins. Accessoirement 16 % ne suffit même pas au cadrage : l'image
-    atterrit sur 73,44 dp des 108, alors que le viewport de l'icône adaptative en fait 72 —
-    il faudrait 16,67 %.
-
-  Le cercle est ce que le système *documente* ; la forme réellement découpée est décidée par
-  l'appareil. Pour l'icône du lanceur, le masque est certain — c'est le mécanisme même de
-  l'icône adaptative — et seule sa forme varie : un carré arrondi n'en coupe presque rien, un
-  masque circulaire décapite la bulle et tranche la carte. Pour l'écran de démarrage, rien ne
-  garantit même qu'un appareil donné masque un PNG simple. **Tout ce qui sort du cercle ne
-  tient donc que par la forme du masque de l'appareil** — ça vaut pour l'icône de l'application
-  autant que pour l'écran de démarrage, et le correctif du 17 août (`2f8a53f`) n'atteignait pas
-  son objectif affiché.
-
-  Le correctif n'est pas symétrique. Côté splash, une ligne suffit : porter la règle sur le
-  cercle. Côté lanceur, il faut soit donner une marge à `logo_foreground.png` — ce qui renverse
-  frontalement la décision de `2f8a53f` —, soit porter l'`inset` de `ic_launcher.xml` de 16 % à
-  ≈ 22,4 %, ou ≈ 25 % pour viser la zone sûre de 66 dp. Dans tous les cas l'icône rapetisse :
-  c'est un **arbitrage visuel**, ouvert dans `REPRISE.md`. Tant qu'il n'est pas rendu, aucune
-  assertion de géométrie n'est ajoutée à `tool/test_ressources_android.py` — elle rougirait.
 
 - **iOS n'a jamais tourné ailleurs qu'en compilation, et n'est même pas compilé à chaque
   commit.** Le job `ios-build` de `ci.yml` ne se déclenche que sur `main`, sur une PR qui vise

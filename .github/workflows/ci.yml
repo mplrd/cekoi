@@ -79,11 +79,13 @@ jobs:
       - name: Tests
         run: flutter test --coverage
 
-      # L'import de contenu est en Python et ne sert qu'en atelier — mais un
-      # outil dont les tests ne tournent jamais pourrit en silence, et celui-ci
-      # décide de ce qui entre dans le jeu. Bibliothèque standard uniquement,
-      # donc rien à installer.
-      - name: Tests de l'import de contenu
+      # L'outillage Python ne tourne qu'en atelier, mais un outil dont les
+      # tests ne tournent jamais pourrit en silence. Il ne s'agit plus du seul
+      # import de contenu : ces tests couvrent aussi les motifs du test de
+      # fumée, la parité des variantes de ressources Android et la géométrie
+      # des icônes — trois choses que rien d'autre ici ne regarde.
+      # Bibliothèque standard uniquement, donc rien à installer.
+      - name: Tests de l'outillage
         run: python3 -m unittest discover -s tool -t tool
 
       - uses: actions/upload-artifact@v4
