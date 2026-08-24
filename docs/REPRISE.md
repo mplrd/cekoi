@@ -28,7 +28,7 @@ reste dans `ROADMAP.md`, les démarches dans `ADMINISTRATIF.md`, les règles dan
 | Lots | 6 sur 8 faits ; le 5 (contenu) et le 8 (publication) sont en cours |
 | Cartes | 529 sur les 1 200 visées, réparties sur 21 catégories |
 | Écrans à risque de débordement | 3, non couverts par un test |
-| Géométrie des icônes | **dans le cercle**, sur les deux, et verrouillée par un test |
+| Géométrie des icônes | dans la **zone sûre documentée** des deux côtés, verrouillée par un test |
 | iOS | **jamais exécuté**, et compilé seulement vers `main` ou sur étiquette `ios` |
 | Build de release | construit par la CI et vérifié à la main ; **aucune partie complète jouée dessus** |
 | Achat in-app | jamais effectué en vrai |
@@ -124,7 +124,7 @@ retire pas proprement d'un magasin.
 
 ## Journal
 
-Ce qui a atterri dans `develop` depuis le dernier point, le 19 août.
+Les PR de la série, du 19 au 24 août.
 
 | PR | Ce qui a changé |
 |---|---|
@@ -134,18 +134,12 @@ Ce qui a atterri dans `develop` depuis le dernier point, le 19 août.
 | #43 | Le splash ne pointe plus l'icône du lanceur en thème sombre. **Vérifié sur les ressources de l'APK, pas à l'écran** — l'appareil s'est débranché avant l'installation. Amène `tool/test_ressources_android.py`. |
 | #44 | `docs/REPRISE.md` entre dans le dépôt et devient la source de l'état du projet ; l'artefact n'en est plus qu'un rendu. Corrige au passage quatre faits faux, dont « iOS est compilé à chaque commit ». |
 | #45 | Le point de reprise cesse d'épingler le SHA du commit qui le contient — il était faux dès son merge. |
-| #46 | Les icônes rentrent dans le cercle. `make_icons.py` mesure le rayon du dessin au lieu de sa boîte, et remesure son résultat avant de l'écrire. Amène `tool/test_geometrie_icones.py`, qui couvre les deux cibles, les deux fichiers produits et les cinq densités. |
 
 **Deux de ces défauts ont exactement la même forme :** une correction appliquée à un endroit
 sur deux. Les deux fonctions jamais appelées du test de fumée, et les deux variantes de
 `styles.xml`. Le second cas est désormais couvert par un test ; le premier ne l'est que par la
 vigilance. (Le défaut de la #42 est d'une autre nature : un délai de garde posé sur deux étapes
 qui n'auraient dû en porter aucune.)
-
-La #46 en est une troisième occurrence, et la plus large : l'icône du lanceur se décline en
-**cinq** densités, et régénérer la source sans relancer la propagation en laisse quatre en
-arrière. C'est exactement ce qui rendait le défaut du 17 août invisible. Le test couvre donc
-les cinq, pas seulement celle qu'on regarde.
 
 **La machine de développement a été saturée deux fois**, une fois jusqu'à emporter les
 instances VS Code ouvertes. Depuis : une commande lourde à la fois, jamais la suite de tests

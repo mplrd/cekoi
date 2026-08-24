@@ -77,8 +77,8 @@ la fournir. Les deux raisonnements supposaient un dessin tenant dans le cercle i
 boîte.
 
 Mesuré avant correction : rayon à 0,4035 du côté pour 0,3333 permis côté splash, et 0,6042
-pour 0,4902 côté lanceur. Le correctif du 17 août (`2f8a53f`), qui disait sauver ces
-trois éléments, n'atteignait donc pas son objectif.
+pour 0,4493 côté lanceur. Le correctif du 17 août (`3ebe467`), qui disait sauver la
+bulle, la carte et les jambes du coureur, n'atteignait donc pas son objectif.
 
 **Ce n'était pas visible, et ça ne pouvait pas l'être.** La forme réellement découpée est
 décidée par le lanceur de l'appareil : un carré arrondi, celui du téléphone de test, n'en
@@ -88,10 +88,22 @@ qui ne dépende de personne — ce qui en sort ne tient que par chance.
 `make_icons.py` mesure désormais le **rayon** du dessin et dimensionne le canevas pour qu'il
 tombe sur le cercle du consommateur, puis remesure son propre résultat avant de l'écrire — le
 centrage tombe sur un demi-pixel quand les parités diffèrent, ce qui suffit à faire déborder
-un carré calculé au plus juste. Le dessin perd 18 % de côté : c'était un arbitrage visuel,
-rendu par Maxime le 24 août — *réduire, ne pas redessiner*. `tool/test_geometrie_icones.py`
-verrouille les deux cibles, les deux fichiers produits, et les cinq densités déclinées par
-`flutter_launcher_icons` — c'est là que se cachait la variante oubliée du 17 août.
+un carré calculé au plus juste. Le dessin perd 17,4 % de côté au démarrage et 25,7 % sur
+l'icône : c'était un arbitrage visuel, rendu par Maxime le 24 août — *réduire, ne pas
+redessiner*, puis *viser la zone sûre et non le couperet*.
+
+Les deux cibles ne sont pas symétriques, et le vocabulaire compte. Pour l'écran de
+démarrage, le cercle documenté **est** le couperet : deux tiers du diamètre. Pour l'icône
+adaptative il y en a deux — le masque circulaire coupe à 36 dp de rayon, mais un masque
+plus étroit sur un axe, comme le cylindre, mord en deçà ; la zone que **tout** masque
+conforme laisse voir est un cercle de 66 dp, donc 33 dp de rayon. C'est celle qu'on vise,
+sinon la bande 66–72 dp resterait à la merci du lanceur — c'est-à-dire le défaut, en plus
+fin.
+
+`tool/test_geometrie_icones.py` verrouille les deux cibles, rejoue le calcul depuis
+`logo_mark.png` pour vérifier que les fichiers versionnés en descendent bien, et borne les
+cinq densités des deux côtés — un dessin qui rétrécit est une régression autant qu'un
+dessin qui déborde.
 
 Ce qui reste ouvert et ne dépend pas d'un lot :
 

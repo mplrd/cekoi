@@ -108,7 +108,8 @@ flutter:
     # son fond corail — il se pose ainsi sur le fond pastel de l'application au
     # lieu d'y coller un carré. Le SVG source, le PNG d'origine et le premier
     # plan des icônes vivent à côté mais restent hors du bundle : ils servent à
-    # fabriquer, pas à exécuter, et pèsent 530 Ko à eux trois.
+    # fabriquer, pas à exécuter, et pèsent plusieurs centaines de kilo-octets à
+    # eux trois.
     - assets/branding/logo_mark.png
 
 # Icônes de lanceur, générées depuis le logo par `dart run flutter_launcher_icons`.
@@ -119,8 +120,12 @@ flutter:
 #
 # Sa marge est calculée sur le **rayon** du dessin, pas sur sa boîte : le
 # système masque sur un cercle, et notre dessin remplit les coins de son carré.
-# `mipmap-anydpi-v26/ic_launcher.xml` pose un retrait de 16 %, l'image atterrit
-# donc sur 73,44 dp des 108 de la couche, et le masque coupe à 36 dp de rayon.
+# Le retrait de 16 % de `mipmap-anydpi-v26/ic_launcher.xml` n'est pas écrit à
+# la main, c'est `adaptive_icon_foreground_inset` ci-dessous — épinglé pour que
+# le calcul du script ne dépende pas d'un défaut de version. L'image atterrit
+# donc sur 73,44 dp des 108 de la couche, et on vise la zone sûre documentée,
+# un cercle de 66 dp, plutôt que le couperet du masque circulaire à 72 : entre
+# les deux, ce qui reste visible dépend de la forme du masque du lanceur.
 # `tool/test_geometrie_icones.py` verrouille les deux bouts de ce calcul.
 #
 # L'écran de démarrage d'Android 12, lui, consomme le drawable **brut** : il a
@@ -134,5 +139,9 @@ flutter_launcher_icons:
   android: true
   adaptive_icon_background: "#FA7567"
   adaptive_icon_foreground: assets/branding/logo_foreground.png
+  # C'est la valeur par défaut du paquet, épinglée : `tool/make_icons.py` en
+  # dérive la taille du canevas, et `tool/test_geometrie_icones.py` vérifie que
+  # les deux disent la même chose.
+  adaptive_icon_foreground_inset: 16
   ios: true
   remove_alpha_ios: true

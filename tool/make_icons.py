@@ -10,8 +10,15 @@ la marge : elle se calcule sur le rayon du dessin, jamais sur sa boîte.
 
 * `assets/branding/logo_foreground.png` — le premier plan de l'icône
   adaptative, que `mipmap-anydpi-v26/ic_launcher.xml` pose avec un retrait de
-  16 %. L'image atterrit donc sur 73,44 dp des 108 de la couche, et le masque
-  coupe à 36 dp de rayon : le dessin doit tenir dans `0,4902 × côté`.
+  16 %. L'image atterrit donc sur 73,44 dp des 108 de la couche.
+
+  Deux seuils s'y appliquent, et ils ne disent pas la même chose. Le masque
+  **circulaire** coupe à 36 dp de rayon, mais tous les masques ne sont pas des
+  cercles : un masque cylindre est plus étroit sur un axe. La zone que **tout**
+  masque conforme laisse voir est un cercle de 66 dp, soit 33 dp de rayon —
+  c'est celle qu'on vise, sur arbitrage du 24 août. Ce qui vit entre 66 et
+  72 dp ne dépendrait que de la forme du lanceur, et c'est précisément ce que
+  ce correctif existe pour supprimer.
 
 * `android/.../drawable-xxxhdpi/splash_icon.png` — l'icône de l'écran de
   démarrage d'Android 12, qui consomme le drawable **brut**, sans retrait.
@@ -83,8 +90,11 @@ SPLASH = (
 RAYON_SPLASH = 1 / 3
 
 # Icône adaptative : `ic_launcher.xml` pose un retrait de 16 %, l'image
-# atterrit sur 108 × 0,68 = 73,44 dp, et le masque coupe à 36 dp de rayon.
-RAYON_PREMIER_PLAN = 36 / (108 * 0.68)
+# atterrit sur 108 × 0,68 = 73,44 dp. On vise la zone sûre documentée — un
+# cercle de 66 dp, donc 33 dp de rayon — et non le couperet du masque
+# circulaire, qui est à 36 dp : entre les deux, ce qui reste visible dépend de
+# la forme du masque du lanceur.
+RAYON_PREMIER_PLAN = 33 / (108 * 0.68)
 
 # En deçà, on considère le pixel transparent. Le dessin est détouré sans
 # anticrénelage, donc le seuil ne change rien au résultat — il est là pour que
@@ -197,6 +207,44 @@ def centrer(
     )
 
 
+def recadrer(
+    largeur: int, hauteur: int, lignes: list[bytes]
+) -> tuple[int, int, list[bytes]]:
+    """Réduit le dessin à sa boîte opaque.
+
+    Sans ça, tout le reste se mesure depuis le centre du **canevas** source et
+    non depuis celui du dessin. Une source ré-exportée avec un peu de marge
+    transparente — ce que produit à peu près n'importe quel export depuis le
+    SVG — sortirait alors un dessin à la fois décentré et inutilement petit,
+    sans que rien ne le signale. Aujourd'hui la marque est détourée au plus
+    juste et ce recadrage ne fait rien ; il est là pour le jour où elle ne le
+    sera plus.
+    """
+    gauche, droite, haut, bas = largeur, -1, hauteur, -1
+    for y, ligne in enumerate(lignes):
+        for x in range(largeur):
+            if ligne[x * 4 + 3] > SEUIL_ALPHA:
+                gauche = min(gauche, x)
+                droite = max(droite, x)
+                haut = min(haut, y)
+                bas = max(bas, y)
+
+    if droite < 0:
+        raise FormatInattendu("le dessin est entièrement transparent")
+    if (gauche, haut, droite, bas) == (0, 0, largeur - 1, hauteur - 1):
+        return largeur, hauteur, lignes
+
+    print(
+        f"  recadré sur sa boîte opaque : "
+        f"{largeur}x{hauteur} → {droite - gauche + 1}x{bas - haut + 1}"
+    )
+    return (
+        droite - gauche + 1,
+        bas - haut + 1,
+        [ligne[gauche * 4 : (droite + 1) * 4] for ligne in lignes[haut : bas + 1]],
+    )
+
+
 def rayon_maximal(largeur: int, hauteur: int, lignes: list[bytes]) -> float:
     """Distance, en pixels, du centre au pixel opaque le plus lointain.
 
@@ -214,6 +262,29 @@ def rayon_maximal(largeur: int, hauteur: int, lignes: list[bytes]) -> float:
     return pire
 
 
+def canevas_pour(
+    largeur: int, hauteur: int, lignes: list[bytes], cible: float
+) -> tuple[int, list[bytes]]:
+    """Le plus petit carré qui fait tenir le dessin dans [cible], et son contenu.
+
+    Le résultat est **remesuré**, et non déduit du calcul : quand le canevas et
+    le dessin n'ont pas la même parité, le centrage tombe sur un demi-pixel, ce
+    qui suffit à faire déborder un carré calculé au plus juste. C'est
+    exactement le genre d'écart qu'on ne voit jamais à l'œil.
+
+    Fonction pure, pour que le test puisse rejouer le calcul et comparer au
+    fichier versionné — sinon rien ne rattache l'un à l'autre.
+    """
+    rayon = rayon_maximal(largeur, hauteur, lignes)
+    cote = max(math.ceil(rayon / cible), largeur, hauteur)
+    for _ in range(4):
+        carre = centrer(largeur, hauteur, lignes, cote)
+        if rayon_maximal(cote, cote, carre) / cote <= cible:
+            return cote, carre
+        cote += 1
+    raise FormatInattendu(f"le canevas ne converge pas vers {cible}")
+
+
 def poser_dans_le_cercle(
     chemin: Path,
     largeur: int,
@@ -221,37 +292,22 @@ def poser_dans_le_cercle(
     lignes: list[bytes],
     cible: float,
 ) -> None:
-    """Centre le dessin sur le plus petit carré qui le fait tenir dans [cible].
-
-    Le résultat est **remesuré avant d'être écrit**, et non déduit du calcul :
-    quand le canevas et le dessin n'ont pas la même parité, le centrage tombe
-    sur un demi-pixel, ce qui suffit à faire déborder un carré calculé au plus
-    juste. C'est exactement le genre d'écart qu'on ne voit jamais à l'œil.
-    """
-    rayon = rayon_maximal(largeur, hauteur, lignes)
-    cote = max(math.ceil(rayon / cible), largeur, hauteur)
-    for _ in range(4):
-        carre = centrer(largeur, hauteur, lignes, cote)
-        obtenu = rayon_maximal(cote, cote, carre) / cote
-        if obtenu <= cible:
-            ecrire_png(chemin, cote, cote, carre)
-            print(
-                f"{chemin.name} : {cote}x{cote} — dessin sur "
-                f"{hauteur / cote:.1%} de la hauteur, rayon à {obtenu:.4f} "
-                f"du côté pour {cible:.4f} permis"
-            )
-            return
-        cote += 1
-    raise FormatInattendu(f"{chemin.name} : le canevas ne converge pas vers {cible}")
+    """Écrit le dessin centré sur le carré que [canevas_pour] a calculé."""
+    cote, carre = canevas_pour(largeur, hauteur, lignes, cible)
+    ecrire_png(chemin, cote, cote, carre)
+    print(
+        f"{chemin.name} : {cote}x{cote} — dessin sur "
+        f"{hauteur / cote:.1%} de la hauteur, rayon à "
+        f"{rayon_maximal(cote, cote, carre) / cote:.4f} du côté pour "
+        f"{cible:.4f} permis"
+    )
 
 
 def main() -> int:
-    largeur, hauteur, lignes = lire_png(SOURCE)
-    rayon = rayon_maximal(largeur, hauteur, lignes)
-    print(
-        f"{SOURCE.name} : {largeur}x{hauteur}, "
-        f"rayon du dessin {rayon:.1f} px"
-    )
+    brut_l, brut_h, brut = lire_png(SOURCE)
+    print(f"{SOURCE.name} : {brut_l}x{brut_h}")
+    largeur, hauteur, lignes = recadrer(brut_l, brut_h, brut)
+    print(f"  rayon du dessin : {rayon_maximal(largeur, hauteur, lignes):.1f} px")
 
     poser_dans_le_cercle(PREMIER_PLAN, largeur, hauteur, lignes, RAYON_PREMIER_PLAN)
     poser_dans_le_cercle(SPLASH, largeur, hauteur, lignes, RAYON_SPLASH)

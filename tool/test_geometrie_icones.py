@@ -16,7 +16,7 @@ Rien d'autre ne l'attrape. `flutter analyze` ne lit pas les PNG, le banc
 d'aperçus rend l'arbre de widgets Flutter, et la CI ne regarde aucune image.
 
 Bibliothèque standard uniquement, comme `make_icons.py` : ni Pillow ni
-appareil, une seconde de calcul.
+appareil, deux secondes de calcul.
 
 Lancer : `python -m unittest discover -s tool -t tool`
 """
@@ -28,46 +28,69 @@ from make_icons import (
     PREMIER_PLAN,
     RAYON_PREMIER_PLAN,
     RAYON_SPLASH,
+    SOURCE,
     SPLASH,
+    canevas_pour,
     lire_png,
     rayon_maximal,
+    recadrer,
 )
 
 RES = Path(__file__).resolve().parent.parent / "android/app/src/main/res"
 
-# Les fichiers que `make_icons.py` écrit lui-même : la garantie y est exacte,
-# le script remesure son résultat avant de l'écrire.
+# Les fichiers que `make_icons.py` écrit lui-même.
 SOURCES = [
     (SPLASH, RAYON_SPLASH),
     (PREMIER_PLAN, RAYON_PREMIER_PLAN),
 ]
 
 # `flutter_launcher_icons` décline ensuite le premier plan à chaque densité, et
-# son rééchantillonnage laisse une auréole d'un fragment de pixel au-delà du
-# bord opaque. Mesuré : +0,32 % du rayon au pire, en mdpi, soit un sixième de
-# pixel. Un pixel de tolérance l'absorbe sans rien laisser passer de ce qui
-# compte — une vraie régression de géométrie se compte en pourcents du côté,
-# pas en fractions de pixel.
+# son rééchantillonnage déplace le bord opaque d'une fraction de pixel. Mesuré
+# sur les cinq : entre −0,30 et +0,24 px. Un pixel de tolérance laisse quatre
+# fois cette marge, et ne laisse rien passer de ce qui compte — une vraie
+# régression de géométrie se compte en pourcents du côté, pas en fractions de
+# pixel.
 TOLERANCE_EN_PIXELS = 1.0
+
+
+def rayon_relatif(chemin: Path) -> tuple[int, float]:
+    largeur, hauteur, lignes = lire_png(chemin)
+    assert largeur == hauteur, f"{chemin.name} n'est pas carré"
+    return largeur, rayon_maximal(largeur, hauteur, lignes) / largeur
 
 
 class DessinDansLeCercle(unittest.TestCase):
     """Le rayon, pas la boîte : c'est un cercle que le système découpe."""
 
-    def rayon_relatif(self, chemin: Path) -> float:
-        largeur, hauteur, lignes = lire_png(chemin)
-        self.assertEqual(largeur, hauteur, msg=f"{chemin.name} n'est pas carré")
-        return rayon_maximal(largeur, hauteur, lignes) / largeur
+    def test_les_fichiers_produits_sont_exactement_ce_que_le_script_recalcule(self):
+        """Le seul contrôle qui rattache les sorties à `logo_mark.png`.
 
-    def test_les_fichiers_produits_par_le_script_tiennent_exactement(self):
+        Comparer le rayon à sa cible ne dit rien de deux choses : qu'un dessin
+        **rétréci** passerait aussi bien — un canevas vide donne un rayon de
+        zéro, donc « inférieur ou égal » —, et que le fichier versionné
+        descend bien de la source d'aujourd'hui. Rejouer le calcul et comparer
+        les pixels ferme les deux d'un coup.
+        """
+        largeur, hauteur, lignes = recadrer(*lire_png(SOURCE))
         for chemin, cible in SOURCES:
-            obtenu = self.rayon_relatif(chemin)
-            self.assertLessEqual(
-                obtenu,
-                cible,
+            cote, attendu = canevas_pour(largeur, hauteur, lignes, cible)
+            obtenu_l, obtenu_h, obtenu = lire_png(chemin)
+            self.assertEqual(
+                (obtenu_l, obtenu_h),
+                (cote, cote),
                 msg=(
-                    f"{chemin.name} : rayon à {obtenu:.4f} du côté pour "
-                    f"{cible:.4f} permis. Relancer `python tool/make_icons.py`."
+                    f"{chemin.name} fait {obtenu_l}x{obtenu_h}, le script en "
+                    f"calcule {cote}x{cote}. Relancer "
+                    "`python tool/make_icons.py`."
+                ),
+            )
+            self.assertEqual(
+                obtenu,
+                attendu,
+                msg=(
+                    f"{chemin.name} ne correspond plus à {SOURCE.name}. "
+                    "Relancer `python tool/make_icons.py`, puis "
+                    "`dart run flutter_launcher_icons`."
                 ),
             )
 
@@ -75,23 +98,33 @@ class DessinDansLeCercle(unittest.TestCase):
         """Le cas « une correction appliquée à un fichier sur cinq ».
 
         Le premier plan est décliné en cinq densités par
-        `flutter_launcher_icons`. Régénérer la source sans relancer la
-        propagation laisse quatre fichiers en arrière, et l'icône n'est fausse
-        que sur les téléphones qui piochent dans ces densités-là.
+        `flutter_launcher_icons`, et le test précédent ne regarde que la
+        source. Régénérer celle-ci sans relancer la propagation laisserait
+        quatre fichiers en arrière, et l'icône ne serait fausse que sur les
+        téléphones qui piochent dans ces densités-là.
         """
         densites = sorted(RES.glob("drawable-*/ic_launcher_foreground.png"))
         self.assertEqual(len(densites), 5, msg="il en manque une, ou il y en a trop")
         for chemin in densites:
-            largeur, hauteur, lignes = lire_png(chemin)
-            marge = TOLERANCE_EN_PIXELS / largeur
-            obtenu = rayon_maximal(largeur, hauteur, lignes) / largeur
+            cote, obtenu = rayon_relatif(chemin)
+            marge = TOLERANCE_EN_PIXELS / cote
+            ou = f"{chemin.parent.name}/{chemin.name}"
             self.assertLessEqual(
                 obtenu,
                 RAYON_PREMIER_PLAN + marge,
                 msg=(
-                    f"{chemin.parent.name}/{chemin.name} : rayon à "
-                    f"{obtenu:.4f} du côté pour {RAYON_PREMIER_PLAN:.4f} "
-                    f"permis. Relancer `dart run flutter_launcher_icons`."
+                    f"{ou} : rayon à {obtenu:.4f} du côté pour "
+                    f"{RAYON_PREMIER_PLAN:.4f} permis. Relancer "
+                    "`dart run flutter_launcher_icons`."
+                ),
+            )
+            self.assertGreaterEqual(
+                obtenu,
+                RAYON_PREMIER_PLAN - marge,
+                msg=(
+                    f"{ou} : rayon à {obtenu:.4f}, nettement en deçà de "
+                    f"{RAYON_PREMIER_PLAN:.4f}. Cette densité ne descend pas "
+                    "du même dessin que les autres."
                 ),
             )
 
@@ -111,12 +144,20 @@ class CiblesCoherentes(unittest.TestCase):
     def test_le_premier_plan_passe_par_le_retrait_de_l_icone_adaptative(self):
         """`ic_launcher.xml` pose 16 % : l'image tombe sur 73,44 dp des 108.
 
-        Le masque coupe à 36 dp de rayon. Si quelqu'un touche à ce retrait sans
+        La cible est la **zone sûre** de 66 dp — 33 dp de rayon —, et non le
+        couperet du masque circulaire, qui est à 36. Entre les deux, ce qui
+        reste visible dépend de la forme du masque du lanceur ; c'est
+        l'arbitrage rendu le 24 août. Si quelqu'un touche au retrait sans
         toucher au script, ce test le rappelle.
         """
         xml = (RES / "mipmap-anydpi-v26/ic_launcher.xml").read_text(encoding="utf-8")
         self.assertIn('android:inset="16%"', xml)
-        self.assertAlmostEqual(RAYON_PREMIER_PLAN, 36 / (108 * 0.68), places=6)
+        self.assertAlmostEqual(RAYON_PREMIER_PLAN, 33 / (108 * 0.68), places=6)
+        self.assertLess(
+            RAYON_PREMIER_PLAN,
+            36 / (108 * 0.68),
+            msg="la cible doit rester la zone sûre, pas le couperet",
+        )
 
 
 if __name__ == "__main__":
