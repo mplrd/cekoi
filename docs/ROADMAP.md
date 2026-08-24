@@ -86,6 +86,29 @@ Ce qui reste ouvert et ne dépend pas d'un lot :
   faut avoir agrandi le texte dans les réglages du système, ce que font justement ceux qui en
   ont besoin. Le troisième est le pire, parce qu'il se dégrade en silence.
 
+- **Les deux icônes débordent du cercle que masque Android.** `tool/make_icons.py` applique sa
+  marge de deux tiers au **côté** du canevas ; le système masque sur un **cercle** de deux
+  tiers de diamètre. Un carré de côté `2/3·c` déborde de 41 % au coin du cercle de rayon `c/3`
+  qu'il est censé tenir, et le dessin de Cékoi remplit justement ses coins — la bulle, la carte
+  « 1 », les jambes du coureur. Mesuré le 24 août : `splash_icon.png` porte son dessin jusqu'à
+  0,4035 du côté en rayon pour 0,3333 garantis, soit **+21 %**, et 7,6 % de ses pixels opaques
+  tombent hors du cercle ; `ic_launcher_foreground.png`, retrait de 16 % de l'icône adaptative
+  compris, monte à 0,6042 pour 0,4902, soit **+23 %** et 8,8 % dehors.
+
+  Le cercle est ce qu'Android *garantit* ; la forme réellement découpée est décidée par
+  l'appareil. Pour l'icône du lanceur, le masque est certain — c'est le mécanisme même de
+  l'icône adaptative — et seule sa forme varie : le carré arrondi observé sur le Xiaomi du
+  projet laisse tout passer, un masque circulaire décapite la bulle et tranche la carte. Pour
+  l'écran de démarrage, rien ne garantit même qu'un appareil donné masque un PNG simple. La
+  conclusion ne dépend d'aucun détail de MIUI : **tout ce qui sort du cercle tient par chance,
+  pas par conformité**, et ça vaut pour l'icône de l'application autant que pour l'écran de
+  démarrage — le correctif du 17 août (`2f8a53f`) n'atteignait donc pas son objectif affiché.
+
+  Le correctif mécanique est de faire porter la règle sur le cercle, soit ×0,826 pour le splash
+  et ×0,811 pour le lanceur. L'icône perd 18 % de côté : c'est un **arbitrage visuel**, ouvert
+  dans `REPRISE.md`. Tant qu'il n'est pas rendu, aucune assertion de géométrie n'est ajoutée à
+  `tool/test_ressources_android.py` — elle rougirait.
+
 - **iOS n'a jamais tourné ailleurs qu'en compilation.** La CI le construit à chaque commit,
   rien de plus. Le lot 4 écrit le cycle de vie du chrono, et c'est exactement ce qui se juge
   sur un vrai iPhone — voir la vigilance ci-dessous.
