@@ -1,6 +1,9 @@
 # Point de reprise
 
-**État au 24 août 2026** — `develop` à `751f1b3`, arbre propre, CI verte, aucune PR ouverte.
+**État au 24 août 2026** — sur `develop`, CI verte, aucune PR ouverte.
+
+Pas de SHA ici : un document versionné ne peut pas citer le commit qui le contient sans être
+faux dès son merge. Pour l'état exact, `git log -1 develop`.
 
 Ce fichier est le récapitulatif du reste à faire, et il est **la source**. L'artefact publié
 sur claude.ai n'en est qu'un rendu :
