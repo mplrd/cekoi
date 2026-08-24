@@ -28,7 +28,7 @@ reste dans `ROADMAP.md`, les démarches dans `ADMINISTRATIF.md`, les règles dan
 | Lots | 6 sur 8 faits ; le 5 (contenu) et le 8 (publication) sont en cours |
 | Cartes | 529 sur les 1 200 visées, réparties sur 21 catégories |
 | Écrans à risque de débordement | 3, non couverts par un test |
-| Géométrie des icônes | hors du cercle documenté, sur les **deux** icônes |
+| Géométrie des icônes | **dans le cercle**, sur les deux, et verrouillée par un test |
 | iOS | **jamais exécuté**, et compilé seulement vers `main` ou sur étiquette `ios` |
 | Build de release | construit par la CI et vérifié à la main ; **aucune partie complète jouée dessus** |
 | Achat in-app | jamais effectué en vrai |
@@ -36,43 +36,7 @@ reste dans `ROADMAP.md`, les démarches dans `ADMINISTRATIF.md`, les règles dan
 
 ## Ce qui ne dépend de personne
 
-### 1. Les icônes débordent du cercle que masque le système
-
-Le mécanisme est décrit dans `ROADMAP.md`. En une phrase : **la silhouette du dessin est
-carrée — elle remplit ses coins — et ses deux consommateurs masquent sur un cercle.** Les deux
-icônes débordent, par deux chemins différents.
-
-Mesuré le 24 août sur les fichiers du dépôt, avec deux décodeurs PNG indépendants qui donnent
-les mêmes chiffres. Rayons exprimés en fraction du côté de l'image.
-
-| | `splash_icon.png` | `ic_launcher_foreground.png` |
-|---|---|---|
-| Rayon max du dessin | 0,4035 | 0,6042 |
-| Cercle documenté | 0,3333 (192 dp sur 288) | 0,4493 (66 dp sur 108) |
-| Dépassement | **+21 %** | **+34 %** |
-| Limite au-delà de laquelle un masque circulaire coupe | 0,3333 | 0,4902 (72 dp) |
-| Pixels opaques hors de cette limite | 7,6 % | 8,8 % |
-
-Deux précisions de vocabulaire, parce qu'elles ne disent pas la même chose :
-
-- Pour l'écran de démarrage, le cercle documenté **est** la limite : Android promet les deux
-  tiers centraux, pas davantage.
-- Pour le lanceur, il y a deux seuils. Le viewport de 72 dp est un couperet — au-delà, c'est
-  coupé sur *tout* appareil, quelle que soit la forme du masque. Le cercle de 66 dp est la zone
-  sûre recommandée par Google, la marge de confort en deçà du couperet. Le dessin dépasse les
-  deux.
-
-**Ce qui n'est pas encore décidé.** Ramener le dessin dans le couperet demande ×0,826 pour le
-splash et ×0,811 pour le lanceur ; le ramener dans la zone sûre de 66 dp demanderait ×0,743
-côté lanceur. L'icône rapetisse d'autant. Voir « Ce qu'il faut trancher ».
-
-Tant que ce n'est pas tranché, aucune assertion de géométrie ne rejoint
-`tool/test_ressources_android.py` : elle rougirait. Ce fichier couvre aujourd'hui trois
-choses — la parité entre variantes de configuration, la résolution de chaque `@drawable` et
-`@color`, et le fait que les deux variantes v31 pointent bien `splash_icon` et non l'icône du
-lanceur. C'est ce dernier contrôle qui verrouille le défaut de la PR #43.
-
-### 2. Trois écrans peuvent mettre une action hors d'atteinte
+### 1. Trois écrans peuvent mettre une action hors d'atteinte
 
 Inchangé depuis le 19 août ; le détail et le tableau des seuils sont dans `ROADMAP.md`. En
 résumé : `turn_summary_view`, `setup_scaffold` et `score_table` sont bâtis sur la même
@@ -81,7 +45,7 @@ jusqu'à tomber à zéro. Aucun test ne mesure de géométrie dessus, et la rece
 trouvera pas : il faut avoir agrandi le texte dans les réglages du système, ce que font
 justement ceux qui en ont besoin. `score_table` est le pire, il se dégrade en silence.
 
-### 3. Le contenu des pages légales
+### 2. Le contenu des pages légales
 
 Quelles données partent, AdMob comme destinataire, absence de compte utilisateur, durées,
 droits : 90 % du texte ne bouge pas et s'écrit maintenant. Le bloc d'identité de l'éditeur
@@ -129,33 +93,6 @@ Deux points qui coûtent cher si on les découvre trop tard :
 
 ## Ce qu'il faut trancher
 
-### La géométrie des icônes : rapetisser, ou redessiner ?
-
-La seule décision nouvelle. Deux voies, et elles ne coûtent pas la même chose.
-
-- **Rapetisser.** Côté splash, c'est une ligne : `tool/make_icons.py` calcule sa marge sur le
-  cercle et non sur le côté, canevas de 1378 px au lieu de 1138, aucun rééchantillonnage.
-  Côté lanceur, il n'y a pas de règle à corriger dans ce script — `logo_foreground.png` est
-  écrit **sans marge**, délibérément (`2f8a53f`), en comptant sur le retrait de 16 % de
-  l'icône adaptative. Il faut donc soit lui donner une marge, ce qui renverse cette décision,
-  soit porter l'`inset` de `mipmap-anydpi-v26/ic_launcher.xml` à ≈ 22,4 % (ou ≈ 25 % pour
-  viser la zone sûre de 66 dp). L'icône perd 18 % de côté, 26 % si on vise la zone sûre.
-- **Redessiner la marque** pour que sa silhouette soit ronde — rapprocher la bulle et la carte
-  « 1 » du centre plutôt que de tout réduire. On garde la taille apparente. Ce n'est pas
-  mécanisable : `assets/branding/logo.svg` est un tracé aplati, quinze chemins sans groupes,
-  donc c'est un travail d'illustration.
-
-Ce que le dépôt permet d'affirmer : le dessin sort du cercle documenté, et **tout ce qui en
-sort ne tient que par la forme du masque de l'appareil**. Ce qu'il ne permet pas d'affirmer :
-sur quels téléphones exactement ça se voit. Un masque en carré arrondi — celui du Xiaomi de
-test — n'en coupe presque rien ; un masque circulaire décapite la bulle et tranche la carte.
-
-Un détail mesuré au passage, indépendant de la forme du masque : le dessin du lanceur touche
-les bords haut et bas de son canevas, si bien que **0,09 % de ses pixels opaques tombent hors
-du viewport de 72 dp sur tout appareil**. C'est un liseré d'environ 0,7 dp, invisible en
-pratique. La cause est que le retrait de 16 % laisse l'image sur 73,44 dp : il en faudrait
-16,67 % pour la ramener dans les 72 dp.
-
 ### Étendre R7.10 au déblocage ?
 
 En mode Sans filtre, l'écran des catégories est inatteignable par construction, et une
@@ -187,20 +124,28 @@ retire pas proprement d'un magasin.
 
 ## Journal
 
-Depuis le dernier point, le 19 août.
+Ce qui a atterri dans `develop` depuis le dernier point, le 19 août.
 
-| PR | | |
-|---|---|---|
-| #40 | Mergée | La dette de géométrie entre dans `ROADMAP.md` : elle ne vivait jusqu'ici que dans une note hors du dépôt. |
-| #41 | Mergée | L'application ne meurt plus au lancement en release. R8 en mode complet retirait le constructeur de `WorkDatabase_Impl`, que Room instancie par réflexion. Amène `tool/fumee.py`, son jeu de tests, et un build de release dans la CI. |
-| #42 | Mergée | La réponse au formulaire de consentement n'est plus perdue. Une échéance de 10 s bornait l'affichage du formulaire : au-delà, le choix du joueur partait à la poubelle sans un mot. |
-| #43 | Mergée | Le splash ne pointe plus l'icône du lanceur en thème sombre. **Vérifié sur les ressources de l'APK, pas à l'écran** — l'appareil s'est débranché avant l'installation. Amène `tool/test_ressources_android.py`. |
+| PR | Ce qui a changé |
+|---|---|
+| #40 | La dette de géométrie entre dans `ROADMAP.md` : elle ne vivait jusqu'ici que dans une note hors du dépôt. |
+| #41 | L'application ne meurt plus au lancement en release. R8 en mode complet retirait le constructeur de `WorkDatabase_Impl`, que Room instancie par réflexion. Amène `tool/fumee.py`, son jeu de tests, et un build de release dans la CI. |
+| #42 | La réponse au formulaire de consentement n'est plus perdue. Une échéance de 10 s bornait l'affichage du formulaire : au-delà, le choix du joueur partait à la poubelle sans un mot. |
+| #43 | Le splash ne pointe plus l'icône du lanceur en thème sombre. **Vérifié sur les ressources de l'APK, pas à l'écran** — l'appareil s'est débranché avant l'installation. Amène `tool/test_ressources_android.py`. |
+| #44 | `docs/REPRISE.md` entre dans le dépôt et devient la source de l'état du projet ; l'artefact n'en est plus qu'un rendu. Corrige au passage quatre faits faux, dont « iOS est compilé à chaque commit ». |
+| #45 | Le point de reprise cesse d'épingler le SHA du commit qui le contient — il était faux dès son merge. |
+| #46 | Les icônes rentrent dans le cercle. `make_icons.py` mesure le rayon du dessin au lieu de sa boîte, et remesure son résultat avant de l'écrire. Amène `tool/test_geometrie_icones.py`, qui couvre les deux cibles, les deux fichiers produits et les cinq densités. |
 
 **Deux de ces défauts ont exactement la même forme :** une correction appliquée à un endroit
 sur deux. Les deux fonctions jamais appelées du test de fumée, et les deux variantes de
 `styles.xml`. Le second cas est désormais couvert par un test ; le premier ne l'est que par la
 vigilance. (Le défaut de la #42 est d'une autre nature : un délai de garde posé sur deux étapes
 qui n'auraient dû en porter aucune.)
+
+La #46 en est une troisième occurrence, et la plus large : l'icône du lanceur se décline en
+**cinq** densités, et régénérer la source sans relancer la propagation en laisse quatre en
+arrière. C'est exactement ce qui rendait le défaut du 17 août invisible. Le test couvre donc
+les cinq, pas seulement celle qu'on regarde.
 
 **La machine de développement a été saturée deux fois**, une fois jusqu'à emporter les
 instances VS Code ouvertes. Depuis : une commande lourde à la fois, jamais la suite de tests
