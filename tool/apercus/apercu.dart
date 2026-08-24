@@ -22,8 +22,6 @@
 /// lance quand on veut regarder.
 library;
 
-import 'dart:io';
-
 import 'package:cekoi/app/app.dart';
 import 'package:cekoi/app/clock.dart';
 import 'package:cekoi/app/current_game.dart';
@@ -58,58 +56,23 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../test/support/fixtures.dart';
+import '../../test/support/polices.dart';
 import '../../test/support/providers.dart';
 
-/// Charge les vraies polices dans le binding de test.
+/// Le chargement des vraies polices vit dans `test/support/polices.dart`.
 ///
-/// Sans ça, `flutter test` compose tout en Ahem — chaque glyphe est un carré
-/// plein. On verrait la mise en page mais ni la lisibilité, ni la hiérarchie
-/// typographique, ni un débordement d'une ligne trop longue : autrement dit,
-/// rien de ce qu'on vient regarder.
-Future<void> _loadFonts() async {
-  final root = Platform.environment['FLUTTER_ROOT'];
-  if (root == null) return;
-  final dir = Directory('$root/bin/cache/artifacts/material_fonts');
-  if (!dir.existsSync()) return;
-
-  Future<void> load(String family, List<String> fichiers) async {
-    final loader = FontLoader(family);
-    for (final fichier in fichiers) {
-      final file = File('${dir.path}/$fichier');
-      if (file.existsSync()) {
-        loader.addFont(
-          Future.value(file.readAsBytesSync().buffer.asByteData()),
-        );
-      }
-    }
-    await loader.load();
-  }
-
-  const familles = [
-    'Roboto',
-    // La famille par défaut du binding de test. Un `TextStyle` déclaré sans
-    // `fontFamily` — ceux des thèmes de boutons — retombe dessus : sans la
-    // remplacer, ces libellés-là restent des rectangles pleins alors que tout
-    // le reste de l'écran est composé.
-    'FlutterTest',
-  ];
-  for (final famille in familles) {
-    await load(famille, [
-      'roboto-regular.ttf',
-      'roboto-medium.ttf',
-      'roboto-bold.ttf',
-      'roboto-black.ttf',
-    ]);
-  }
-  await load('MaterialIcons', ['materialicons-regular.otf']);
-}
+/// Il y a été déplacé le 24 août, quand les tests de géométrie en ont eu
+/// besoin : sans les vraies polices, `flutter test` compose en Ahem et toute
+/// mesure de largeur est fausse. Ce banc s'en passait déjà mal — il montre
+/// des écrans —, mais deux copies de la même liste de fichiers auraient fini
+/// par diverger.
 
 void main() {
   late AppLocalizations l10n;
 
   setUpAll(() async {
     l10n = await AppLocalizations.delegate.load(const Locale('fr'));
-    await _loadFonts();
+    await chargerLesVraiesPolices();
   });
 
   late AppDatabase db;
