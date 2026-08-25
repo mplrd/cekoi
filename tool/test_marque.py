@@ -19,11 +19,14 @@ import tempfile
 import unittest
 from datetime import date
 from pathlib import Path
+from unittest import mock
 
 from marque import (
+    COMPTAGE,
     DEFINES,
     Marque,
     MarqueIndisponible,
+    branche_courante,
     marque,
     options,
     version_du_pubspec,
@@ -31,6 +34,7 @@ from marque import (
 
 DEPOT = Path(__file__).resolve().parent.parent
 BUILD_INFO = DEPOT / "lib/app/build_info.dart"
+GRADLE = DEPOT / "android/app/build.gradle.kts"
 
 
 def faux_git(*, empreinte="050e30a", commits="128", sale=False):
@@ -90,6 +94,39 @@ class Empreinte(unittest.TestCase):
         with self.assertRaises(MarqueIndisponible):
             marque(DEPOT, git=faux_git(empreinte=""))
 
+    def test_git_absent_du_path_reste_une_MarqueIndisponible(self):
+        # `FileNotFoundError` traverserait les `except MarqueIndisponible` de
+        # `main()` et de `fumee.py` : on obtiendrait une trace Python à la
+        # place du message que ce module existe pour afficher. La même leçon
+        # est déjà écrite dans `fumee.py` à propos d'`adb`.
+        with mock.patch("marque.subprocess.run", side_effect=FileNotFoundError("git")):
+            with self.assertRaises(MarqueIndisponible):
+                marque(DEPOT)
+
+
+class LeVraiGit(unittest.TestCase):
+    """Le seul cas qui exerce `_git_reel` : ailleurs, tout est simulé."""
+
+    def test_le_depot_rend_une_identite_plausible(self):
+        identite = marque(DEPOT, aujourdhui=date(2026, 8, 25))
+        self.assertRegex(identite.numero, r"^\d+$")
+        self.assertRegex(identite.commit, r"^[0-9a-f]{7,}(-sale)?$")
+
+    def test_la_branche_se_lit(self):
+        # Ni le nom ni sa présence ne sont contractuels — la CI travaille sur
+        # un HEAD détaché. C'est le type qui compte.
+        self.assertIsInstance(branche_courante(DEPOT), str)
+
+
+class Branche(unittest.TestCase):
+    def test_un_head_detache_ne_rend_aucune_branche(self):
+        self.assertEqual(branche_courante(DEPOT, git=lambda *_: "HEAD\n"), "")
+
+    def test_une_branche_est_rendue_telle_quelle(self):
+        self.assertEqual(
+            branche_courante(DEPOT, git=lambda *_: "feature/x\n"), "feature/x"
+        )
+
 
 class Options(unittest.TestCase):
     def test_les_quatre_valeurs_partent_au_compilateur(self):
@@ -110,13 +147,44 @@ class LesDeuxCotesDuJoint(unittest.TestCase):
 
     def _noms_lus_par_dart(self) -> set[str]:
         source = BUILD_INFO.read_text(encoding="utf-8")
-        return set(re.findall(r"String\.fromEnvironment\('([^']+)'\)", source))
+        # Pas de parenthèse fermante exigée après le nom : un `defaultValue:`
+        # parfaitement légitime, ou une coupe de `dart format` sur deux lignes,
+        # ferait rougir ces tests avec un diagnostic faux.
+        return set(re.findall(r"String\.fromEnvironment\(\s*'([^']+)'", source))
+
+    def test_l_instrument_voit_quelque_chose(self):
+        # Sans ça, un motif qui cesse de correspondre rend l'ensemble vide, et
+        # `test_tout_ce_que_dart_lit_est_injecte` passe au vert sur du néant.
+        self.assertEqual(len(self._noms_lus_par_dart()), len(DEFINES))
 
     def test_tout_ce_que_l_outil_injecte_est_lu(self):
         self.assertEqual(set(DEFINES) - self._noms_lus_par_dart(), set())
 
     def test_tout_ce_que_dart_lit_est_injecte(self):
         self.assertEqual(self._noms_lus_par_dart() - set(DEFINES), set())
+
+
+class LeCompteEstFaitDesDeuxCotes(unittest.TestCase):
+    """Gradle grave le numéro dans le paquet, ce module l'injecte dans l'écran.
+
+    Deux commandes, un seul résultat attendu. Si elles divergent, l'application
+    annonce un numéro que le paquet ne porte pas — et c'est le champ qu'on lit
+    justement pour comprendre un refus d'installation.
+    """
+
+    def test_gradle_lance_exactement_la_meme_commande(self):
+        attendue = 'commandLine("git", ' + ", ".join(f'"{a}"' for a in COMPTAGE) + ")"
+        self.assertIn(attendue, GRADLE.read_text(encoding="utf-8"))
+
+    def test_l_outil_lance_bien_celle_la(self):
+        appels = []
+
+        def espion(*arguments: str) -> str:
+            appels.append(arguments)
+            return "7\n" if arguments == COMPTAGE else "050e30a\n"
+
+        marque(DEPOT, git=espion, aujourdhui=date(2026, 8, 25))
+        self.assertIn(COMPTAGE, appels)
 
 
 if __name__ == "__main__":
