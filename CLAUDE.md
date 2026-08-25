@@ -62,6 +62,17 @@ la release, donc elle voit une règle mal écrite, mais elle ne voit rien de ce 
 manifeste qu'au lancement. Un APK de release qu'on n'a pas lancé soi-même n'est pas un APK
 vérifié.
 
+C'est aussi **le** chemin de livraison, au sens strict : lui seul grave dans le binaire son
+commit, son numéro et sa date, via `tool/marque.py`. Un `flutter build apk` tapé à la main
+produit un APK que personne ne saura désigner — l'application l'affiche alors « non
+identifié », ce qui est honnête mais inutile face à un testeur qui écrit « ça plante ».
+Le `versionCode`, lui, est calculé par Gradle depuis le nombre de commits, donc tous les
+builds Android en portent un.
+
+```bash
+python tool/marque.py    # ce que le prochain build gravera, si on veut le lire seul
+```
+
 `dart format` n'est pas un confort : la CI lance `--set-exit-if-changed` et rougit sur un
 fichier écrit à la main. `flutter analyze` ne le voit pas.
 
