@@ -27,7 +27,8 @@ reste dans `ROADMAP.md`, les démarches dans `ADMINISTRATIF.md`, les règles dan
 |---|---|
 | Lots | 6 sur 8 faits ; le 5 (contenu) et le 8 (publication) sont en cours |
 | Cartes | 529 sur les 1 200 visées, réparties sur 21 catégories |
-| Écrans à risque de débordement | 0 — quatre écrans mesurés jusqu'à ×3,1, dont les réglages |
+| Écrans à risque de débordement | 0 — cinq écrans mesurés jusqu'à ×3,1 |
+| Lisibilité de la face de carte | **un texte long y tombe à 8,6 px** — mesuré, non corrigé |
 | Identification d'un build | commit, numéro et date lisibles dans les réglages, et copiables |
 | Longueur des cartes personnalisées | bornée à 60 caractères, comme le contenu officiel |
 | Géométrie des icônes | dans la **zone sûre documentée** des deux côtés, verrouillée par un test |
@@ -38,7 +39,20 @@ reste dans `ROADMAP.md`, les démarches dans `ADMINISTRATIF.md`, les règles dan
 
 ## Ce qui ne dépend de personne
 
-### 1. Le nom d'une catégorie n'est toujours pas borné
+### 1. La face de carte du jeu écrase les textes longs
+
+Mesuré le 25 août sur un 360 : « Chat » sort à 60 px, « Zinédine Zidane » à 37,7, « Se cogner
+le petit orteil dans le meuble » à **15,5**, une carte de 60 caractères à **8,6**. Le
+paragraphe garde la hauteur d'une seule ligne dans les quatre cas — `FittedBox` mesure son
+enfant sans borne de largeur, donc le texte n'est jamais replié : il est composé sur une
+ligne, puis écrasé. La carte est haute et vide pendant que la phrase est illisible, sur
+l'écran qu'on lit à bout de bras. `tie_break_view.dart` fait la même chose.
+
+Ça touche le contenu **officiel** : `CONTENU.md` autorise les situations jusqu'à 60
+caractères. Le correctif demande un widget qui cherche la plus grande taille dont le *repli*
+tient dans la boîte, ce qu'aucun de ceux du projet ne fait — et ça change le rendu du
+principal écran du jeu, donc ça se regarde avant de se coder.
+### 2. Le nom d'une catégorie n'est toujours pas borné
 
 La longueur des **cartes** l'est depuis le 25 août : 60 caractères, la borne que
 `tool/import_decks.py` applique au contenu officiel depuis toujours, tenue par le dépôt et
@@ -48,7 +62,7 @@ Le nom d'une catégorie, lui, reste libre. Même classe de défaut, mais rien ne
 on ne sait pas ce que devient un nom de trois cents caractères dans la liste des catégories.
 Le détail est dans `ROADMAP.md`.
 
-### 2. Le contenu des pages légales
+### 3. Le contenu des pages légales
 
 Quelles données partent, AdMob comme destinataire, absence de compte utilisateur, durées,
 droits : 90 % du texte ne bouge pas et s'écrit maintenant. Le bloc d'identité de l'éditeur
