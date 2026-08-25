@@ -60,6 +60,42 @@ if (signingKeyFile.exists() && !file(signingProperties.getProperty("storeFile"))
 
 val hasSigningKey = signingKeyFile.exists()
 
+// Le `versionCode` suit le nombre de commits.
+//
+// `pubspec.yaml` porte `+1` depuis le premier build : tous les APK produits
+// jusqu'ici s'annonçaient donc `versionCode 1`, et rien, ni sur le téléphone ni
+// dans un rapport, ne distinguait deux binaires. Le compter ici plutôt que dans
+// `tool/marque.py` couvre **tous** les builds Android, y compris ceux qu'on
+// tape à la main : un numéro qui ne monterait que sur le chemin de livraison
+// ferait refuser les autres comme des retours en arrière.
+//
+// Ce que ce numéro ne dit pas : deux branches parties du même point peuvent
+// rendre le même compte. C'est l'empreinte du commit, injectée par
+// `tool/marque.py` et lisible dans les réglages, qui lève l'ambiguïté — le
+// `versionCode` n'a qu'à monter.
+//
+// `providers.exec` et non `exec {}` : le second est interdit à la
+// configuration depuis que le cache de configuration existe. Le repli sur
+// `flutter.versionCode` couvre une archive sans dépôt git, où le compte n'a
+// pas de sens.
+val nombreDeCommits: Int? =
+    try {
+        providers
+            .exec {
+                workingDir = rootProject.projectDir
+                commandLine("git", "rev-list", "--count", "HEAD")
+                isIgnoreExitValue = true
+            }
+            .standardOutput
+            .asText
+            .get()
+            .trim()
+            .toIntOrNull()
+    } catch (souci: Exception) {
+        logger.warn("versionCode : git indisponible, repli sur pubspec.yaml ($souci)")
+        null
+    }
+
 android {
     namespace = "com.twoagames.cekoi"
     compileSdk = flutter.compileSdkVersion
@@ -77,7 +113,7 @@ android {
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
+        versionCode = nombreDeCommits ?: flutter.versionCode
         versionName = flutter.versionName
 
         // L'identifiant d'application AdMob est une donnée du manifeste, lue
