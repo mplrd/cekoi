@@ -3,6 +3,7 @@ import 'package:cekoi/app/current_game.dart';
 import 'package:cekoi/app/preferences.dart';
 import 'package:cekoi/app/screen_awake.dart';
 import 'package:cekoi/app/theme/app_theme.dart';
+import 'package:cekoi/domain/decks/card_length.dart';
 import 'package:cekoi/domain/engine/game_phase.dart';
 import 'package:cekoi/domain/engine/game_state.dart';
 import 'package:cekoi/domain/engine/turn.dart';
@@ -44,9 +45,20 @@ void main() {
 
   /// Un récapitulatif au pire de ce que la règle permet : le tour est tombé au
   /// chrono, donc une carte était encore à l'écran et son bloc s'ajoute.
-  GameState recapitulatif({int tranchees = 6}) {
+  GameState recapitulatif({int tranchees = 6, String? premiereCarte}) {
     const duree = Duration(seconds: 30);
-    final base = testGame(cardCount: 24, roundIndex: 1, turnDuration: duree);
+    final tire = testGame(cardCount: 24, roundIndex: 1, turnDuration: duree);
+    // La substitution se fait **avant** de relever les identifiants : celui
+    // d'une carte se dérive de son texte, donc remplacer la carte après coup
+    // laisserait le tour référencer une carte qui n'existe plus.
+    final base = premiereCarte == null
+        ? tire
+        : tire.copyWith(
+            deck: [
+              testCard(premiereCarte, deckId: tire.deck.first.deckId),
+              ...tire.deck.skip(1),
+            ],
+          );
     final cartes = [for (final carte in base.deck) carte.id];
 
     return base.copyWith(
@@ -141,4 +153,29 @@ void main() {
       aucunTexteRogne(tester);
     });
   }
+
+  testWidgets('une carte aussi longue que la borne tient, en un seul mot', (
+    tester,
+  ) async {
+    // Le défaut trouvé par le contrôle de géométrie le jour où il est entré :
+    // un mot unique de trente-trois caractères était rogné **à taille de
+    // texte normale**. Borner la saisie à soixante n'y suffit pas — soixante
+    // en un seul mot n'a toujours aucun point de coupure. C'est le pire des
+    // textes que la saisie autorise désormais.
+    final long = 'a' * maxCardTextLength;
+    final game = recapitulatif(tranchees: 4, premiereCarte: long);
+
+    // Garde-fou : la carte longue doit être une de celles que l'écran affiche,
+    // sans quoi le test mesurerait un récapitulatif ordinaire.
+    expect(
+      game.turn!.results.map((r) => r.cardId),
+      contains(game.deck.first.id),
+    );
+
+    await pumpRecapitulatif(tester, game: game, taille: const Size(360, 800));
+
+    expect(tester.takeException(), isNull);
+    expect(find.text(long), findsOneWidget);
+    aucunTexteRogne(tester);
+  });
 }
