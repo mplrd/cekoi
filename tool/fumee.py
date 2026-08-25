@@ -45,6 +45,8 @@ import subprocess
 import sys
 import time
 
+from marque import MarqueIndisponible, marque, options
+
 # La console Windows n'est pas en UTF-8 par défaut, et les accents de ce
 # script y ressortaient en mojibake — un message d'échec illisible est un
 # message d'échec perdu.
@@ -162,10 +164,19 @@ def construire() -> None:
     if outil is None:
         echouer("« flutter » est introuvable dans le PATH.")
 
+    # Ce script est le chemin de livraison : ce qui en sort doit pouvoir se
+    # nommer. Un APK qu'on donne à quelqu'un sans savoir le désigner ramène le
+    # défaut qu'on vient de fermer — « quelle version as-tu ? », sans réponse.
+    try:
+        options_de_marque = options(marque())
+    except MarqueIndisponible as souci:
+        echouer(f"build non identifiable, donc non livrable : {souci}")
+
     print("Construction du build de release…")
     # Sans capture : un build de release est long, et le silence pendant cinq
     # minutes ressemble trop à un blocage.
-    if subprocess.run([outil, "build", "apk", "--release"]).returncode != 0:
+    commande = [outil, "build", "apk", "--release", *options_de_marque]
+    if subprocess.run(commande).returncode != 0:
         echouer("le build de release a échoué.")
 
 
