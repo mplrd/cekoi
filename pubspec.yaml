@@ -8,6 +8,7 @@ environment:
   sdk: ^3.12.2
 
 dependencies:
+
   # Les sons du jeu, joués depuis un asset sur le canal média.
   #
   # Et non `SystemSound.play`, qui a été un faux ami : sur Android il passe par
@@ -16,6 +17,15 @@ dependencies:
   # `SystemSoundType.alert` est documenté par Flutter comme **ignoré sur
   # Android et iOS** : le buzzer ne pouvait pas exister.
   audioplayers: ^6.8.1
+
+  # Compter des grappes de graphèmes plutôt que des unités UTF-16.
+  #
+  # lib/domain/decks/card_length.dart borne la longueur d'une carte, et le
+  # maxLength d'un champ Flutter compte en graphèmes : sans ce paquet, une
+  # carte à emoji serait refusée pendant que le compteur du champ afficherait
+  # qu'elle tient. Déjà là en transitif de flutter — déclaré parce que le
+  # domaine l'importe directement.
+  characters: ^1.4.0
   cupertino_icons: ^1.0.8
 
   # Base locale. sqlite3 3.x embarque lui-même les binaires natifs via les

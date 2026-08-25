@@ -207,6 +207,72 @@ void main() {
       expect(apres.single.text, 'Le rhum arrangé');
     });
 
+    /// Une carte écrite avant que la borne existe, posée directement en base.
+    Future<String> carteHeritee(String deckId) async {
+      const id = 'custom-heritee';
+      await db
+          .into(db.cards)
+          .insert(
+            CardsCompanion.insert(
+              id: id,
+              deckId: deckId,
+              cardText: 'a' * (maxCardTextLength + 20),
+              audience: Audience.family,
+              difficulty: 2,
+              origin: DeckOrigin.custom,
+            ),
+          );
+      return id;
+    }
+
+    test('une carte héritée trop longue reste modifiable', () async {
+      // Sinon elle est **gelée** : la boîte de correction renvoie toujours le
+      // texte, donc changer son seul niveau lèverait, et le joueur n'aurait
+      // aucun moyen de la reclasser ni de comprendre pourquoi.
+      final deck = await repository.createCustomDeck(
+        name: 'Apéro',
+        audience: Audience.family,
+      );
+      final id = await carteHeritee(deck.id);
+
+      await repository.updateCustomCard(id, difficulty: Difficulty.hard);
+      await repository.updateCustomCard(
+        id,
+        text: 'a' * (maxCardTextLength + 20),
+      );
+
+      final apres = (await repository.cardsOfDeck(deck.id)).single;
+      expect(apres.difficulty, Difficulty.hard);
+      expect(apres.text.length, maxCardTextLength + 20);
+    });
+
+    test('mais on ne peut pas la rallonger', () async {
+      // On refuse d'aggraver, pas de conserver.
+      final deck = await repository.createCustomDeck(
+        name: 'Apéro',
+        audience: Audience.family,
+      );
+      final id = await carteHeritee(deck.id);
+
+      expect(
+        () => repository.updateCustomCard(
+          id,
+          text: 'b' * (maxCardTextLength + 21),
+        ),
+        throwsArgumentError,
+      );
+    });
+
+    test('les emoji comptent pour ce qu ils affichent', () async {
+      // `String.length` compte en unités UTF-16 : ce drapeau en vaut quatre à
+      // lui seul, là où le compteur du champ n'en voit qu'un. Deux compteurs
+      // qui se contredisent laissent le joueur sans rien à corriger.
+      const drapeau = '🇫🇷';
+      expect(drapeau.length, greaterThan(1));
+      expect(cardTextFits(drapeau * maxCardTextLength), isTrue);
+      expect(cardTextFits(drapeau * (maxCardTextLength + 1)), isFalse);
+    });
+
     test('la borne exacte passe', () async {
       final deck = await repository.createCustomDeck(
         name: 'Apéro',

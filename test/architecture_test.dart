@@ -23,6 +23,9 @@ const Set<String> _allowedPackagePrefixes = {
   'package:freezed_annotation/',
   'package:json_annotation/',
   'package:collection/',
+  // characters est du Dart pur, sans dépendance à Flutter : compter des
+  // graphèmes est une opération de texte, pas de rendu.
+  'package:characters/',
   'package:meta/',
 };
 

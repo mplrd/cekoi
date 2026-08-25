@@ -1,3 +1,5 @@
+import 'package:characters/characters.dart';
+
 /// La longueur au-delà de laquelle une carte devient illisible à bout de bras.
 ///
 /// Soixante, comme `MAX_TEXT_LENGTH` dans `tool/import_decks.py` : la règle
@@ -20,4 +22,11 @@ const maxCardTextLength = 60;
 /// Le `trim` est fait ici plutôt que chez l'appelant : c'est la longueur du
 /// texte **enregistré** qui compte, et un joueur qui colle un texte suivi de
 /// trois espaces ne comprendrait pas d'être refusé.
-bool cardTextFits(String texte) => texte.trim().length <= maxCardTextLength;
+///
+/// Compté en **grappes de graphèmes**, et non en unités UTF-16, parce que
+/// c'est ce que compte le `maxLength` d'un champ Flutter. Avec
+/// `String.length`, une carte de 58 caractères contenant trois emoji en vaut
+/// 61 : le compteur du champ afficherait « 58/60 » pendant qu'on la refuse.
+/// Un utilisateur ne peut rien faire d'un désaccord entre deux compteurs.
+bool cardTextFits(String texte) =>
+    texte.trim().characters.length <= maxCardTextLength;

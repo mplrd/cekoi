@@ -4,7 +4,9 @@ import 'package:cekoi/data/db/seed/deck_seeder.dart';
 import 'package:cekoi/data/providers.dart';
 import 'package:cekoi/domain/decks/card_length.dart';
 import 'package:cekoi/domain/entities/audience.dart';
+import 'package:cekoi/domain/entities/deck_origin.dart';
 import 'package:cekoi/domain/entities/difficulty.dart';
+import 'package:cekoi/features/decks/presentation/custom_decks_controller.dart';
 import 'package:cekoi/features/decks/presentation/deck_cards_screen.dart';
 import 'package:cekoi/features/decks/presentation/widgets/difficulty_labels.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
@@ -247,6 +249,96 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text(l10n.cardAlreadyThere), findsNothing);
+    });
+  });
+
+  group('une carte écrite avant que la borne existe', () {
+    /// Posée directement en base : aucun chemin de l'application ne permet
+    /// plus d'en créer une pareille.
+    Future<void> poserCarteHeritee(WidgetTester tester) async {
+      await pumpScreen(tester);
+      await container
+          .read(appDatabaseProvider)
+          .into(container.read(appDatabaseProvider).cards)
+          .insert(
+            CardsCompanion.insert(
+              id: 'custom-heritee',
+              deckId: deckId,
+              cardText: 'a' * (maxCardTextLength + 20),
+              audience: Audience.family,
+              difficulty: 2,
+              origin: DeckOrigin.custom,
+            ),
+          );
+      container.invalidate(deckCardsProvider(deckId));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('son niveau reste modifiable', (tester) async {
+      // Sinon elle est gelée : la boîte renvoie toujours le texte, donc
+      // enregistrer un simple changement de niveau échouerait — en silence,
+      // puisque le chemin d'édition est lancé sans être attendu.
+      await poserCarteHeritee(tester);
+
+      await tester.tap(find.text('a' * (maxCardTextLength + 20)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(Difficulty.hard.label(l10n)).last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(l10n.actionSave));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      final cartes = await container
+          .read(deckRepositoryProvider)
+          .cardsOfDeck(deckId);
+      expect(cartes.single.difficulty, Difficulty.hard);
+      expect(cartes.single.text.length, maxCardTextLength + 20);
+    });
+
+    testWidgets('son texte n est pas raboté sous les doigts', (tester) async {
+      // `maxLength` seul installerait un formateur qui tronque à la première
+      // frappe — y compris en corrigeant une faute au début du texte.
+      await poserCarteHeritee(tester);
+
+      await tester.tap(find.text('a' * (maxCardTextLength + 20)));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byType(TextField).last,
+        'b' * (maxCardTextLength + 21),
+      );
+      await tester.pumpAndSettle();
+
+      final champ = tester.widget<TextField>(find.byType(TextField).last);
+      expect(champ.controller!.text.length, maxCardTextLength + 21);
+      // Le compteur reste, et c'est lui qui explique le refus à venir.
+      expect(
+        find.text('${maxCardTextLength + 21}/$maxCardTextLength'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('la rallonger est refusé, et dit', (tester) async {
+      await poserCarteHeritee(tester);
+
+      await tester.tap(find.text('a' * (maxCardTextLength + 20)));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byType(TextField).last,
+        'b' * (maxCardTextLength + 21),
+      );
+      await tester.tap(find.text(l10n.actionSave));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text(l10n.cardTooLong(maxCardTextLength)), findsOneWidget);
+      final cartes = await container
+          .read(deckRepositoryProvider)
+          .cardsOfDeck(deckId);
+      expect(
+        cartes.single.text,
+        'a' * (maxCardTextLength + 20),
+        reason: 'la boîte reste ouverte, rien n est enregistré',
+      );
     });
   });
 

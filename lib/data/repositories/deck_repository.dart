@@ -230,13 +230,20 @@ class DeckRepository {
     String? text,
     Difficulty? difficulty,
   }) async {
-    await _requireCustomCard(cardId);
+    final avant = await _requireCustomCard(cardId);
 
     final propre = text?.trim();
     if (text != null && (propre?.isEmpty ?? true)) {
       throw ArgumentError.value(text, 'text', 'Le texte ne peut pas être vide');
     }
-    if (propre != null && !cardTextFits(propre)) {
+    // On refuse d'aggraver, pas de conserver.
+    //
+    // Une carte saisie avant que la borne existe peut dépasser. La refuser
+    // telle quelle la **gèlerait** : la boîte de correction renvoie toujours
+    // le texte, donc changer son seul niveau lèverait, et le joueur n'aurait
+    // aucun moyen de la reclasser ni même de comprendre pourquoi. Seul un
+    // texte qui change doit tenir dans la borne.
+    if (propre != null && propre != avant.cardText && !cardTextFits(propre)) {
       throw ArgumentError.value(text, 'text', _tropLong);
     }
 
@@ -273,7 +280,7 @@ class DeckRepository {
     return _toDeck(row);
   }
 
-  Future<void> _requireCustomCard(String cardId) async {
+  Future<CardRow> _requireCustomCard(String cardId) async {
     final row = await (_db.select(
       _db.cards,
     )..where((c) => c.id.equals(cardId))).getSingleOrNull();
@@ -288,6 +295,7 @@ class DeckRepository {
         'Le contenu officiel se gère par le seeding, pas par cette API',
       );
     }
+    return row;
   }
 
   /// Un identifiant libre, dérivé du nom, préfixé et suffixé si besoin.

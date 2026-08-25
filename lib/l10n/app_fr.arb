@@ -858,6 +858,14 @@
     "description": "Remplace l'entrée de consentement là où aucun formulaire n'est requis — hors zone réglementée, ou dans un build sans publicité."
   },
 
+  "cardTooLong": "{max} caractères au maximum, pour rester lisible à bout de bras",
+  "@cardTooLong": {
+    "description": "Refus opposé à une carte trop longue dans la boîte de correction. Le champ de saisie rapide, lui, ne laisse pas dépasser — mais une carte écrite avant que la borne existe arrive ici trop longue, et on ne peut pas se contenter de la tronquer sous les doigts.",
+    "placeholders": {
+      "max": { "type": "int", "example": "60" }
+    }
+  },
+
   "settingsAbout": "Cette version",
   "@settingsAbout": {
     "description": "Titre de la dernière section des réglages. « Cette version » plutôt que « À propos » : la section ne parle pas du jeu ni de son éditeur, elle identifie le binaire qu'on est en train d'exécuter."
@@ -879,9 +887,9 @@
     "description": "Ce qu'affiche un binaire construit hors du chemin de livraison. Dire « non identifié » plutôt que d'afficher la version de pubspec.yaml, qui est la même depuis le premier build et désignerait donc n'importe quoi."
   },
 
-  "settingsBuildHint": "Copier l'identifiant",
+  "settingsBuildHint": "copier l'identifiant",
   "@settingsBuildHint": {
-    "description": "Ce que fait un appui sur la ligne d'identité. N'est plus affiché : l'icône le dit. Reste pour les lecteurs d'écran, à qui une ligne cliquable sans libellé n'annoncerait rien de ce qu'elle déclenche."
+    "description": "Ce que fait un appui sur la ligne d'identité. N'est plus affiché : l'icône le dit. Reste pour les lecteurs d'écran, à qui une ligne cliquable sans libellé n'annoncerait rien de ce qu'elle déclenche. En minuscule, parce qu'il se lit au milieu d'une phrase composée par le lecteur : « appuyez deux fois pour copier l'identifiant »."
   },
 
   "settingsBuildCopied": "Identifiant du build copié.",
