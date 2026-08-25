@@ -117,6 +117,19 @@ le texte dans les réglages du système, ce que font justement ceux qui en ont b
 | `turn_summary_view.dart` | la correction du récapitulatif de tour (R3.6) | ×2 | **×2** sur un 360 × 640 |
 | `setup_scaffold.dart` | le pied des quatre étapes de configuration | ×2,5 | **×2,5** avec le pied de l'étape des équipes |
 
+**La longueur d'une carte personnalisée est bornée à 60 caractères.** La même borne que
+`MAX_TEXT_LENGTH` dans `tool/import_decks.py`, que `docs/CONTENU.md` documente et que
+l'import du contenu officiel refuse depuis toujours ; ce qui manquait, c'est qu'elle
+s'applique à ce que le joueur écrit lui-même. Tenue par `DeckRepository` et non par le seul
+champ de saisie, parce que l'import d'un fichier de catégorie ne passe pas par lui. Le champ
+la relaie avec un compteur, sinon la frappe s'arrêterait sans explication.
+
+Ça ne suffisait pas : soixante caractères en **un seul mot** n'ont aucun point de coupure et
+se faisaient rogner quand même — 188,4 px de boîte pour 253,7 nécessaires, à taille de texte
+normale. Le récapitulatif de tour compose donc son texte avec `TexteQuiTient`, qui ne réduit
+que ce qui dépasse. Borner la saisie et composer le texte sont deux problèmes distincts, et il
+fallait les deux.
+
 Deux estimations sur trois étaient justes. Celle du tableau des scores était optimiste d'un
 cran, et la cause du troisième avait été mal comprise : ce n'est pas la liste qui poussait —
 les cinq écrans du parcours passent une `ListView`, elle se contente de ce qu'on lui laisse —
@@ -151,13 +164,9 @@ polices depuis toujours et dont le commentaire disait pourquoi.
 
 Ce qui reste ouvert et ne dépend pas d'un lot :
 
-- **Rien ne borne la longueur d'une carte personnalisée.** Trouvé par le contrôle de géométrie
-  le jour où il est entré : un mot unique de 33 caractères est rogné dans le récapitulatif de
-  tour **à taille de texte normale** — 188,4 px de boîte pour 253,7 nécessaires. `CONTENU.md`
-  cadre le contenu officiel à 30 caractères pour un mot, mais c'est une consigne de rédaction :
-  aucun `maxLength` ni `inputFormatters` n'existe sur les champs de `lib/features/decks/`. Le
-  contrôle est à poser à la saisie, pas à l'affichage — un texte tronqué à l'écran reste une
-  carte qu'on ne peut pas faire deviner.
+- **Le nom d'une catégorie n'est pas borné.** Même classe de défaut que la longueur des
+  cartes, fermée le 25 août : rien ne l'empêche de faire trois cents caractères, et ce qu'il
+  devient alors dans la liste des catégories n'a pas été mesuré.
 
 - **iOS n'a jamais tourné ailleurs qu'en compilation, et n'est même pas compilé à chaque
   commit.** Le job `ios-build` de `ci.yml` ne se déclenche que sur `main`, sur une PR qui vise
