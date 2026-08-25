@@ -127,7 +127,7 @@ retire pas proprement d'un magasin.
 
 ## Journal
 
-Les PR de la série, du 19 au 24 août.
+Les PR de la série, du 19 au 25 août.
 
 | PR | Ce qui a changé |
 |---|---|
@@ -139,10 +139,9 @@ Les PR de la série, du 19 au 24 août.
 | #45 | Le point de reprise cesse d'épingler le SHA du commit qui le contient — il était faux dès son merge. |
 | #46 | Les icônes tiennent dans la zone sûre que le système garantit. `make_icons.py` mesure le rayon du dessin au lieu de sa boîte, recadre sur la boîte opaque avant de mesurer, et remesure son résultat avant de l'écrire. Amène `tool/test_geometrie_icones.py`, qui rejoue le calcul depuis `logo_mark.png` et borne les cinq densités des deux côtés. |
 | #47 | Les trois écrans qui pouvaient mettre une action hors d'atteinte sont corrigés, et mesurés plutôt qu'estimés. Amène `test/support/geometrie.dart`, qui voit ce qu'aucune exception ne signale — un texte plus large que sa boîte — et refuse de conclure sans les vraies polices. |
-
 | #48 | Un binaire dit enfin ce qu'il est. Le `versionCode` valait `1` sur tous les builds depuis le premier, et `versionName` `1.0.0` : la seule façon d'établir ce qu'un téléphone exécutait était de le brancher pour comparer une empreinte SHA-256. Gradle compte désormais les commits, `tool/marque.py` grave l'empreinte et la date, et les réglages les affichent — copiables d'un appui. Un build hors du chemin de livraison le dit plutôt que d'inventer. |
-
 | #49 | La longueur d'une carte est bornée à 60 caractères, la borne que l'import du contenu officiel applique depuis toujours — tenue par le dépôt, pas par le seul champ de saisie. Et parce que soixante caractères en un seul mot n'ont aucun point de coupure, le récapitulatif de tour les compose avec `TexteQuiTient` au lieu de les rogner. Le nom d'une catégorie reste ouvert. |
+
 **Deux de ces défauts ont exactement la même forme :** une correction appliquée à un endroit
 sur deux. Les deux fonctions jamais appelées du test de fumée, et les deux variantes de
 `styles.xml`. Le second cas est désormais couvert par un test ; le premier ne l'est que par la

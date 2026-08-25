@@ -59,6 +59,7 @@ lib/
       game_setup.dart         # la configuration en cours de construction (R6, R7, R8)
       game_launch.dart        # tirage + ouverture de partie, et rejeu à l'identique
     decks/
+      card_length.dart        # borne de longueur d'une carte, partagée avec l'import
       deck_exchange.dart      # format d'échange des catégories du joueur (lot 6)
     text/
       text_normalization.dart # forme comparable d'un texte de carte (R6.4)
