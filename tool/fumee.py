@@ -44,8 +44,15 @@ import shutil
 import subprocess
 import sys
 import time
+from pathlib import Path
 
-from marque import MarqueIndisponible, marque, options
+from marque import (
+    LIGNEES_SURES,
+    MarqueIndisponible,
+    branche_courante,
+    marque,
+    options,
+)
 
 # La console Windows n'est pas en UTF-8 par défaut, et les accents de ce
 # script y ressortaient en mojibake — un message d'échec illisible est un
@@ -168,16 +175,40 @@ def construire() -> None:
     # nommer. Un APK qu'on donne à quelqu'un sans savoir le désigner ramène le
     # défaut qu'on vient de fermer — « quelle version as-tu ? », sans réponse.
     try:
-        options_de_marque = options(marque())
+        identite = marque()
+        branche = branche_courante()
     except MarqueIndisponible as souci:
         echouer(f"build non identifiable, donc non livrable : {souci}")
+
+    print(f"Identité du build : {identite.commit} ({identite.numero})")
+    if branche not in LIGNEES_SURES:
+        # Pas un refus : construire depuis une branche de travail pour
+        # l'essayer soi-même est le cas courant. Mais le `versionCode` est un
+        # compte de commits, et une branche en retard en rend un plus petit :
+        # l'appareil qui a reçu le précédent refusera celui-ci.
+        print(
+            f"  ATTENTION : livraison depuis « {branche or 'HEAD détaché'} », "
+            f"hors de {' et '.join(LIGNEES_SURES)}. Le numéro {identite.numero} "
+            "ne monte que le long de cette branche — un appareil qui a reçu un "
+            "numéro plus élevé refusera celui-ci."
+        )
 
     print("Construction du build de release…")
     # Sans capture : un build de release est long, et le silence pendant cinq
     # minutes ressemble trop à un blocage.
-    commande = [outil, "build", "apk", "--release", *options_de_marque]
+    commande = [outil, "build", "apk", "--release", *options(identite)]
     if subprocess.run(commande).returncode != 0:
         echouer("le build de release a échoué.")
+
+    # Une copie qui porte son nom, à côté de l'artefact de Flutter.
+    #
+    # C'est l'autre moitié du problème : l'étiquette dans l'application répond
+    # à « que fait tourner ce téléphone », pas à « lequel de ces trois
+    # `app-release.apk` est lequel ». `versionName` reste `1.0.0`, donc le nom
+    # du fichier est le seul endroit où l'écrire.
+    nomme = Path(APK_PAR_DEFAUT).with_name(f"cekoi-{identite.commit}.apk")
+    shutil.copyfile(APK_PAR_DEFAUT, nomme)
+    print(f"Artefact nommé : {nomme}")
 
 
 def installer(serie: str, apk: str) -> None:
@@ -197,7 +228,21 @@ def installer(serie: str, apk: str) -> None:
     if "Success" in resultat.stdout:
         return
 
-    if "USER_RESTRICTED" not in (resultat.stdout + resultat.stderr):
+    sortie = resultat.stdout + resultat.stderr
+
+    # Le refus le plus déroutant depuis que le `versionCode` monte : Android
+    # rend « INSTALL_FAILED_VERSION_DOWNGRADE », et le téléphone n'affiche que
+    # « Application non installée ». Sans cette phrase, on cherche du côté de
+    # l'APK alors que le problème est l'ordre des livraisons.
+    if "VERSION_DOWNGRADE" in sortie:
+        echouer(
+            "l'appareil porte déjà un versionCode plus élevé que celui de cet "
+            "APK. Le numéro est un compte de commits : il redescend quand on "
+            "livre depuis une branche en retard sur celle du build précédent. "
+            "Désinstaller, ou livrer depuis une lignée qui contient l'autre."
+        )
+
+    if "USER_RESTRICTED" not in sortie:
         echouer(f"installation impossible :\n{resultat.stdout}\n{resultat.stderr}")
 
     print("  (refusée par la ROM, seconde tentative depuis le shell)")
