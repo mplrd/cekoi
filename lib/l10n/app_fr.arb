@@ -879,9 +879,9 @@
     "description": "Ce qu'affiche un binaire construit hors du chemin de livraison. Dire « non identifié » plutôt que d'afficher la version de pubspec.yaml, qui est la même depuis le premier build et désignerait donc n'importe quoi."
   },
 
-  "settingsBuildHint": "Touche pour copier — à joindre à tout signalement",
+  "settingsBuildHint": "Copier l'identifiant",
   "@settingsBuildHint": {
-    "description": "Sous-titre de la ligne d'identité. Sans lui, personne ne devine que la ligne est copiable, et c'est tout son intérêt."
+    "description": "Ce que fait un appui sur la ligne d'identité. N'est plus affiché : l'icône le dit. Reste pour les lecteurs d'écran, à qui une ligne cliquable sans libellé n'annoncerait rien de ce qu'elle déclenche."
   },
 
   "settingsBuildCopied": "Identifiant du build copié.",
