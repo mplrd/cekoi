@@ -27,7 +27,8 @@ reste dans `ROADMAP.md`, les démarches dans `ADMINISTRATIF.md`, les règles dan
 |---|---|
 | Lots | 6 sur 8 faits ; le 5 (contenu) et le 8 (publication) sont en cours |
 | Cartes | 529 sur les 1 200 visées, réparties sur 21 catégories |
-| Écrans à risque de débordement | 0 — les trois sont corrigés, testés jusqu'à ×3,1 |
+| Écrans à risque de débordement | 0 — quatre écrans mesurés jusqu'à ×3,1, dont les réglages |
+| Identification d'un build | commit, numéro et date lisibles dans les réglages, et copiables |
 | Longueur des cartes personnalisées | **non bornée à la saisie** — un mot long est rogné |
 | Géométrie des icônes | dans la **zone sûre documentée** des deux côtés, verrouillée par un test |
 | iOS | **jamais exécuté**, et compilé seulement vers `main` ou sur étiquette `ios` |
@@ -137,6 +138,8 @@ Les PR de la série, du 19 au 24 août.
 | #45 | Le point de reprise cesse d'épingler le SHA du commit qui le contient — il était faux dès son merge. |
 | #46 | Les icônes tiennent dans la zone sûre que le système garantit. `make_icons.py` mesure le rayon du dessin au lieu de sa boîte, recadre sur la boîte opaque avant de mesurer, et remesure son résultat avant de l'écrire. Amène `tool/test_geometrie_icones.py`, qui rejoue le calcul depuis `logo_mark.png` et borne les cinq densités des deux côtés. |
 | #47 | Les trois écrans qui pouvaient mettre une action hors d'atteinte sont corrigés, et mesurés plutôt qu'estimés. Amène `test/support/geometrie.dart`, qui voit ce qu'aucune exception ne signale — un texte plus large que sa boîte — et refuse de conclure sans les vraies polices. |
+
+| #48 | Un binaire dit enfin ce qu'il est. Le `versionCode` valait `1` sur tous les builds depuis le premier, et `versionName` `1.0.0` : la seule façon d'établir ce qu'un téléphone exécutait était de le brancher pour comparer une empreinte SHA-256. Gradle compte désormais les commits, `tool/marque.py` grave l'empreinte et la date, et les réglages les affichent — copiables d'un appui. Un build hors du chemin de livraison le dit plutôt que d'inventer. |
 
 **Deux de ces défauts ont exactement la même forme :** une correction appliquée à un endroit
 sur deux. Les deux fonctions jamais appelées du test de fumée, et les deux variantes de
