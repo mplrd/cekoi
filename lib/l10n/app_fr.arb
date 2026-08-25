@@ -856,5 +856,36 @@
   "settingsAdConsentNone": "Aucun choix publicitaire à régler sur cet appareil.",
   "@settingsAdConsentNone": {
     "description": "Remplace l'entrée de consentement là où aucun formulaire n'est requis — hors zone réglementée, ou dans un build sans publicité."
+  },
+
+  "settingsAbout": "Cette version",
+  "@settingsAbout": {
+    "description": "Titre de la dernière section des réglages. « Cette version » plutôt que « À propos » : la section ne parle pas du jeu ni de son éditeur, elle identifie le binaire qu'on est en train d'exécuter."
+  },
+
+  "settingsBuildStamp": "{version} ({numero}) · {commit} · {date}",
+  "@settingsBuildStamp": {
+    "description": "L'identité du binaire, telle qu'un testeur la recopie dans un signalement. Volontairement dense et non traduite dans sa forme : c'est une référence technique, pas une phrase.",
+    "placeholders": {
+      "version": { "type": "String", "example": "1.0.0" },
+      "numero": { "type": "String", "example": "128" },
+      "commit": { "type": "String", "example": "050e30a" },
+      "date": { "type": "String", "example": "2026-08-24" }
+    }
+  },
+
+  "settingsBuildUnidentified": "Build local, non identifié",
+  "@settingsBuildUnidentified": {
+    "description": "Ce qu'affiche un binaire construit hors du chemin de livraison. Dire « non identifié » plutôt que d'afficher la version de pubspec.yaml, qui est la même depuis le premier build et désignerait donc n'importe quoi."
+  },
+
+  "settingsBuildHint": "Touche pour copier — à joindre à tout signalement",
+  "@settingsBuildHint": {
+    "description": "Sous-titre de la ligne d'identité. Sans lui, personne ne devine que la ligne est copiable, et c'est tout son intérêt."
+  },
+
+  "settingsBuildCopied": "Identifiant du build copié.",
+  "@settingsBuildCopied": {
+    "description": "Confirmation après la copie. Un appui qui ne dit rien laisse croire que la ligne n'est pas cliquable."
   }
 }

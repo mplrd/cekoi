@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cekoi/app/build_info.dart';
 import 'package:cekoi/app/ownership.dart';
 import 'package:cekoi/app/preferences.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
@@ -7,6 +8,7 @@ import 'package:cekoi/services/ads/ads.dart';
 import 'package:cekoi/services/ads/consent.dart';
 import 'package:cekoi/services/purchases/purchase_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Les réglages de l'application.
@@ -107,6 +109,10 @@ class AppSettingsScreen extends ConsumerWidget {
                 ),
               _ => _NoChoice(message: l10n.settingsAdConsentNone),
             },
+            const SizedBox(height: 28),
+            _SectionTitle(label: l10n.settingsAbout),
+            const SizedBox(height: 12),
+            _BuildStamp(info: ref.watch(buildInfoProvider)),
           ],
         ),
       ),
@@ -227,6 +233,64 @@ class _RestoreTile extends StatelessWidget {
         title: Text(l10n.settingsRestore),
       ),
     );
+  }
+}
+
+/// L'identité du binaire, copiable d'un appui.
+///
+/// Un testeur qui écrit « ça plante » ne sait pas ce qu'il exécute, et
+/// personne ne peut le lui dire : jusqu'ici, la seule façon de l'établir était
+/// de brancher le téléphone et de comparer une empreinte SHA-256. La ligne se
+/// copie donc en un geste, pour qu'elle atterrisse dans le message.
+///
+/// Non identifié n'est pas un cas d'erreur : c'est ce qu'affiche tout build
+/// qui n'est pas passé par `tool/marque.py` — un `flutter run` de
+/// développement, par exemple. Y afficher la version de `pubspec.yaml` serait
+/// pire que ce silence, puisqu'elle vaut `1.0.0` sur tous les builds depuis le
+/// premier et ne désignerait donc rien.
+class _BuildStamp extends StatelessWidget {
+  const _BuildStamp({required this.info});
+
+  final BuildInfo info;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
+    if (!info.identifie) {
+      return Card(
+        clipBehavior: Clip.antiAlias,
+        child: ListTile(
+          leading: const Icon(Icons.help_outline),
+          title: Text(l10n.settingsBuildUnidentified),
+        ),
+      );
+    }
+
+    final etiquette = l10n.settingsBuildStamp(
+      info.version,
+      info.numero,
+      info.commit,
+      info.date,
+    );
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: ListTile(
+        onTap: () => unawaited(_copier(context, etiquette)),
+        leading: const Icon(Icons.tag),
+        title: Text(etiquette),
+        subtitle: Text(l10n.settingsBuildHint),
+      ),
+    );
+  }
+
+  Future<void> _copier(BuildContext context, String etiquette) async {
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+
+    await Clipboard.setData(ClipboardData(text: etiquette));
+    messenger.showSnackBar(SnackBar(content: Text(l10n.settingsBuildCopied)));
   }
 }
 
