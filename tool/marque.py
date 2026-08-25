@@ -51,6 +51,17 @@ DEFINES = {
 }
 
 
+# La commande qui donne le numéro de build.
+#
+# Écrite ici et **relue** par `test_marque.py` dans
+# `android/app/build.gradle.kts`, qui doit lancer exactement la même : Gradle
+# grave le résultat dans le `versionCode` du paquet, ce module l'injecte dans
+# l'application. Les deux se contrediraient sans bruit — l'écran des réglages
+# annoncerait un numéro que le paquet ne porte pas, et c'est précisément le
+# champ qu'on lit pour comprendre un refus d'installation.
+COMPTAGE = ("rev-list", "--count", "HEAD")
+
+
 class MarqueIndisponible(RuntimeError):
     """Le dépôt ne permet pas d'identifier ce build."""
 
@@ -67,13 +78,23 @@ class Marque:
 
 def _git_reel(depot: Path):
     def lancer(*arguments: str) -> str:
-        fini = subprocess.run(
-            ["git", *arguments],
-            cwd=depot,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-        )
+        # `OSError` et pas seulement le code de retour : un `git` absent du
+        # PATH lève `FileNotFoundError`, qui n'est pas une `MarqueIndisponible`
+        # et traverserait donc les `except` de `main()` et de `fumee.py`. On
+        # obtiendrait une trace Python à la place du message que ce module
+        # existe pour afficher — la leçon est déjà écrite dans `fumee.py` à
+        # propos d'`adb`, elle n'avait pas été reportée ici.
+        try:
+            fini = subprocess.run(
+                ["git", *arguments],
+                cwd=depot,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+            )
+        except OSError as souci:
+            raise MarqueIndisponible(f"git n'a pas pu être lancé : {souci}") from souci
+
         if fini.returncode != 0:
             raise MarqueIndisponible(
                 "git " + " ".join(arguments) + " a échoué : " + fini.stderr.strip()
@@ -109,10 +130,27 @@ def marque(depot: Path = DEPOT, *, git=None, aujourdhui: date | None = None) -> 
 
     return Marque(
         version=version_du_pubspec(depot / "pubspec.yaml"),
-        numero=lancer("rev-list", "--count", "HEAD").strip(),
+        numero=lancer(*COMPTAGE).strip(),
         commit=empreinte,
         date=(aujourdhui or date.today()).isoformat(),
     )
+
+
+# Les branches d'où un artefact se livre sans risque.
+#
+# Le `versionCode` est un compte de commits : il ne monte que le long d'une
+# même lignée. Livrer depuis une branche de travail (212), puis depuis
+# `develop` qui ne l'a pas encore intégrée (208), fait refuser la seconde
+# installation par tous les appareils qui ont reçu la première — « Application
+# non installée », sans autre explication.
+LIGNEES_SURES = ("develop", "main")
+
+
+def branche_courante(depot: Path = DEPOT, *, git=None) -> str:
+    """La branche sur laquelle HEAD se trouve, ou `''` si HEAD est détaché."""
+    lancer = git or _git_reel(depot)
+    nom = lancer("rev-parse", "--abbrev-ref", "HEAD").strip()
+    return "" if nom == "HEAD" else nom
 
 
 def options(m: Marque) -> list[str]:
