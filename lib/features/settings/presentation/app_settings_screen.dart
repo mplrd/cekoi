@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cekoi/app/build_info.dart';
 import 'package:cekoi/app/ownership.dart';
 import 'package:cekoi/app/preferences.dart';
+import 'package:cekoi/app/widgets/texte_qui_tient.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:cekoi/services/ads/ads.dart';
 import 'package:cekoi/services/ads/consent.dart';
@@ -262,7 +263,7 @@ class _BuildStamp extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: ListTile(
           leading: const Icon(Icons.help_outline),
-          title: Text(l10n.settingsBuildUnidentified),
+          title: TexteQuiTient(l10n.settingsBuildUnidentified),
         ),
       );
     }
@@ -279,8 +280,15 @@ class _BuildStamp extends StatelessWidget {
       child: ListTile(
         onTap: () => unawaited(_copier(context, etiquette)),
         leading: const Icon(Icons.tag),
-        title: Text(etiquette),
-        subtitle: Text(l10n.settingsBuildHint),
+        // L'empreinte et la date sont des mots insécables : à ×3 sur un écran
+        // étroit, un seul d'entre eux est plus large que la ligne, et se fait
+        // rogner sans que rien ne le signale. C'est exactement le cas que
+        // `TexteQuiTient` traite pour le titre des étapes de configuration.
+        title: TexteQuiTient(etiquette),
+        // « signalement » aussi est plus large que la ligne à ×3 sur un écran
+        // de 320. Le sous-titre a le droit de rétrécir avant l'étiquette : il
+        // explique, elle identifie.
+        subtitle: TexteQuiTient(l10n.settingsBuildHint),
       ),
     );
   }

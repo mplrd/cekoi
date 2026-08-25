@@ -39,7 +39,10 @@ class BuildInfo {
   /// Le nom de version de `pubspec.yaml`, par exemple `1.0.0`.
   final String version;
 
-  /// Le nombre de commits, qui est aussi le `versionCode` du paquet.
+  /// Le nombre de commits. C'est aussi ce que Gradle grave dans le
+  /// `versionCode` du paquet — sauf s'il n'a pas pu compter, auquel cas il le
+  /// crie au build. Les deux nombres se lisent côte à côte le jour où une mise
+  /// à jour est refusée, donc autant dire d'où vient celui-ci.
   final String numero;
 
   /// L'empreinte courte du commit, suffixée `-sale` si l'arbre de travail
