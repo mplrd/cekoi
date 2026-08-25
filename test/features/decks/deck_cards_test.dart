@@ -2,6 +2,7 @@ import 'package:cekoi/app/router.dart';
 import 'package:cekoi/data/db/database.dart';
 import 'package:cekoi/data/db/seed/deck_seeder.dart';
 import 'package:cekoi/data/providers.dart';
+import 'package:cekoi/domain/decks/card_length.dart';
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/difficulty.dart';
 import 'package:cekoi/features/decks/presentation/deck_cards_screen.dart';
@@ -142,6 +143,26 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Le camping'), findsOneWidget);
+    });
+
+    testWidgets('le champ ne laisse pas écrire plus long que la carte', (
+      tester,
+    ) async {
+      // La borne est tenue par le dépôt, qui **lève**. Si le champ la laissait
+      // dépasser, le bouton d'ajout ferait remonter une exception au lieu
+      // d'ajouter une carte — et le joueur n'aurait rien vu venir. Le champ
+      // est donc le premier des deux verrous, pas le seul.
+      await pumpScreen(tester);
+
+      await tester.enterText(
+        find.byType(TextField).first,
+        'a' * (maxCardTextLength + 20),
+      );
+      await tester.tap(find.widgetWithText(FilledButton, l10n.actionAddCard));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('a' * maxCardTextLength), findsOneWidget);
     });
   });
 

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cekoi/app/theme/app_colors.dart';
 import 'package:cekoi/app/theme/app_theme.dart';
+import 'package:cekoi/domain/decks/card_length.dart';
 import 'package:cekoi/domain/entities/card.dart' as domain;
 import 'package:cekoi/domain/entities/deck.dart';
 import 'package:cekoi/domain/entities/difficulty.dart';
@@ -119,6 +120,10 @@ class _QuickAddState extends ConsumerState<_QuickAdd> {
               if (_doublon) setState(() => _doublon = false);
             },
             onSubmitted: (_) => unawaited(_add()),
+            // Le compteur de caractères vient avec `maxLength`, et c'est lui
+            // qui rend la borne acceptable : sans compteur, la frappe s'arrête
+            // sans explication et le joueur croit à un clavier cassé.
+            maxLength: maxCardTextLength,
             decoration: InputDecoration(
               labelText: l10n.cardTextHint,
               errorText: _doublon ? l10n.cardAlreadyThere : null,
@@ -317,6 +322,7 @@ class _CardDialogState extends State<_CardDialog> {
             autofocus: true,
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _submit(),
+            maxLength: maxCardTextLength,
             decoration: InputDecoration(labelText: l10n.cardTextHint),
           ),
           const SizedBox(height: 24),

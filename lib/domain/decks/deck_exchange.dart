@@ -1,3 +1,4 @@
+import 'package:cekoi/domain/decks/card_length.dart';
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/difficulty.dart';
 import 'package:cekoi/domain/text/text_normalization.dart';
@@ -84,6 +85,12 @@ DeckExchange parseDeckExchange(Map<String, dynamic> json) {
 
     final texte = (brute['text'] as Object?)?.toString().trim() ?? '';
     if (texte.isEmpty) continue;
+
+    // Écartée comme une carte vide, et pour la même raison : le fichier vient
+    // d'ailleurs — d'une version antérieure de l'application, qui ne bornait
+    // rien, ou d'un JSON écrit à la main. Refuser tout le fichier pour une
+    // carte de soixante-et-un caractères ferait perdre les trois cents autres.
+    if (!cardTextFits(texte)) continue;
 
     // R6.4 : le fichier vient d'ailleurs, rien ne garantit qu'il a été produit
     // par l'application. Deux fois la même carte ferait mentir le compteur, et

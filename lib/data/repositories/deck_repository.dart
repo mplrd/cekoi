@@ -1,5 +1,6 @@
 import 'package:cekoi/data/db/database.dart';
 import 'package:cekoi/data/db/seed/slug.dart';
+import 'package:cekoi/domain/decks/card_length.dart';
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/card.dart' as domain;
 import 'package:cekoi/domain/entities/deck.dart';
@@ -8,6 +9,15 @@ import 'package:cekoi/domain/entities/difficulty.dart';
 import 'package:cekoi/domain/entities/min_age.dart';
 import 'package:cekoi/domain/text/text_normalization.dart';
 import 'package:drift/drift.dart';
+
+/// Le refus opposé à une carte trop longue.
+///
+/// Ici et pas seulement dans le champ de saisie : l'import d'un fichier de
+/// catégorie n'en passe pas par lui, et une borne qui ne vit que dans
+/// l'interface n'est pas une borne.
+const _tropLong =
+    'Une carte fait au plus $maxCardTextLength caractères, '
+    'sans quoi elle devient illisible à bout de bras';
 
 /// Accès aux catégories et aux cartes.
 ///
@@ -177,6 +187,9 @@ class DeckRepository {
     if (propre.isEmpty) {
       throw ArgumentError.value(text, 'text', 'Le texte ne peut pas être vide');
     }
+    if (!cardTextFits(propre)) {
+      throw ArgumentError.value(text, 'text', _tropLong);
+    }
 
     // R6.4 dans une seule catégorie : le tirage n'en garderait qu'une, et le
     // compteur affiché mentirait. Entre deux catégories, en revanche, le
@@ -222,6 +235,9 @@ class DeckRepository {
     final propre = text?.trim();
     if (text != null && (propre?.isEmpty ?? true)) {
       throw ArgumentError.value(text, 'text', 'Le texte ne peut pas être vide');
+    }
+    if (propre != null && !cardTextFits(propre)) {
+      throw ArgumentError.value(text, 'text', _tropLong);
     }
 
     await (_db.update(_db.cards)..where((c) => c.id.equals(cardId))).write(

@@ -1,3 +1,4 @@
+import 'package:cekoi/domain/decks/card_length.dart';
 import 'package:cekoi/domain/decks/deck_exchange.dart';
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/difficulty.dart';
@@ -68,6 +69,28 @@ void main() {
       expect(deck.name, 'Animaux');
       expect(deck.audience, Audience.family);
       expect(deck.cards.single.text, 'Girafe');
+    });
+
+    test('une carte trop longue est écartée, pas le fichier', () {
+      // Le fichier peut venir d'une version antérieure de l'application, qui
+      // ne bornait rien, ou d'un JSON écrit à la main. Refuser les trois cents
+      // autres cartes pour une seule de soixante-et-un caractères serait la
+      // pire des deux réponses — c'est la politique déjà tenue pour les cartes
+      // vides et les doublons.
+      final deck = parseDeckExchange({
+        'name': 'Vacances',
+        'audience': 'family',
+        'cards': [
+          {'text': 'a' * (maxCardTextLength + 1)},
+          {'text': 'a' * maxCardTextLength},
+          {'text': 'Le camping'},
+        ],
+      });
+
+      expect(deck.cards.map((c) => c.text.length), [
+        maxCardTextLength,
+        'Le camping'.length,
+      ]);
     });
 
     test('la difficulté absente vaut moyen', () {
