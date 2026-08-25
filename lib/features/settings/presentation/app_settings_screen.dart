@@ -56,8 +56,8 @@ class AppSettingsScreen extends ConsumerWidget {
                           .setSound(enabled: actif),
                     ),
                     secondary: const Icon(Icons.volume_up_outlined),
-                    title: Text(l10n.settingsSound),
-                    subtitle: Text(l10n.settingsSoundHint),
+                    title: TexteQuiTient(l10n.settingsSound),
+                    subtitle: TexteQuiTient(l10n.settingsSoundHint),
                   ),
                   SwitchListTile(
                     value: reglages.hapticsEnabled,
@@ -67,8 +67,8 @@ class AppSettingsScreen extends ConsumerWidget {
                           .setHaptics(enabled: actif),
                     ),
                     secondary: const Icon(Icons.vibration),
-                    title: Text(l10n.settingsHaptics),
-                    subtitle: Text(l10n.settingsHapticsHint),
+                    title: TexteQuiTient(l10n.settingsHaptics),
+                    subtitle: TexteQuiTient(l10n.settingsHapticsHint),
                   ),
                 ],
               ),
@@ -184,7 +184,7 @@ class _FullVersionOffer extends StatelessWidget {
         leading: const Icon(Icons.workspace_premium_outlined),
         // Le titre de section dit déjà « Version complète » : la ligne porte
         // la promesse, pas une deuxième fois le nom.
-        title: Text(l10n.settingsFullVersionPitch),
+        title: TexteQuiTient(l10n.settingsFullVersionPitch),
         // Aucun prix affiché ici : il vient du magasin, qui connaît la devise
         // et la taxe du joueur. La feuille de paiement le montrera.
         trailing: busy
@@ -209,7 +209,7 @@ class _Owned extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: ListTile(
         leading: const Icon(Icons.check_circle_outline),
-        title: Text(message),
+        title: TexteQuiTient(message),
       ),
     );
   }
@@ -231,7 +231,7 @@ class _RestoreTile extends StatelessWidget {
         onTap: busy ? null : onTap,
         enabled: !busy,
         leading: const Icon(Icons.restore),
-        title: Text(l10n.settingsRestore),
+        title: TexteQuiTient(l10n.settingsRestore),
       ),
     );
   }
@@ -384,7 +384,7 @@ class _ConsentTile extends StatelessWidget {
       child: ListTile(
         onTap: onTap,
         leading: const Icon(Icons.privacy_tip_outlined),
-        title: Text(l10n.settingsAdConsent),
+        title: TexteQuiTient(l10n.settingsAdConsent),
         // Région vive : le temps que le formulaire réponde, cette tuile est
         // remplacée par l'attente, donc détruite, et le lecteur d'écran perd
         // le focus avec elle. Sans ça, un joueur aveugle entend « chargement »
@@ -399,7 +399,7 @@ class _ConsentTile extends StatelessWidget {
         // à l'ouverture des réglages.
         subtitle: Semantics(
           liveRegion: true,
-          child: Text(
+          child: TexteQuiTient(
             _consentStatus(l10n, allowed: allowed, showsAds: showsAds),
           ),
         ),

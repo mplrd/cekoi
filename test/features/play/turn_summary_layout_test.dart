@@ -45,20 +45,27 @@ void main() {
 
   /// Un récapitulatif au pire de ce que la règle permet : le tour est tombé au
   /// chrono, donc une carte était encore à l'écran et son bloc s'ajoute.
-  GameState recapitulatif({int tranchees = 6, String? premiereCarte}) {
+  GameState recapitulatif({
+    int tranchees = 6,
+    String? premiereCarte,
+    String? carteAuBuzzer,
+  }) {
     const duree = Duration(seconds: 30);
     final tire = testGame(cardCount: 24, roundIndex: 1, turnDuration: duree);
     // La substitution se fait **avant** de relever les identifiants : celui
     // d'une carte se dérive de son texte, donc remplacer la carte après coup
     // laisserait le tour référencer une carte qui n'existe plus.
-    final base = premiereCarte == null
-        ? tire
-        : tire.copyWith(
-            deck: [
-              testCard(premiereCarte, deckId: tire.deck.first.deckId),
-              ...tire.deck.skip(1),
-            ],
-          );
+    final paquet = [...tire.deck];
+    final terrain = paquet.first.deckId;
+    if (premiereCarte != null) {
+      paquet[0] = testCard(premiereCarte, deckId: terrain);
+    }
+    // La carte au buzzer est la tête de ce qui reste du paquet : les cartes
+    // tranchées sont derrière elle.
+    if (carteAuBuzzer != null) {
+      paquet[tranchees] = testCard(carteAuBuzzer, deckId: terrain);
+    }
+    final base = tire.copyWith(deck: paquet);
     final cartes = [for (final carte in base.deck) carte.id];
 
     return base.copyWith(
@@ -163,7 +170,14 @@ void main() {
     // en un seul mot n'a toujours aucun point de coupure. C'est le pire des
     // textes que la saisie autorise désormais.
     final long = 'a' * maxCardTextLength;
-    final game = recapitulatif(tranchees: 4, premiereCarte: long);
+    // Les deux endroits qui affichent un texte de carte : la ligne d'un
+    // résultat, et le bloc « carte au buzzer ». Ne poser que la première
+    // laissait le second sans rien qui puisse le faire rougir.
+    final game = recapitulatif(
+      tranchees: 4,
+      premiereCarte: long,
+      carteAuBuzzer: 'b' * maxCardTextLength,
+    );
 
     // Garde-fou : la carte longue doit être une de celles que l'écran affiche,
     // sans quoi le test mesurerait un récapitulatif ordinaire.
@@ -176,6 +190,7 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.text(long), findsOneWidget);
+    expect(find.text('b' * maxCardTextLength), findsOneWidget);
     aucunTexteRogne(tester);
   });
 }
