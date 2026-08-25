@@ -60,6 +60,65 @@ if (signingKeyFile.exists() && !file(signingProperties.getProperty("storeFile"))
 
 val hasSigningKey = signingKeyFile.exists()
 
+// Le `versionCode` suit le nombre de commits.
+//
+// `pubspec.yaml` porte `+1` depuis le premier build : tous les APK produits
+// jusqu'ici s'annonçaient donc `versionCode 1`, et rien, ni sur le téléphone ni
+// dans un rapport, ne distinguait deux binaires. Le compter ici plutôt que dans
+// `tool/marque.py` couvre **tous** les builds Android, y compris ceux qu'on
+// tape à la main : un numéro qui ne monterait que sur le chemin de livraison
+// ferait refuser les autres comme des retours en arrière.
+//
+// Ce que ce numéro ne dit pas : il ne monte que le long d'une même lignée.
+// Deux branches parties du même point rendent le même compte, et une branche
+// en retard en rend un **plus petit** — livrer depuis `feature/x` (212) puis
+// depuis `develop` (208) fait refuser la seconde installation sur les douze
+// téléphones. `tool/marque.py` le signale au moment de construire ; ici, on ne
+// peut que compter. L'empreinte du commit, elle, lève toute ambiguïté.
+//
+// `providers.exec` et non `exec {}` : le second est interdit à la
+// configuration depuis que le cache de configuration existe. Le repli sur
+// `flutter.versionCode` couvre une archive sans dépôt git, où le compte n'a
+// pas de sens.
+//
+// Deux façons d'échouer, et une seule levait une exception. `git` absent du
+// PATH fait échouer le démarrage du processus, d'où le `catch`. Mais un
+// répertoire sans `.git`, un `HEAD` non né ou un dépôt abîmé font sortir git
+// en code 128 avec une sortie vide : `isIgnoreExitValue` avale le code,
+// `toIntOrNull` rend `null`, et on repliait **en silence** — sur le plus
+// probable des deux chemins. Le code de sortie est donc lu explicitement.
+val nombreDeCommits: Int? =
+    try {
+        val comptage =
+            providers.exec {
+                workingDir = rootProject.projectDir
+                commandLine("git", "rev-list", "--count", "HEAD")
+                isIgnoreExitValue = true
+            }
+        if (comptage.result.get().exitValue != 0) {
+            null
+        } else {
+            comptage.standardOutput.asText.get().trim().toIntOrNull()
+        }
+    } catch (souci: Exception) {
+        logger.error("versionCode : git n'a pas pu être lancé ($souci).")
+        null
+    }
+
+// `error` et non `warn`, pour la raison détaillée plus bas à propos de la clé
+// de signature : l'outil Flutter lance Gradle avec `-q`, qui ne laisse passer
+// que QUIET et ERROR. Un avertissement serait invisible sur le seul chemin que
+// quelqu'un emprunte — et c'est exactement l'erreur que ce fichier avait déjà
+// commise une fois.
+if (nombreDeCommits == null) {
+    logger.error(
+        "ATTENTION : versionCode replié sur pubspec.yaml — git n'a pas pu " +
+            "compter les commits. Tous les artefacts porteront le même numéro, " +
+            "et un appareil qui en a déjà reçu un plus élevé refusera la mise " +
+            "à jour, sans autre explication que « Application non installée ».",
+    )
+}
+
 android {
     namespace = "com.twoagames.cekoi"
     compileSdk = flutter.compileSdkVersion
@@ -77,7 +136,7 @@ android {
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
+        versionCode = nombreDeCommits ?: flutter.versionCode
         versionName = flutter.versionName
 
         // L'identifiant d'application AdMob est une donnée du manifeste, lue

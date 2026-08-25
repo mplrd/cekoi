@@ -104,7 +104,16 @@ jobs:
     if: needs.scaffolded.outputs.ready == 'true'
     runs-on: ubuntu-latest
     steps:
+      # `fetch-depth: 0`, et pas le clone superficiel par défaut. Le
+      # `versionCode` est calculé par `android/app/build.gradle.kts` depuis
+      # `git rev-list --count HEAD` : à la profondeur 1, ce compte vaut `1`.
+      # Ce n'est pas seulement un mauvais numéro sur un artefact que personne
+      # ne récupère — c'est que `1` est aussi la valeur de repli, donc la CI
+      # serait le seul endroit incapable de distinguer « le comptage marche »
+      # de « le comptage est tombé en panne ».
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-java@v4
         with:
           distribution: temurin

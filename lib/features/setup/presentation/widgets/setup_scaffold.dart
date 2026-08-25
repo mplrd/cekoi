@@ -1,4 +1,5 @@
 import 'package:cekoi/app/theme/app_colors.dart';
+import 'package:cekoi/app/widgets/texte_qui_tient.dart';
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/features/setup/presentation/setup_controller.dart';
 import 'package:cekoi/features/setup/presentation/setup_steps.dart';
@@ -136,9 +137,9 @@ class SetupScaffold extends ConsumerWidget {
                         const SizedBox(height: 4),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 4),
-                          child: _Titre(
+                          child: TexteQuiTient(
                             title,
-                            theme.textTheme.displaySmall?.copyWith(
+                            style: theme.textTheme.displaySmall?.copyWith(
                               fontWeight: FontWeight.w800,
                               color: AppColors.ink,
                               letterSpacing: -0.5,
@@ -181,55 +182,4 @@ class SetupScaffold extends ConsumerWidget {
   /// meme quand l'en-tete et le pied reclament tout ce qu'ils peuvent.
   static const double _partDeLEnTete = 0.35;
   static const double _partDuPied = 0.55;
-}
-
-/// Le titre de l'étape, ramené dans la largeur quand un seul mot n'y tient
-/// plus.
-///
-/// Borner l'agrandissement à une constante ne suffisait pas : le problème est
-/// un **rapport**, pas un seuil. À ×2, « Combien » réclame 355 px sur une
-/// ligne qui en fait 312 — donc même borné, le titre de l'étape des équipes
-/// restait coupé. Et sur un écran plus large, la même borne rabotait pour
-/// rien.
-///
-/// Ici on ne réduit que quand ça dépasse, et que d'autant qu'il faut : le
-/// réglage de l'utilisateur est respecté partout où il tient. Le repli et le
-/// défilement ne peuvent rien pour un mot plus large que l'écran, c'est la
-/// seule raison de toucher à l'échelle.
-class _Titre extends StatelessWidget {
-  const _Titre(this.texte, this.style);
-
-  final String texte;
-  final TextStyle? style;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, contraintes) {
-        final peintre = TextPainter(
-          text: TextSpan(text: texte, style: style),
-          textDirection: Directionality.of(context),
-          textScaler: MediaQuery.textScalerOf(context),
-        )..layout();
-        final insecable = peintre.minIntrinsicWidth;
-        peintre.dispose();
-
-        if (insecable <= contraintes.maxWidth) {
-          return Text(texte, style: style);
-        }
-
-        // Le bloc est composé à la largeur qu'exige son mot le plus large,
-        // puis ramené à celle qu'on a : le rapport est exactement celui qui
-        // manquait, et le titre garde son repli sur plusieurs lignes.
-        return FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: SizedBox(
-            width: insecable,
-            child: Text(texte, style: style),
-          ),
-        );
-      },
-    );
-  }
 }
