@@ -7,11 +7,13 @@ invisible jusqu'à ce qu'un joueur la cherche dans le jeu.
 Lancer : `python -m unittest discover -s tool`
 """
 
+import re
 import tempfile
 import unittest
 from pathlib import Path
 
 from import_decks import (
+    MAX_TEXT_LENGTH,
     ImportError_,
     parse_csv,
     slugify,
@@ -381,3 +383,21 @@ class LectureDUnClasseur(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class LaBorneEstLaMemeDansLApplication(unittest.TestCase):
+    """Deux jeux de règles pour les cartes d'une même partie divergeraient.
+
+    MAX_TEXT_LENGTH ne vaut que pour le contenu officiel, importé par cet
+    outil. Depuis le 25 août, lib/domain/decks/card_length.dart applique la
+    même borne à ce que le joueur écrit — et rien, sans ce test, n'empêcherait
+    de monter l'une sans l'autre.
+    """
+
+    def test_le_dart_porte_le_meme_nombre(self):
+        source = (
+            Path(__file__).resolve().parent.parent
+            / "lib/domain/decks/card_length.dart"
+        ).read_text(encoding="utf-8")
+        trouve = re.search(r"const maxCardTextLength = (\d+);", source)
+        self.assertIsNotNone(trouve, "la constante Dart a changé de forme")
+        self.assertEqual(int(trouve.group(1)), MAX_TEXT_LENGTH)

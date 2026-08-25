@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:cekoi/domain/decks/card_length.dart';
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/difficulty.dart';
 import 'package:cekoi/domain/entities/min_age.dart';
 import 'package:cekoi/domain/text/text_normalization.dart';
+import 'package:characters/characters.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Contrôle du contenu livré dans `assets/decks/`.
@@ -78,6 +80,18 @@ void main() {
 
         if (texte is! String || texte.trim().isEmpty) {
           fautes.add('${deck['id']} : carte sans texte');
+        } else if (!cardTextFits(texte)) {
+          // Le seeder écrit card['text'] tel quel : c'est le seul chemin
+          // d'écriture qui ne passe ni par le dépôt ni par le parseur
+          // d'échange, donc la borne des cartes du joueur ne s'y applique
+          // pas. 	ool/import_decks.py refuse au-delà, mais rien
+          // n'obligeait un JSON écrit à la main à passer par lui — et
+          // deck_exchange.dart revendique ce format comme légitime.
+          fautes.add(
+            '${deck['id']} : « ${texte.substring(0, 30)}… » fait '
+            '${texte.characters.length} caractères, '
+            '$maxCardTextLength au maximum',
+          );
         }
         if (difficulte != null &&
             !Difficulty.values.any((d) => d.value == difficulte)) {
