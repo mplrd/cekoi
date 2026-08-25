@@ -1,4 +1,5 @@
 import 'package:cekoi/app/theme/app_colors.dart';
+import 'package:cekoi/app/widgets/texte_qui_tient.dart';
 import 'package:cekoi/domain/engine/game_state.dart';
 import 'package:cekoi/domain/engine/turn.dart';
 import 'package:cekoi/features/play/presentation/play_controller.dart';
@@ -206,7 +207,10 @@ class _AtBuzzer extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 4),
-              Text(
+              // Le texte d'une carte peut être un mot unique de soixante
+              // caractères : rien ne l'y coupe, et il se faisait rogner ici
+              // dès la taille de texte normale.
+              TexteQuiTient(
                 text,
                 style: theme.textTheme.titleMedium?.copyWith(
                   color: AppColors.ink,
@@ -268,7 +272,7 @@ class _ResultTile extends StatelessWidget {
                 ? AppColors.deep
                 : AppColors.ink.withValues(alpha: 0.45),
           ),
-          title: Text(
+          title: TexteQuiTient(
             text,
             style: theme.textTheme.titleMedium?.copyWith(
               color: AppColors.ink,

@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:cekoi/app/theme/app_colors.dart';
 import 'package:cekoi/app/theme/app_theme.dart';
+import 'package:cekoi/app/widgets/texte_qui_tient.dart';
+import 'package:cekoi/domain/decks/card_length.dart';
 import 'package:cekoi/domain/entities/card.dart' as domain;
 import 'package:cekoi/domain/entities/deck.dart';
 import 'package:cekoi/domain/entities/difficulty.dart';
@@ -9,6 +11,7 @@ import 'package:cekoi/features/decks/presentation/custom_decks_controller.dart';
 import 'package:cekoi/features/decks/presentation/widgets/difficulty_labels.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Les cartes d'une catégorie du joueur.
@@ -119,6 +122,10 @@ class _QuickAddState extends ConsumerState<_QuickAdd> {
               if (_doublon) setState(() => _doublon = false);
             },
             onSubmitted: (_) => unawaited(_add()),
+            // Le compteur de caractères vient avec `maxLength`, et c'est lui
+            // qui rend la borne acceptable : sans compteur, la frappe s'arrête
+            // sans explication et le joueur croit à un clavier cassé.
+            maxLength: maxCardTextLength,
             decoration: InputDecoration(
               labelText: l10n.cardTextHint,
               errorText: _doublon ? l10n.cardAlreadyThere : null,
@@ -209,7 +216,9 @@ class _CardList extends ConsumerWidget {
         return Card(
           clipBehavior: Clip.antiAlias,
           child: ListTile(
-            title: Text(card.text),
+            // C'est ici que le joueur constate le premier qu'une carte de
+            // soixante caractères ne tient pas : elle vient d'être écrite.
+            title: TexteQuiTient(card.text),
             subtitle: Text(card.difficulty.label(l10n)),
             trailing: IconButton(
               icon: const Icon(Icons.delete_outline),
@@ -249,6 +258,12 @@ class _CardList extends ConsumerWidget {
     final confirme = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        // Text et non TexteQuiTient : un AlertDialog mesure les
+        // dimensions intrinsèques de son titre, et le LayoutBuilder qu'il y
+        // a dedans ne sait pas y répondre — « Calculating the intrinsic
+        // dimensions would require running the layout callback
+        // speculatively ». Un mot de soixante caractères y sera donc rogné ;
+        // c'est un titre de confirmation sur une carte qu'on vient de toucher.
         title: Text(l10n.deleteCardTitle(card.text)),
         actions: [
           TextButton(
@@ -297,9 +312,23 @@ class _CardDialogState extends State<_CardDialog> {
     super.dispose();
   }
 
+  bool _tropLong = false;
+
   void _submit() {
     final propre = _text.text.trim();
     if (propre.isEmpty) return;
+
+    // On refuse d'aggraver, pas de conserver.
+    //
+    // Une carte écrite avant que la borne existe peut dépasser. Refuser de
+    // l'enregistrer telle quelle la **gèlerait** : cette boîte renvoie
+    // toujours le texte, donc changer son seul niveau échouerait, et le joueur
+    // n'aurait aucun moyen de la reclasser. Seul un texte qu'on modifie doit
+    // tenir dans la borne.
+    if (!cardTextFits(propre) && propre != widget.card.text.trim()) {
+      setState(() => _tropLong = true);
+      return;
+    }
     Navigator.of(context).pop(_CardDraft(propre, _difficulty));
   }
 
@@ -317,7 +346,20 @@ class _CardDialogState extends State<_CardDialog> {
             autofocus: true,
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _submit(),
-            decoration: InputDecoration(labelText: l10n.cardTextHint),
+            onChanged: (_) {
+              if (_tropLong) setState(() => _tropLong = false);
+            },
+            maxLength: maxCardTextLength,
+            // Le compteur, sans la troncature : une carte héritée arrive ici
+            // à quatre-vingts caractères, et le formateur les raboterait à la
+            // première frappe — y compris en corrigeant une faute au début du
+            // texte. Le compteur passe en rouge, _submit refuse, et le
+            // joueur décide de ce qu'il coupe.
+            maxLengthEnforcement: MaxLengthEnforcement.none,
+            decoration: InputDecoration(
+              labelText: l10n.cardTextHint,
+              errorText: _tropLong ? l10n.cardTooLong(maxCardTextLength) : null,
+            ),
           ),
           const SizedBox(height: 24),
           _DifficultyPicker(

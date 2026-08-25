@@ -1,5 +1,6 @@
 import 'package:cekoi/data/db/database.dart';
 import 'package:cekoi/data/repositories/deck_repository.dart';
+import 'package:cekoi/domain/decks/card_length.dart';
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/deck_origin.dart';
 import 'package:cekoi/domain/entities/difficulty.dart';
@@ -150,6 +151,139 @@ void main() {
         () => repository.renameCustomDeck('animaux', 'Les bêtes'),
         throwsArgumentError,
       );
+    });
+  });
+
+  group('la longueur des cartes est bornée', () {
+    /// Un mot d'un caractère de trop, sans espace : ni le repli sur plusieurs
+    /// lignes ni le compteur du champ ne peuvent quoi que ce soit pour lui.
+    final tropLongue = 'a' * (maxCardTextLength + 1);
+
+    test('la borne vaut celle du contenu officiel', () {
+      // `tool/import_decks.py` refuse au-delà depuis toujours, et
+      // `docs/CONTENU.md` la documente. Deux nombres différents pour les
+      // cartes d'une même partie auraient fini par diverger.
+      expect(maxCardTextLength, 60);
+      expect(cardTextFits('a' * maxCardTextLength), isTrue);
+      expect(cardTextFits(tropLongue), isFalse);
+    });
+
+    test('les blancs ne comptent pas', () {
+      // Un texte collé depuis ailleurs traîne souvent des espaces. C'est la
+      // longueur de ce qui est **enregistré** qui compte.
+      expect(cardTextFits('  ${'a' * maxCardTextLength}  '), isTrue);
+    });
+
+    test('une carte trop longue est refusée à l ajout', () async {
+      final deck = await repository.createCustomDeck(
+        name: 'Apéro',
+        audience: Audience.family,
+      );
+
+      expect(
+        () => repository.addCustomCard(deckId: deck.id, text: tropLongue),
+        throwsArgumentError,
+      );
+      expect(await repository.cardsOfDeck(deck.id), isEmpty);
+    });
+
+    test('une carte trop longue est refusée à la correction', () async {
+      // Le chemin de correction est distinct de celui de l'ajout : borner le
+      // premier seulement laisserait entrer par le second.
+      final deck = await repository.createCustomDeck(
+        name: 'Apéro',
+        audience: Audience.family,
+      );
+      final carte = await repository.addCustomCard(
+        deckId: deck.id,
+        text: 'Le rhum arrangé',
+      );
+
+      expect(
+        () => repository.updateCustomCard(carte.id, text: tropLongue),
+        throwsArgumentError,
+      );
+      final apres = await repository.cardsOfDeck(deck.id);
+      expect(apres.single.text, 'Le rhum arrangé');
+    });
+
+    /// Une carte écrite avant que la borne existe, posée directement en base.
+    Future<String> carteHeritee(String deckId) async {
+      const id = 'custom-heritee';
+      await db
+          .into(db.cards)
+          .insert(
+            CardsCompanion.insert(
+              id: id,
+              deckId: deckId,
+              cardText: 'a' * (maxCardTextLength + 20),
+              audience: Audience.family,
+              difficulty: 2,
+              origin: DeckOrigin.custom,
+            ),
+          );
+      return id;
+    }
+
+    test('une carte héritée trop longue reste modifiable', () async {
+      // Sinon elle est **gelée** : la boîte de correction renvoie toujours le
+      // texte, donc changer son seul niveau lèverait, et le joueur n'aurait
+      // aucun moyen de la reclasser ni de comprendre pourquoi.
+      final deck = await repository.createCustomDeck(
+        name: 'Apéro',
+        audience: Audience.family,
+      );
+      final id = await carteHeritee(deck.id);
+
+      await repository.updateCustomCard(id, difficulty: Difficulty.hard);
+      await repository.updateCustomCard(
+        id,
+        text: 'a' * (maxCardTextLength + 20),
+      );
+
+      final apres = (await repository.cardsOfDeck(deck.id)).single;
+      expect(apres.difficulty, Difficulty.hard);
+      expect(apres.text.length, maxCardTextLength + 20);
+    });
+
+    test('mais on ne peut pas la rallonger', () async {
+      // On refuse d'aggraver, pas de conserver.
+      final deck = await repository.createCustomDeck(
+        name: 'Apéro',
+        audience: Audience.family,
+      );
+      final id = await carteHeritee(deck.id);
+
+      expect(
+        () => repository.updateCustomCard(
+          id,
+          text: 'b' * (maxCardTextLength + 21),
+        ),
+        throwsArgumentError,
+      );
+    });
+
+    test('les emoji comptent pour ce qu ils affichent', () async {
+      // `String.length` compte en unités UTF-16 : ce drapeau en vaut quatre à
+      // lui seul, là où le compteur du champ n'en voit qu'un. Deux compteurs
+      // qui se contredisent laissent le joueur sans rien à corriger.
+      const drapeau = '🇫🇷';
+      expect(drapeau.length, greaterThan(1));
+      expect(cardTextFits(drapeau * maxCardTextLength), isTrue);
+      expect(cardTextFits(drapeau * (maxCardTextLength + 1)), isFalse);
+    });
+
+    test('la borne exacte passe', () async {
+      final deck = await repository.createCustomDeck(
+        name: 'Apéro',
+        audience: Audience.family,
+      );
+      final carte = await repository.addCustomCard(
+        deckId: deck.id,
+        text: 'a' * maxCardTextLength,
+      );
+
+      expect(carte.text.length, maxCardTextLength);
     });
   });
 

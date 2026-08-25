@@ -12,10 +12,16 @@ import 'package:flutter/material.dart';
 /// d'autant qu'il faut — le réglage de l'utilisateur est respecté partout où
 /// il tient, et sur un écran plus large rien n'est raboté.
 ///
-/// Deux endroits en ont besoin, et c'est pour ça que ce widget est dans
-/// `app/` : le titre des étapes de configuration, et l'étiquette d'identité
-/// du build, dont l'empreinte et la date sont des mots insécables. Une feature
-/// n'en importe pas une autre.
+/// **À ne pas poser là où l'on mesure des intrinsèques** — le titre d'un
+/// `AlertDialog`, une cellule de `Table`, un `IntrinsicHeight`. Le
+/// `LayoutBuilder` ci-dessous ne sait pas répondre à une mesure spéculative et
+/// lève. Le cas s'est présenté sur la confirmation de suppression d'une carte.
+///
+/// Cinq endroits en ont besoin, et c'est pour ça que ce widget est dans
+/// `app/` : le titre des étapes de configuration, les titres de section des
+/// réglages, l'étiquette d'identité du build, et les textes de carte du
+/// récapitulatif de tour comme de la liste d'une catégorie. Une feature n'en
+/// importe pas une autre.
 class TexteQuiTient extends StatelessWidget {
   const TexteQuiTient(
     this.texte, {

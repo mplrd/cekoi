@@ -107,4 +107,24 @@ void main() {
       await resteAtteignable(tester, etiquette);
     });
   }
+
+  testWidgets('les titres de section tiennent aussi', (tester) async {
+    // « Confidentialité » est un mot de quinze lettres, et il était rogné
+    // avant même que cette section existe. Le cas ci-dessus le couvre par
+    // accident — il balaie ce qui est monté après le défilement, et rien
+    // n'assure que ce titre en fasse encore partie le jour où la liste
+    // changera.
+    await pumpReglages(tester, taille: const Size(320, 568), echelleTexte: 3);
+
+    final titre = find.text(l10n.settingsPrivacy);
+    await tester.scrollUntilVisible(
+      titre,
+      240,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+
+    expect(titre, findsOneWidget);
+    aucunTexteRogne(tester);
+  });
 }

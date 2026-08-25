@@ -27,9 +27,10 @@ reste dans `ROADMAP.md`, les démarches dans `ADMINISTRATIF.md`, les règles dan
 |---|---|
 | Lots | 6 sur 8 faits ; le 5 (contenu) et le 8 (publication) sont en cours |
 | Cartes | 529 sur les 1 200 visées, réparties sur 21 catégories |
-| Écrans à risque de débordement | 0 — quatre écrans mesurés jusqu'à ×3,1, dont les réglages |
+| Écrans à risque de débordement | 0 — cinq écrans mesurés jusqu'à ×3,1 |
+| Lisibilité de la face de carte | **un texte long y tombe à 8,6 px** — mesuré, non corrigé |
 | Identification d'un build | commit, numéro et date lisibles dans les réglages, et copiables |
-| Longueur des cartes personnalisées | **non bornée à la saisie** — un mot long est rogné |
+| Longueur des cartes personnalisées | bornée à 60 caractères, comme le contenu officiel |
 | Géométrie des icônes | dans la **zone sûre documentée** des deux côtés, verrouillée par un test |
 | iOS | **jamais exécuté**, et compilé seulement vers `main` ou sur étiquette `ios` |
 | Build de release | construit par la CI et vérifié à la main ; **aucune partie complète jouée dessus** |
@@ -38,16 +39,30 @@ reste dans `ROADMAP.md`, les démarches dans `ADMINISTRATIF.md`, les règles dan
 
 ## Ce qui ne dépend de personne
 
-### 1. Rien ne borne la longueur d'une carte personnalisée
+### 1. La face de carte du jeu écrase les textes longs
 
-Trouvé par le contrôle de géométrie le jour où il est entré : un mot unique de 33 caractères
-est rogné dans le récapitulatif de tour **à taille de texte normale**. `CONTENU.md` cadre le
-contenu officiel à 30 caractères, mais c'est une consigne de rédaction — aucun `maxLength` ni
-`inputFormatters` n'existe sur les champs de saisie. Le contrôle est à poser à la saisie et
-non à l'affichage : un texte tronqué à l'écran reste une carte qu'on ne peut pas faire
-deviner. Le détail est dans `ROADMAP.md`.
+Mesuré le 25 août sur un 360 : « Chat » sort à 60 px, « Zinédine Zidane » à 37,7, « Se cogner
+le petit orteil dans le meuble » à **15,5**, une carte de 60 caractères à **8,6**. Le
+paragraphe garde la hauteur d'une seule ligne dans les quatre cas — `FittedBox` mesure son
+enfant sans borne de largeur, donc le texte n'est jamais replié : il est composé sur une
+ligne, puis écrasé. La carte est haute et vide pendant que la phrase est illisible, sur
+l'écran qu'on lit à bout de bras. `tie_break_view.dart` fait la même chose.
 
-### 2. Le contenu des pages légales
+Ça touche le contenu **officiel** : `CONTENU.md` autorise les situations jusqu'à 60
+caractères. Le correctif demande un widget qui cherche la plus grande taille dont le *repli*
+tient dans la boîte, ce qu'aucun de ceux du projet ne fait — et ça change le rendu du
+principal écran du jeu, donc ça se regarde avant de se coder.
+### 2. Le nom d'une catégorie n'est toujours pas borné
+
+La longueur des **cartes** l'est depuis le 25 août : 60 caractères, la borne que
+`tool/import_decks.py` applique au contenu officiel depuis toujours, tenue par le dépôt et
+non par le seul champ de saisie — l'import d'un fichier de catégorie ne passe pas par lui.
+
+Le nom d'une catégorie, lui, reste libre. Même classe de défaut, mais rien ne l'a mesuré :
+on ne sait pas ce que devient un nom de trois cents caractères dans la liste des catégories.
+Le détail est dans `ROADMAP.md`.
+
+### 3. Le contenu des pages légales
 
 Quelles données partent, AdMob comme destinataire, absence de compte utilisateur, durées,
 droits : 90 % du texte ne bouge pas et s'écrit maintenant. Le bloc d'identité de l'éditeur
@@ -126,7 +141,7 @@ retire pas proprement d'un magasin.
 
 ## Journal
 
-Les PR de la série, du 19 au 24 août.
+Les PR de la série, du 19 au 25 août.
 
 | PR | Ce qui a changé |
 |---|---|
@@ -138,8 +153,8 @@ Les PR de la série, du 19 au 24 août.
 | #45 | Le point de reprise cesse d'épingler le SHA du commit qui le contient — il était faux dès son merge. |
 | #46 | Les icônes tiennent dans la zone sûre que le système garantit. `make_icons.py` mesure le rayon du dessin au lieu de sa boîte, recadre sur la boîte opaque avant de mesurer, et remesure son résultat avant de l'écrire. Amène `tool/test_geometrie_icones.py`, qui rejoue le calcul depuis `logo_mark.png` et borne les cinq densités des deux côtés. |
 | #47 | Les trois écrans qui pouvaient mettre une action hors d'atteinte sont corrigés, et mesurés plutôt qu'estimés. Amène `test/support/geometrie.dart`, qui voit ce qu'aucune exception ne signale — un texte plus large que sa boîte — et refuse de conclure sans les vraies polices. |
-
 | #48 | Un binaire dit enfin ce qu'il est. Le `versionCode` valait `1` sur tous les builds depuis le premier, et `versionName` `1.0.0` : la seule façon d'établir ce qu'un téléphone exécutait était de le brancher pour comparer une empreinte SHA-256. Gradle compte désormais les commits, `tool/marque.py` grave l'empreinte et la date, et les réglages les affichent — copiables d'un appui. Un build hors du chemin de livraison le dit plutôt que d'inventer. |
+| #49 | La longueur d'une carte est bornée à 60 caractères, la borne que l'import du contenu officiel applique depuis toujours — tenue par le dépôt, pas par le seul champ de saisie. Et parce que soixante caractères en un seul mot n'ont aucun point de coupure, le récapitulatif de tour les compose avec `TexteQuiTient` au lieu de les rogner. Le nom d'une catégorie reste ouvert. |
 
 **Deux de ces défauts ont exactement la même forme :** une correction appliquée à un endroit
 sur deux. Les deux fonctions jamais appelées du test de fumée, et les deux variantes de

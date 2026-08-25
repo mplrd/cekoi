@@ -56,8 +56,8 @@ class AppSettingsScreen extends ConsumerWidget {
                           .setSound(enabled: actif),
                     ),
                     secondary: const Icon(Icons.volume_up_outlined),
-                    title: Text(l10n.settingsSound),
-                    subtitle: Text(l10n.settingsSoundHint),
+                    title: TexteQuiTient(l10n.settingsSound),
+                    subtitle: TexteQuiTient(l10n.settingsSoundHint),
                   ),
                   SwitchListTile(
                     value: reglages.hapticsEnabled,
@@ -67,8 +67,8 @@ class AppSettingsScreen extends ConsumerWidget {
                           .setHaptics(enabled: actif),
                     ),
                     secondary: const Icon(Icons.vibration),
-                    title: Text(l10n.settingsHaptics),
-                    subtitle: Text(l10n.settingsHapticsHint),
+                    title: TexteQuiTient(l10n.settingsHaptics),
+                    subtitle: TexteQuiTient(l10n.settingsHapticsHint),
                   ),
                 ],
               ),
@@ -184,7 +184,7 @@ class _FullVersionOffer extends StatelessWidget {
         leading: const Icon(Icons.workspace_premium_outlined),
         // Le titre de section dit déjà « Version complète » : la ligne porte
         // la promesse, pas une deuxième fois le nom.
-        title: Text(l10n.settingsFullVersionPitch),
+        title: TexteQuiTient(l10n.settingsFullVersionPitch),
         // Aucun prix affiché ici : il vient du magasin, qui connaît la devise
         // et la taxe du joueur. La feuille de paiement le montrera.
         trailing: busy
@@ -209,7 +209,7 @@ class _Owned extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: ListTile(
         leading: const Icon(Icons.check_circle_outline),
-        title: Text(message),
+        title: TexteQuiTient(message),
       ),
     );
   }
@@ -231,7 +231,7 @@ class _RestoreTile extends StatelessWidget {
         onTap: busy ? null : onTap,
         enabled: !busy,
         leading: const Icon(Icons.restore),
-        title: Text(l10n.settingsRestore),
+        title: TexteQuiTient(l10n.settingsRestore),
       ),
     );
   }
@@ -277,18 +277,22 @@ class _BuildStamp extends StatelessWidget {
 
     return Card(
       clipBehavior: Clip.antiAlias,
-      child: ListTile(
-        onTap: () => unawaited(_copier(context, etiquette)),
-        leading: const Icon(Icons.tag),
-        // L'empreinte et la date sont des mots insécables : à ×3 sur un écran
-        // étroit, un seul d'entre eux est plus large que la ligne, et se fait
-        // rogner sans que rien ne le signale. C'est exactement le cas que
-        // `TexteQuiTient` traite pour le titre des étapes de configuration.
-        title: TexteQuiTient(etiquette),
-        // « signalement » aussi est plus large que la ligne à ×3 sur un écran
-        // de 320. Le sous-titre a le droit de rétrécir avant l'étiquette : il
-        // explique, elle identifie.
-        subtitle: TexteQuiTient(l10n.settingsBuildHint),
+      child: Semantics(
+        // L'icône suffit à qui la voit. Un lecteur d'écran, lui, annoncerait
+        // une ligne cliquable sans dire ce que l'appui déclenche : `onTapHint`
+        // remplace le sous-titre qui portait ce rôle et occupait deux lignes
+        // pour le dire.
+        onTapHint: l10n.settingsBuildHint,
+        child: ListTile(
+          onTap: () => unawaited(_copier(context, etiquette)),
+          leading: const Icon(Icons.tag),
+          // L'empreinte et la date sont des mots insécables : à ×3 sur un
+          // écran étroit, un seul d'entre eux est plus large que la ligne, et
+          // se fait rogner sans que rien ne le signale. C'est exactement le
+          // cas que `TexteQuiTient` traite pour le titre des étapes.
+          title: TexteQuiTient(etiquette),
+          trailing: const Icon(Icons.copy_outlined, size: 20),
+        ),
       ),
     );
   }
@@ -309,7 +313,11 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
+    // « Confidentialité » est un mot de quinze lettres : à ×3 sur un écran de
+    // 320 il réclame 320 px pour 280 disponibles, et se faisait rogner bien
+    // avant que cette section existe. Le repli sur plusieurs lignes n'y peut
+    // rien — il n'y a pas d'espace où couper.
+    return TexteQuiTient(
       label,
       style: Theme.of(
         context,
@@ -376,7 +384,7 @@ class _ConsentTile extends StatelessWidget {
       child: ListTile(
         onTap: onTap,
         leading: const Icon(Icons.privacy_tip_outlined),
-        title: Text(l10n.settingsAdConsent),
+        title: TexteQuiTient(l10n.settingsAdConsent),
         // Région vive : le temps que le formulaire réponde, cette tuile est
         // remplacée par l'attente, donc détruite, et le lecteur d'écran perd
         // le focus avec elle. Sans ça, un joueur aveugle entend « chargement »
@@ -391,7 +399,7 @@ class _ConsentTile extends StatelessWidget {
         // à l'ouverture des réglages.
         subtitle: Semantics(
           liveRegion: true,
-          child: Text(
+          child: TexteQuiTient(
             _consentStatus(l10n, allowed: allowed, showsAds: showsAds),
           ),
         ),

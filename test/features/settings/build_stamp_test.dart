@@ -162,6 +162,35 @@ void main() {
     expect(find.text(l10n.settingsBuildCopied), findsOneWidget);
   });
 
+  testWidgets("ce que l'appui déclenche est annoncé aux lecteurs d'écran", (
+    tester,
+  ) async {
+    // L'affordance visible a été retirée au profit d'une icône. Sans
+    // onTapHint, un lecteur d'écran annonce une ligne cliquable sans dire ce
+    // que l'appui fait — et l'icône ne lui parle pas.
+    await pumpSettings(tester, identifie);
+
+    final etiquette = find.text(
+      l10n.settingsBuildStamp('1.0.0', '128', '050e30a', '2026-08-24'),
+    );
+    await amener(tester, etiquette);
+
+    expect(
+      tester.getSemantics(etiquette),
+      matchesSemantics(
+        label: l10n.settingsBuildStamp('1.0.0', '128', '050e30a', '2026-08-24'),
+        onTapHint: l10n.settingsBuildHint,
+        hasTapAction: true,
+        hasFocusAction: true,
+        hasEnabledState: true,
+        isEnabled: true,
+        isFocusable: true,
+        isButton: true,
+        hasSelectedState: true,
+      ),
+    );
+  });
+
   testWidgets("rien à copier quand il n'y a rien à dire", (tester) async {
     await pumpSettings(tester, _inconnu);
 
