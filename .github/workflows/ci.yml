@@ -34,8 +34,13 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       ready: ${{ steps.check.outputs.ready }}
+      code: ${{ steps.portee.outputs.code }}
     steps:
+      # `fetch-depth: 2` pour que `HEAD^` existe : c'est ce qui permet à l'étape
+      # `portee` de savoir ce que la modification touche.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
       - id: check
         run: |
           if [ -f pubspec.yaml ]; then
@@ -43,6 +48,38 @@ jobs:
           else
             echo "ready=false" >> "$GITHUB_OUTPUT"
             echo "::notice::Projet Flutter pas encore scaffoldé — analyze et test sont sautés."
+          fi
+
+      # Une PR qui ne change que de la prose n'a aucune raison de payer un build
+      # de release : Gradle et R8 sont le job le plus long de cette CI, et aucun
+      # `.md` ne peut les faire changer d'avis. `docs/REPRISE.md` étant mis à
+      # jour à chaque unité de travail, ce cas n'a rien d'exceptionnel.
+      #
+      # `HEAD^` est le bon point de comparaison dans les deux déclencheurs : sur
+      # une `pull_request`, GitHub construit un commit de fusion dont le premier
+      # parent est la branche visée, donc `HEAD^..HEAD` est exactement le
+      # contenu de la PR ; sur un `push`, c'est le commit précédent.
+      #
+      # Le défaut est de **construire** : une liste vide, une erreur de git, ou
+      # un seul fichier qui n'est ni un `.md` ni sous `docs/`, suffit à faire
+      # tourner le job. Se tromper en construisant coûte des minutes de runner ;
+      # se tromper en sautant laisse passer une régression.
+      #
+      # Le `|| echo FORCE` n'est pas une ceinture de plus : le shell d'une étape
+      # est `bash -e`, où une affectation par substitution qui échoue **tue
+      # l'étape**. Un `scaffolded` rouge ne saute pas que le build Android — un
+      # `if:` de job sans fonction de statut n'affranchit pas des `needs`, donc
+      # `analyze-test` tomberait avec lui. Ce job de garde ne portait aucune
+      # logique faillible avant cette étape ; `FORCE` ne matche aucun des deux
+      # motifs, donc une panne de git construit au lieu de tout emporter.
+      - id: portee
+        run: |
+          fichiers=$(git diff --name-only HEAD^ HEAD || echo FORCE)
+          if [ -z "$fichiers" ] || echo "$fichiers" | grep -qvE '(^docs/|\.md$)'; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "code=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Seuls des documents changent — le build Android est sauté."
           fi
 
   analyze-test:
@@ -99,9 +136,27 @@ jobs:
   # le seul job qui prouve que ça se résout sur Android : sans lui, la
   # déviation par rapport à sqlite3_flutter_libs n'est validée nulle part sur
   # mobile.
+  # Sauté quand une **PR** ne touche que de la prose, voir l'étape `portee`.
+  # `analyze-test`, lui, tourne toujours — quatre minutes contre une dizaine
+  # ici, et c'est le feu vert qu'on regarde avant de merger.
+  #
+  # Le filtre ne vaut que pour les PR, et c'est délibéré : sur un `push`,
+  # `HEAD^` ne montre que le dernier commit, alors que `develop` peut avancer de
+  # plusieurs d'un coup — un « Rebase and merge », ou un push direct que rien
+  # n'empêche techniquement. Comme une unité de travail finit souvent par un
+  # `docs(reprise): …`, la série entière serait classée prose sur la foi de son
+  # dernier commit. Le run de `push` reste donc le filet complet.
+  #
+  # L'étiquette `android` force le job à la main, sur le précédent de `ios` :
+  # `labeled` est déjà dans les types de déclenchement, et un filtre sans porte
+  # de sortie se contourne sinon à coups de commits vides.
   android-build:
     needs: scaffolded
-    if: needs.scaffolded.outputs.ready == 'true'
+    if: >-
+      needs.scaffolded.outputs.ready == 'true' &&
+      (github.event_name != 'pull_request' ||
+      needs.scaffolded.outputs.code == 'true' ||
+      contains(github.event.pull_request.labels.*.name, 'android'))
     runs-on: ubuntu-latest
     steps:
       # `fetch-depth: 0`, et pas le clone superficiel par défaut. Le

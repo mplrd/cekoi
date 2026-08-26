@@ -47,6 +47,12 @@ branché, donc il ne peut pas vivre dans la CI en l'état — **c'est une étape
 faire avant de livrer un artefact à qui que ce soit.** Ne pas la sauter était censé aller de
 soi ; ça n'a pas suffi.
 
+Depuis le 26 août, ce job de release est **sauté sur une PR qui ne change que de la prose** :
+`docs/REPRISE.md` se met à jour à chaque unité de travail, et aucun `.md` ne peut faire changer
+R8 d'avis. Le filtre ne vaut que pour les PR — sur un `push`, `HEAD^` ne montre que le dernier
+commit d'une série qui peut en compter plusieurs — et l'étiquette `android` le force à la main,
+comme `ios` force le sien.
+
 Une deuxième classe de règles est tombée à la même revue, par le même mécanisme et depuis
 la même dépendance : `androidx.work.InputMerger` perdait aussi son constructeur. Là, rien ne
 plante — WorkManager journalise « Could not create Input Merger » et marque la tâche en
@@ -159,13 +165,14 @@ arrivé le 24 août, avant que le lien soit fait avec `tool/apercus/`, qui charg
 polices depuis toujours et dont le commentaire disait pourquoi.
 
 **Réserve.** Ces seuils valent pour Roboto, donc pour Android, dont le réglage système plafonne
-à ×2. iOS va plus loin — AX4 vaut ×2,35 et AX5 ×3,1 — et n'a jamais été exercé. Les trois
-écrans sont désormais testés jusqu'à ×3,1 et sur 320 px de large, mais sur la police d'Android.
+à ×2. iOS va plus loin — AX4 vaut ×2,35 et AX5 ×3,1 — et n'a jamais été exercé. Ces trois
+écrans, plus les réglages venus avec l'étiquette d'identité du build, sont désormais testés
+jusqu'à ×3,1 et sur 320 px de large, mais sur la police d'Android.
 
 Ce qui reste ouvert et ne dépend pas d'un lot :
 
 - **La face de carte du jeu écrase les textes longs au lieu de les replier.** Mesuré le
-  25 août sur un 360, ` ontSize: 60 ` : « Chat » sort à 60 px, « Zinédine Zidane » à 37,7,
+  25 août sur un 360, `fontSize: 60` : « Chat » sort à 60 px, « Zinédine Zidane » à 37,7,
   « Se cogner le petit orteil dans le meuble » à **15,5**, et une carte de 60 caractères à
   **8,6**. La hauteur du paragraphe reste celle d'une seule ligne dans les quatre cas — c'est
   le mécanisme : `FittedBox` mesure son enfant **sans borne de largeur**, donc le texte ne se
@@ -178,7 +185,19 @@ Ce qui reste ouvert et ne dépend pas d'un lot :
 - **Le nom d'une catégorie n'est pas borné.** Même classe de défaut que la longueur des
   cartes, fermée le 25 août : rien ne l'empêche de faire trois cents caractères, et ce qu'il
   devient alors dans la liste des catégories n'a pas été mesuré.
-
+- **Hors des quatre surfaces instrumentées, la géométrie n'est exercée qu'à ×1,3.** Quatre
+  fichiers seulement importent `test/support/geometrie.dart` : `score_table_layout_test.dart`,
+  `turn_summary_layout_test.dart`, `setup_scaffold_layout_test.dart` et
+  `app_settings_layout_test.dart`. Partout ailleurs, un test de mise en page ne rougit que sur
+  une exception de `RenderFlex` ou sur un widget introuvable, jamais sur un texte rogné — le
+  défaut que la série du 24 août a justement trouvé sur trois écrans. Sont dans ce cas
+  **l'annonce de tour**, vue à chaque tour (`game_screen_test.dart:211`, plafonné à ×1,3 alors
+  qu'il débordait de 454 px avant correction), le contenu réel des étapes de configuration
+  (`setup_flow_test.dart:549` et `:945` — l'ossature est mesurée, mais avec une `ListView`
+  factice), l'accueil (`home_layout_test.dart:90`, dont la boucle d'atteignabilité s'appuie sur
+  `ensureVisible`, qui ne lève rien sans `Scrollable` ancêtre) et la fin de partie. Les deux
+  écrans de catégories, eux, ne posent jamais d'échelle de texte : `my_decks_test.dart:40` et
+  `deck_cards_test.dart:32` fixent une taille d'écran et rien d'autre.
 - **iOS n'a jamais tourné ailleurs qu'en compilation, et n'est même pas compilé à chaque
   commit.** Le job `ios-build` de `ci.yml` ne se déclenche que sur `main`, sur une PR qui vise
   `main`, ou si la PR porte l'étiquette `ios` — c'est un arbitrage de minutes de runner macOS,

@@ -1,6 +1,6 @@
 # Point de reprise
 
-**État au 24 août 2026** — sur `develop`, CI verte, aucune PR ouverte.
+**État au 26 août 2026** — `develop` au merge de la #49, CI verte dessus.
 
 Pas de SHA ici : un document versionné ne peut pas citer le commit qui le contient sans être
 faux dès son merge. Pour l'état exact, `git log -1 develop`.
@@ -27,13 +27,13 @@ reste dans `ROADMAP.md`, les démarches dans `ADMINISTRATIF.md`, les règles dan
 |---|---|
 | Lots | 6 sur 8 faits ; le 5 (contenu) et le 8 (publication) sont en cours |
 | Cartes | 529 sur les 1 200 visées, réparties sur 21 catégories |
-| Écrans à risque de débordement | 0 — cinq écrans mesurés jusqu'à ×3,1 |
+| Écrans à risque de débordement | 0 sur les **quatre surfaces instrumentées**, jusqu'à ×3,1 ; tout le reste plafonne à ×1,3 |
 | Lisibilité de la face de carte | **un texte long y tombe à 8,6 px** — mesuré, non corrigé |
 | Identification d'un build | commit, numéro et date lisibles dans les réglages, et copiables |
 | Longueur des cartes personnalisées | bornée à 60 caractères, comme le contenu officiel |
 | Géométrie des icônes | dans la **zone sûre documentée** des deux côtés, verrouillée par un test |
 | iOS | **jamais exécuté**, et compilé seulement vers `main` ou sur étiquette `ios` |
-| Build de release | construit par la CI et vérifié à la main ; **aucune partie complète jouée dessus** |
+| Build de release | construit par la CI — sauf sur une PR de prose seule — et vérifié à la main ; **aucune partie complète jouée dessus** |
 | Achat in-app | jamais effectué en vrai |
 | Clé de signature | `android/key.properties` absent — les APK sortent signés de la clé de debug |
 
@@ -52,6 +52,11 @@ l'écran qu'on lit à bout de bras. `tie_break_view.dart` fait la même chose.
 caractères. Le correctif demande un widget qui cherche la plus grande taille dont le *repli*
 tient dans la boîte, ce qu'aucun de ceux du projet ne fait — et ça change le rendu du
 principal écran du jeu, donc ça se regarde avant de se coder.
+
+Aucun test ne fixe ces quatre chiffres : c'est une observation, pas un verrou. Le seul test qui
+touche à `game_card_face.dart` regarde la présence et la position de la carte, jamais la taille
+du texte — le jour où le correctif tombera, rien ne rougira pour dire qu'il a servi.
+
 ### 2. Le nom d'une catégorie n'est toujours pas borné
 
 La longueur des **cartes** l'est depuis le 25 août : 60 caractères, la borne que
@@ -83,6 +88,14 @@ recette, pas par du code.
   `main`, ou si la PR porte l'étiquette `ios`. Une régression de pods, de permissions ou de
   signature s'accumule donc jusqu'à la remontée vers `main` — exactement ce que le lot 1
   voulait éviter en branchant la CI iOS tôt.
+- **Le contrôle de géométrie ne couvre que quatre surfaces.** Quatre fichiers de test importent
+  `test/support/geometrie.dart` — tableau des scores, récapitulatif de tour, ossature de
+  configuration, réglages — et vont jusqu'à ×3,1. Partout ailleurs, un test de mise en page ne
+  rougit que sur une exception de `RenderFlex` ou sur un widget introuvable, jamais sur un
+  texte rogné, et s'arrête à ×1,3 : c'est le cas de **l'annonce de tour**, l'écran vu à chaque
+  tour, du contenu réel des étapes de configuration, de l'accueil et de la fin de partie. Les
+  deux écrans de catégories ne posent même jamais d'échelle de texte. Le détail des fichiers
+  est dans `ROADMAP.md`.
 - **Aucun achat in-app réel, aucune vraie publicité.** Le lot 7 tourne de bout en bout sur les
   identifiants de test de Google et un magasin injecté.
 
