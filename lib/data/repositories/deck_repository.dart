@@ -1,6 +1,7 @@
 import 'package:cekoi/data/db/database.dart';
 import 'package:cekoi/data/db/seed/slug.dart';
 import 'package:cekoi/domain/decks/card_length.dart';
+import 'package:cekoi/domain/decks/deck_name_length.dart';
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/card.dart' as domain;
 import 'package:cekoi/domain/entities/deck.dart';
@@ -18,6 +19,14 @@ import 'package:drift/drift.dart';
 const _tropLong =
     'Une carte fait au plus $maxCardTextLength caractères, '
     'sans quoi elle devient illisible à bout de bras';
+
+/// Le refus opposé à un nom de catégorie trop long.
+///
+/// Même raison d'être ici plutôt que dans le seul champ de saisie : l'import
+/// d'un fichier de catégorie ne passe pas par lui, et il porte un nom.
+const _nomTropLong =
+    'Un nom de catégorie fait au plus $maxDeckNameLength caractères, '
+    'sans quoi sa ligne mange la liste';
 
 /// Accès aux catégories et aux cartes.
 ///
@@ -117,6 +126,9 @@ class DeckRepository {
     if (propre.isEmpty) {
       throw ArgumentError.value(name, 'name', 'Le nom ne peut pas être vide');
     }
+    if (!deckNameFits(propre)) {
+      throw ArgumentError.value(name, 'name', _nomTropLong);
+    }
 
     final id = await _freeCustomId(propre);
 
@@ -145,7 +157,15 @@ class DeckRepository {
     if (propre.isEmpty) {
       throw ArgumentError.value(name, 'name', 'Le nom ne peut pas être vide');
     }
-    await _requireCustomDeck(deckId);
+    final avant = await _requireCustomDeck(deckId);
+    // On refuse d'aggraver, pas de conserver — la règle qu'`updateCustomCard`
+    // applique déjà au texte d'une carte. Une catégorie nommée avant que la
+    // borne existe dépasse : la refuser telle quelle la **gèlerait**, puisque
+    // la boîte de renommage renvoie toujours le nom. Seul un nom qui change
+    // doit tenir dans la borne.
+    if (propre != avant.name && !deckNameFits(propre)) {
+      throw ArgumentError.value(name, 'name', _nomTropLong);
+    }
 
     // L'identifiant ne suit pas le nom : le faire changer orphelinerait les
     // cartes et casserait une partie en cours qui référence la catégorie.

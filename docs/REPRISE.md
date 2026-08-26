@@ -27,10 +27,11 @@ reste dans `ROADMAP.md`, les démarches dans `ADMINISTRATIF.md`, les règles dan
 |---|---|
 | Lots | 6 sur 8 faits ; le 5 (contenu) et le 8 (publication) sont en cours |
 | Cartes | 529 sur les 1 200 visées, réparties sur 21 catégories |
-| Écrans à risque de débordement | 0 sur les **quatre surfaces instrumentées**, jusqu'à ×3,1 ; tout le reste plafonne à ×1,3 |
-| Lisibilité de la face de carte | **un texte long y tombe à 8,6 px** — mesuré, non corrigé |
+| Écrans à risque de débordement | 0 sur les **six surfaces instrumentées** ; tout le reste plafonne à ×1,3 |
+| Lisibilité de la face de carte | corrigée : une situation de 40 caractères passe de 15,5 à **46,6 px** |
 | Identification d'un build | commit, numéro et date lisibles dans les réglages, et copiables |
 | Longueur des cartes personnalisées | bornée à 60 caractères, comme le contenu officiel |
+| Nom d'une catégorie | borné à 30 caractères, mesurés sur la hauteur de ligne à ×2 |
 | Géométrie des icônes | dans la **zone sûre documentée** des deux côtés, verrouillée par un test |
 | iOS | **jamais exécuté**, et compilé seulement vers `main` ou sur étiquette `ios` |
 | Build de release | construit par la CI — sauf sur une PR de prose seule — et vérifié à la main ; **aucune partie complète jouée dessus** |
@@ -39,35 +40,7 @@ reste dans `ROADMAP.md`, les démarches dans `ADMINISTRATIF.md`, les règles dan
 
 ## Ce qui ne dépend de personne
 
-### 1. La face de carte du jeu écrase les textes longs
-
-Mesuré le 25 août sur un 360 : « Chat » sort à 60 px, « Zinédine Zidane » à 37,7, « Se cogner
-le petit orteil dans le meuble » à **15,5**, une carte de 60 caractères à **8,6**. Le
-paragraphe garde la hauteur d'une seule ligne dans les quatre cas — `FittedBox` mesure son
-enfant sans borne de largeur, donc le texte n'est jamais replié : il est composé sur une
-ligne, puis écrasé. La carte est haute et vide pendant que la phrase est illisible, sur
-l'écran qu'on lit à bout de bras. `tie_break_view.dart` fait la même chose.
-
-Ça touche le contenu **officiel** : `CONTENU.md` autorise les situations jusqu'à 60
-caractères. Le correctif demande un widget qui cherche la plus grande taille dont le *repli*
-tient dans la boîte, ce qu'aucun de ceux du projet ne fait — et ça change le rendu du
-principal écran du jeu, donc ça se regarde avant de se coder.
-
-Aucun test ne fixe ces quatre chiffres : c'est une observation, pas un verrou. Le seul test qui
-touche à `game_card_face.dart` regarde la présence et la position de la carte, jamais la taille
-du texte — le jour où le correctif tombera, rien ne rougira pour dire qu'il a servi.
-
-### 2. Le nom d'une catégorie n'est toujours pas borné
-
-La longueur des **cartes** l'est depuis le 25 août : 60 caractères, la borne que
-`tool/import_decks.py` applique au contenu officiel depuis toujours, tenue par le dépôt et
-non par le seul champ de saisie — l'import d'un fichier de catégorie ne passe pas par lui.
-
-Le nom d'une catégorie, lui, reste libre. Même classe de défaut, mais rien ne l'a mesuré :
-on ne sait pas ce que devient un nom de trois cents caractères dans la liste des catégories.
-Le détail est dans `ROADMAP.md`.
-
-### 3. Le contenu des pages légales
+### 1. Le contenu des pages légales
 
 Quelles données partent, AdMob comme destinataire, absence de compte utilisateur, durées,
 droits : 90 % du texte ne bouge pas et s'écrit maintenant. Le bloc d'identité de l'éditeur
@@ -88,9 +61,11 @@ recette, pas par du code.
   `main`, ou si la PR porte l'étiquette `ios`. Une régression de pods, de permissions ou de
   signature s'accumule donc jusqu'à la remontée vers `main` — exactement ce que le lot 1
   voulait éviter en branchant la CI iOS tôt.
-- **Le contrôle de géométrie ne couvre que quatre surfaces.** Quatre fichiers de test importent
+- **Le contrôle de géométrie ne couvre que six surfaces.** Six fichiers de test importent
   `test/support/geometrie.dart` — tableau des scores, récapitulatif de tour, ossature de
-  configuration, réglages — et vont jusqu'à ×3,1. Partout ailleurs, un test de mise en page ne
+  configuration, réglages, et depuis le 26 août la face de carte et le nom d'une catégorie ;
+  les quatre premiers vont jusqu'à ×3,1, les deux derniers s'arrêtent à ×2.
+  Partout ailleurs, un test de mise en page ne
   rougit que sur une exception de `RenderFlex` ou sur un widget introuvable, jamais sur un
   texte rogné, et s'arrête à ×1,3 : c'est le cas de **l'annonce de tour**, l'écran vu à chaque
   tour, du contenu réel des étapes de configuration, de l'accueil et de la fin de partie. Les
@@ -154,7 +129,7 @@ retire pas proprement d'un magasin.
 
 ## Journal
 
-Les PR de la série, du 19 au 25 août.
+Les PR de la série, du 19 au 26 août.
 
 | PR | Ce qui a changé |
 |---|---|
@@ -168,6 +143,8 @@ Les PR de la série, du 19 au 25 août.
 | #47 | Les trois écrans qui pouvaient mettre une action hors d'atteinte sont corrigés, et mesurés plutôt qu'estimés. Amène `test/support/geometrie.dart`, qui voit ce qu'aucune exception ne signale — un texte plus large que sa boîte — et refuse de conclure sans les vraies polices. |
 | #48 | Un binaire dit enfin ce qu'il est. Le `versionCode` valait `1` sur tous les builds depuis le premier, et `versionName` `1.0.0` : la seule façon d'établir ce qu'un téléphone exécutait était de le brancher pour comparer une empreinte SHA-256. Gradle compte désormais les commits, `tool/marque.py` grave l'empreinte et la date, et les réglages les affichent — copiables d'un appui. Un build hors du chemin de livraison le dit plutôt que d'inventer. |
 | #49 | La longueur d'une carte est bornée à 60 caractères, la borne que l'import du contenu officiel applique depuis toujours — tenue par le dépôt, pas par le seul champ de saisie. Et parce que soixante caractères en un seul mot n'ont aucun point de coupure, le récapitulatif de tour les compose avec `TexteQuiTient` au lieu de les rogner. Le nom d'une catégorie reste ouvert. |
+| #50 | Le point de reprise redevient exact — il datait du 24 en décrivant le 25, et annonçait cinq écrans mesurés là où il y en a quatre. Une PR de prose seule ne construit plus d'APK de release. |
+| #51 | La face de carte replie son texte au lieu de l'écraser : une situation de 40 caractères passe de 15,5 à **46,6 px**, une carte à la borne de 10,2 à 38,3. Le nom d'une catégorie est borné à 30 caractères, valeur mesurée sur la hauteur de ligne à ×2. Amène `TexteDeCarte`, un aperçu de carte longue au banc de rendu, et deux fichiers de mesure. |
 
 **Deux de ces défauts ont exactement la même forme :** une correction appliquée à un endroit
 sur deux. Les deux fonctions jamais appelées du test de fumée, et les deux variantes de

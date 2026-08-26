@@ -169,26 +169,70 @@ polices depuis toujours et dont le commentaire disait pourquoi.
 écrans, plus les réglages venus avec l'étiquette d'identité du build, sont désormais testés
 jusqu'à ×3,1 et sur 320 px de large, mais sur la police d'Android.
 
+**La face de carte replie enfin son texte.** Le défaut : `FittedBox` mesure son enfant **sans
+borne de largeur** — la source de Flutter le fait pour tous ses `fit`, `scaleDown` compris —
+donc le paragraphe n'avait jamais de raison de replier. Il se composait sur une ligne unique,
+aussi longue qu'il fallait, et c'est cette ligne-là que `scaleDown` écrasait. Mesuré sur un
+360 avant correction : « Chat » à 60 px, « Zinédine Zidane » à 37,7, « Se cogner le petit
+orteil dans le meuble » à **15,5**, une carte à la borne à **10,2** — une seule ligne dans les
+quatre cas, dans une carte haute et vide.
+
+Donner la largeur au texte suffit à le faire replier, mais pas à bien l'afficher : les coupures
+sont alors calculées à 60 px, sept lignes de deux mots, puis le bloc entier est réduit — 26,6 px
+sur 123 px de large, là où la carte en offre 272. `TexteDeCarte` cherche donc la **taille**, par
+dichotomie : la plus grande dont le repli tient dans la boîte. Après correction, aux mêmes
+mesures : 60, **60**, **46,6**, **38,3** px, et plus aucune réduction — chaque carte est
+composée à sa taille, sur toute la largeur.
+
+| Carte | Avant | Après |
+|---|---|---|
+| « Chat », 4 caractères | 60,0 px | 60,0 px, 1 ligne |
+| « Zinédine Zidane », 15 | 37,7 px | **60,0 px**, 2 lignes |
+| « Se cogner le petit orteil dans le meuble », 40 | 15,5 px | **46,6 px**, 4 lignes |
+| un gabarit à la borne, 60 | 10,2 px | **38,3 px**, 4 lignes |
+| 60 caractères en un seul mot | 8,6 px | 8,6 px — inchangé |
+
+Le dernier cas est le seul que le repli ne peut pas servir : un mot n'a aucun point de coupure.
+On compose alors à sa largeur et `scaleDown` reprend la main — illisible, mais entier ; rogner
+serait pire. Le banc d'aperçus gagne `08b-jeu-carte-longue` : il n'avait que des cartes de trois
+mots, donc il ne pouvait pas montrer ce défaut-là.
+
+`tie_break_view.dart` portait le même défaut et reçoit le même widget, **sans être mesuré** :
+aucun test ne monte cet écran, et sa boîte est bien plus courte que celle du jeu — `minHeight`
+96, `maxHeight` 40 % de la hauteur. C'est donc là que la branche « même le plancher ne tient
+pas » a le plus de chances de se déclencher en vrai, et personne ne l'a vue tourner.
+
+Deux effets de bord de cette instrumentation, sur l'écran de jeu :
+
+- **les deux zones d'action étaient rognées à ×2** — « Trouvé » réclame 161 px et « passe… »
+  151 dans une boîte de 134, sur un 360. Rien ne le signalait, et ce sont les deux zones qu'on
+  tape sans regarder. Elles passent à `TexteQuiTient`, comme les cinq autres endroits ;
+- **`_CardZone` cesse de se reconstruire dix fois par seconde.** `GameScreen` observe la partie
+  entière, donc le tick du chrono redescendait jusqu'à la carte et relançait la recherche de
+  taille — une dizaine de mises en page de paragraphe par tick. La zone est passée en `const`
+  avec deux `select`, ce que le commentaire de `playing_view.dart` annonçait déjà sans le faire.
+
+**Le nom d'une catégorie est borné à 30 caractères.** La valeur est mesurée et non devinée : sur
+un 360 × 640, la ligne de « Mes catégories » fait 84 px à l'échelle normale et 240 px au maximum
+d'Android, contre 108 et 384 px à soixante — où le texte est en plus **rogné**. Trente laisse de
+la marge au-dessus du plus long nom officiel, « Humour noir et galères », qui en fait 22.
+
+Sans borne, mesuré à trois cents caractères : ligne de 288 px, nom d'un seul mot rogné, boîte de
+suppression occupant l'écran entier, et au maximum d'Android l'entrée « Supprimer » de son menu
+**introuvable** — la catégorie n'était alors plus supprimable. Un témoin au nom court, même
+écran et même réglage, la trouvait : c'était bien la longueur du nom. La borne est tenue par
+`DeckRepository` et par `parseDeckExchange`, pas par le seul champ de saisie ; et comme trente
+caractères en un seul mot réclament 276 px dans une boîte qui en fait 208, la liste des
+catégories et l'étape de sélection les composent avec `TexteQuiTient`.
+
 Ce qui reste ouvert et ne dépend pas d'un lot :
 
-- **La face de carte du jeu écrase les textes longs au lieu de les replier.** Mesuré le
-  25 août sur un 360, `fontSize: 60` : « Chat » sort à 60 px, « Zinédine Zidane » à 37,7,
-  « Se cogner le petit orteil dans le meuble » à **15,5**, et une carte de 60 caractères à
-  **8,6**. La hauteur du paragraphe reste celle d'une seule ligne dans les quatre cas — c'est
-  le mécanisme : `FittedBox` mesure son enfant **sans borne de largeur**, donc le texte ne se
-  replie jamais, il est composé sur une ligne puis réduit. La carte est haute et vide pendant
-  que la phrase est illisible, sur l'écran qu'on lit à bout de bras. `tie_break_view.dart`
-  fait la même chose. Ce qu'il faudrait est un texte qui **cherche la plus grande taille dont
-  le repli tient dans la boîte**, ce que ni `FittedBox` ni `TexteQuiTient` ne font — le
-  second dimensionne au mot le plus large, ce qui améliorerait déjà beaucoup, mais ne
-  maximiserait pas. À trancher avec un œil sur l'écran, pas seulement des nombres.
-- **Le nom d'une catégorie n'est pas borné.** Même classe de défaut que la longueur des
-  cartes, fermée le 25 août : rien ne l'empêche de faire trois cents caractères, et ce qu'il
-  devient alors dans la liste des catégories n'a pas été mesuré.
-- **Hors des quatre surfaces instrumentées, la géométrie n'est exercée qu'à ×1,3.** Quatre
-  fichiers seulement importent `test/support/geometrie.dart` : `score_table_layout_test.dart`,
-  `turn_summary_layout_test.dart`, `setup_scaffold_layout_test.dart` et
-  `app_settings_layout_test.dart`. Partout ailleurs, un test de mise en page ne rougit que sur
+- **Hors des six surfaces instrumentées, la géométrie n'est exercée qu'à ×1,3.** Six fichiers
+  seulement importent `test/support/geometrie.dart` : `score_table_layout_test.dart`,
+  `turn_summary_layout_test.dart`, `setup_scaffold_layout_test.dart`,
+  `app_settings_layout_test.dart`, et depuis le 26 août `game_card_face_layout_test.dart` et
+  `deck_name_layout_test.dart` — les quatre premiers vont jusqu'à ×3,1, les deux derniers
+  s'arrêtent à ×2, le maximum d'Android. Partout ailleurs, un test de mise en page ne rougit que sur
   une exception de `RenderFlex` ou sur un widget introuvable, jamais sur un texte rogné — le
   défaut que la série du 24 août a justement trouvé sur trois écrans. Sont dans ce cas
   **l'annonce de tour**, vue à chaque tour (`game_screen_test.dart:211`, plafonné à ×1,3 alors

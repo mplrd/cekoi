@@ -9,7 +9,7 @@ import 'package:characters/characters.dart';
 /// pour les cartes d'une même partie auraient fini par diverger.
 ///
 /// Assez pour une situation — « Se cogner le petit orteil dans le meuble » en
-/// fait 39 — et trop peu pour un paragraphe.
+/// fait 40 — et trop peu pour un paragraphe.
 ///
 /// Ce que cette borne **ne** règle **pas** : un mot unique de trente-trois
 /// caractères tient dans les soixante et se fait quand même rogner à

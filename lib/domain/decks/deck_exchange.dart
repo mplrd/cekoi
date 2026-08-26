@@ -1,4 +1,5 @@
 import 'package:cekoi/domain/decks/card_length.dart';
+import 'package:cekoi/domain/decks/deck_name_length.dart';
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/difficulty.dart';
 import 'package:cekoi/domain/text/text_normalization.dart';
@@ -65,6 +66,16 @@ DeckExchange parseDeckExchange(Map<String, dynamic> json) {
   if (name.isEmpty) {
     throw const DeckExchangeException(
       "Ce fichier n'a pas de nom de catégorie.",
+    );
+  }
+  // Strict ici, comme pour le nom vide, et tolérant sur les cartes juste en
+  // dessous : c'est la même ligne de partage. Le dépôt refuserait de toute
+  // façon, mais par un `ArgumentError` que l'écran ne rattrape pas — le joueur
+  // verrait une trace technique là où il attend une phrase.
+  if (!deckNameFits(name)) {
+    throw const DeckExchangeException(
+      'Le nom de cette catégorie dépasse $maxDeckNameLength caractères. '
+      'Raccourcissez-le dans le fichier, puis réessayez.',
     );
   }
 

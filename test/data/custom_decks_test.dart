@@ -1,6 +1,7 @@
 import 'package:cekoi/data/db/database.dart';
 import 'package:cekoi/data/repositories/deck_repository.dart';
 import 'package:cekoi/domain/decks/card_length.dart';
+import 'package:cekoi/domain/decks/deck_name_length.dart';
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/deck_origin.dart';
 import 'package:cekoi/domain/entities/difficulty.dart';
@@ -99,6 +100,105 @@ void main() {
       await installOfficial('animaux');
 
       expect(await repository.customDecks(), isEmpty);
+    });
+  });
+
+  group('la longueur du nom est bornée', () {
+    /// Un caractère de trop, et rien pour le rattraper à l'affichage.
+    final tropLong = 'a' * (maxDeckNameLength + 1);
+
+    test('la borne laisse passer le plus long nom officiel', () {
+      // « Humour noir et galères » fait 22 caractères. Une borne qui
+      // refuserait ce que le contenu officiel s'autorise serait absurde : le
+      // joueur verrait dans la liste des noms qu'il ne peut pas écrire.
+      expect(maxDeckNameLength, 30);
+      expect(deckNameFits('Humour noir et galères'), isTrue);
+      expect(deckNameFits('a' * maxDeckNameLength), isTrue);
+      expect(deckNameFits(tropLong), isFalse);
+    });
+
+    test('les blancs ne comptent pas', () {
+      expect(deckNameFits('  ${'a' * maxDeckNameLength}  '), isTrue);
+    });
+
+    test('un nom trop long est refusé à la création', () async {
+      expect(
+        () => repository.createCustomDeck(
+          name: tropLong,
+          audience: Audience.family,
+        ),
+        throwsArgumentError,
+      );
+    });
+
+    test('un nom trop long est refusé au renommage', () async {
+      final deck = await repository.createCustomDeck(
+        name: 'Vacances',
+        audience: Audience.family,
+      );
+
+      expect(
+        () => repository.renameCustomDeck(deck.id, tropLong),
+        throwsArgumentError,
+      );
+    });
+
+    /// Une catégorie nommée avant que la borne existe.
+    ///
+    /// Écrite directement en base : le dépôt refuserait, et c'est justement le
+    /// cas qu'on veut reproduire — celui d'un appareil mis à jour.
+    Future<String> categorieHeritee(String nom) async {
+      const id = 'custom-heritee';
+      await db
+          .into(db.decks)
+          .insert(
+            DecksCompanion.insert(
+              id: id,
+              name: nom,
+              audience: Audience.family,
+              minAge: MinAge.six.years,
+              origin: DeckOrigin.custom,
+            ),
+          );
+      return id;
+    }
+
+    test('un nom hérité trop long reste renommable', () async {
+      // Sinon la catégorie est **gelée** : la boîte de renommage renvoie
+      // toujours le nom, donc valider sans y toucher lèverait, et le joueur
+      // n'aurait aucun moyen de comprendre pourquoi. Même règle que pour le
+      // texte d'une carte héritée.
+      final long = 'a' * (maxDeckNameLength + 15);
+      final id = await categorieHeritee(long);
+
+      await repository.renameCustomDeck(id, long);
+      expect((await repository.customDecks()).single.name, long);
+
+      await repository.renameCustomDeck(id, 'Apéro');
+      expect((await repository.customDecks()).single.name, 'Apéro');
+    });
+
+    test('mais on ne peut pas le rallonger', () async {
+      // On refuse d'aggraver, pas de conserver.
+      final id = await categorieHeritee('a' * (maxDeckNameLength + 15));
+
+      expect(
+        () => repository.renameCustomDeck(id, 'b' * (maxDeckNameLength + 16)),
+        throwsArgumentError,
+      );
+    });
+
+    test('la borne exacte passe, des deux côtés', () async {
+      final juste = 'a' * maxDeckNameLength;
+      final deck = await repository.createCustomDeck(
+        name: juste,
+        audience: Audience.family,
+      );
+      expect(deck.name, juste);
+
+      await repository.renameCustomDeck(deck.id, 'b' * maxDeckNameLength);
+      final apres = await repository.customDecks();
+      expect(apres.single.name, 'b' * maxDeckNameLength);
     });
   });
 

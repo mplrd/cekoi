@@ -1,13 +1,16 @@
 import 'dart:async';
 
 import 'package:cekoi/app/router.dart';
+import 'package:cekoi/app/widgets/texte_qui_tient.dart';
 import 'package:cekoi/domain/decks/deck_exchange.dart';
+import 'package:cekoi/domain/decks/deck_name_length.dart';
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/deck.dart';
 import 'package:cekoi/features/decks/presentation/custom_decks_controller.dart';
 import 'package:cekoi/features/decks/presentation/deck_transfer.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -153,7 +156,11 @@ class _DeckTile extends ConsumerWidget {
     final cards = ref.watch(deckCardsProvider(deck.id));
 
     return ListTile(
-      title: Text(deck.name),
+      // Borner le nom ne suffit pas : trente caractères en un seul mot n'ont
+      // aucun point de coupure et réclament 276 px dans une boîte qui en fait
+      // 208. Même couple que pour les cartes — une borne à la saisie, et un
+      // texte qui se ramène quand un mot dépasse.
+      title: TexteQuiTient(deck.name),
       subtitle: Text(
         '${deck.audience == Audience.adult ? l10n.modeAdult : l10n.modeFamily}'
         ' · ${l10n.cardCount(cards.value?.length ?? 0)}',
@@ -214,7 +221,18 @@ class _DeckTile extends ConsumerWidget {
     final reponse = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(l10n.deleteDeckTitle(deck.name)),
+        // Céder, mais visiblement. `AlertDialog` enveloppe sa colonne dans un
+        // `IntrinsicWidth`, donc `TexteQuiTient` lèverait ici — c'est la
+        // réserve que son propre commentaire pose. Or trente caractères en un
+        // seul mot réclament ~400 px dans un titre que la boîte borne à ~232
+        // sur un 360. On déclare donc la coupe au lieu de la subir : les points
+        // de suspension disent qu'il manque quelque chose, là où un rognage
+        // muet laisse croire que c'est tout le nom.
+        title: Text(
+          l10n.deleteDeckTitle(deck.name),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
         content: Text(l10n.deleteDeckBody(cardCount)),
         actions: [
           TextButton(
@@ -257,6 +275,7 @@ class _DeckDialogState extends State<_DeckDialog> {
   );
   late Audience _audience = widget.deck?.audience ?? Audience.family;
   bool _vide = false;
+  bool _tropLong = false;
 
   @override
   void dispose() {
@@ -268,6 +287,16 @@ class _DeckDialogState extends State<_DeckDialog> {
     final propre = _name.text.trim();
     if (propre.isEmpty) {
       setState(() => _vide = true);
+      return;
+    }
+
+    // On refuse d'aggraver, pas de conserver — même règle que la boîte de
+    // correction d'une carte, et pour la même raison. Une catégorie nommée
+    // avant que la borne existe arrive ici trop longue : refuser de
+    // l'enregistrer telle quelle la **gèlerait**, puisque cette boîte renvoie
+    // toujours le nom. Seul un nom qu'on modifie doit tenir dans la borne.
+    if (!deckNameFits(propre) && propre != widget.deck?.name.trim()) {
+      setState(() => _tropLong = true);
       return;
     }
     Navigator.of(context).pop(_DeckDraft(propre, _audience));
@@ -289,9 +318,26 @@ class _DeckDialogState extends State<_DeckDialog> {
             autofocus: true,
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => _submit(),
+            onChanged: (_) {
+              if (_tropLong) setState(() => _tropLong = false);
+            },
+            // Le compteur vient avec `maxLength`, et c'est lui qui rend la
+            // borne acceptable : sans compteur, la frappe s'arrête sans
+            // explication et le joueur croit à un clavier cassé.
+            maxLength: maxDeckNameLength,
+            // Le compteur, sans la troncature : un nom hérité arrive ici à
+            // quarante-cinq caractères, et le formateur les raboterait à la
+            // première frappe — y compris en corrigeant une faute au début.
+            // Le compteur passe en rouge, `_submit` refuse, et le joueur
+            // décide de ce qu'il coupe.
+            maxLengthEnforcement: MaxLengthEnforcement.none,
             decoration: InputDecoration(
               labelText: l10n.deckNameHint,
-              errorText: _vide ? l10n.deckNameRequired : null,
+              errorText: switch ((_vide, _tropLong)) {
+                (true, _) => l10n.deckNameRequired,
+                (_, true) => l10n.deckNameTooLong(maxDeckNameLength),
+                _ => null,
+              },
             ),
           ),
           // Le mode se choisit à la création et ne bouge plus : il décide de

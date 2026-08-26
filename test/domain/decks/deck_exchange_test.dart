@@ -1,5 +1,6 @@
 import 'package:cekoi/domain/decks/card_length.dart';
 import 'package:cekoi/domain/decks/deck_exchange.dart';
+import 'package:cekoi/domain/decks/deck_name_length.dart';
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/difficulty.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -161,6 +162,40 @@ void main() {
         }),
         throwsA(isA<DeckExchangeException>()),
       );
+    });
+
+    test('avec un nom trop long', () {
+      // Le fichier vient d'ailleurs : d'une version antérieure qui ne bornait
+      // rien, ou d'un JSON écrit à la main. Sans ce refus, l'import allait
+      // jusqu'au dépôt, qui lève un `ArgumentError` — et l'écran ne rattrape
+      // que `DeckExchangeException`. Le joueur aurait eu une trace technique
+      // au lieu d'un message.
+      //
+      // Refusé plutôt que tronqué, et c'est la même ligne que le nom vide :
+      // strict sur la structure, tolérant sur les cartes. Raccourcir à sa
+      // place changerait ce qu'il a écrit sans le lui dire.
+      expect(
+        () => parseDeckExchange({
+          'name': 'a' * (maxDeckNameLength + 1),
+          'audience': 'family',
+          'cards': const [
+            {'text': 'Le camping'},
+          ],
+        }),
+        throwsA(isA<DeckExchangeException>()),
+      );
+    });
+
+    test('un nom juste à la borne passe', () {
+      final deck = parseDeckExchange({
+        'name': 'a' * maxDeckNameLength,
+        'audience': 'family',
+        'cards': const [
+          {'text': 'Le camping'},
+        ],
+      });
+
+      expect(deck.name, 'a' * maxDeckNameLength);
     });
 
     test('sans aucune carte utilisable', () {
