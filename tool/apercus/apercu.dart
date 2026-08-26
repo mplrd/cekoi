@@ -409,6 +409,42 @@ void main() {
       await shoot(tester, '08-jeu-manche1');
     });
 
+    /// La même partie, mais avec la carte la plus longue que le contenu
+    /// autorise.
+    ///
+    /// Le banc n'en avait aucune, et c'est exactement le cas que personne
+    /// n'avait regardé : la face de carte composait son texte sur une ligne
+    /// unique avant de l'écraser, si bien qu'une situation de quarante
+    /// caractères tombait à 15,5 px sur un 360. Un banc de rendu qui ne montre
+    /// que des cartes de trois mots ne pouvait pas le dire.
+    GameState partieCarteLongue() {
+      final autres = testCards(9);
+      const carte = domain.Card(
+        id: 'deck:orteil',
+        deckId: 'deck',
+        text: 'Se cogner le petit orteil dans le meuble',
+        audience: Audience.family,
+        difficulty: Difficulty.medium,
+        origin: DeckOrigin.official,
+      );
+
+      return testGame(cardCount: 10, roundIndex: 2).copyWith(
+        teams: const [
+          Team(id: 't1', name: 'Les Renards'),
+          Team(id: 't2', name: 'Les Hiboux', colorId: 1),
+        ],
+        deck: [carte, ...autres],
+        pile: [carte.id, for (final c in autres) c.id],
+      );
+    }
+
+    testWidgets('en jeu, carte longue', (tester) async {
+      await pumpGame(tester, partieCarteLongue());
+      await tapText(tester, l10n.actionStartTurn);
+      await clock.advance(tester, const Duration(seconds: 4));
+      await shoot(tester, '08b-jeu-carte-longue');
+    });
+
     testWidgets('en jeu, manche 3', (tester) async {
       await pumpGame(tester, partie(roundIndex: 2));
       await tapText(tester, l10n.actionStartTurn);

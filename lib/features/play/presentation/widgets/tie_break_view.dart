@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:cekoi/app/theme/app_colors.dart';
 import 'package:cekoi/domain/engine/game_state.dart';
 import 'package:cekoi/features/play/presentation/play_controller.dart';
+import 'package:cekoi/features/play/presentation/widgets/texte_de_carte.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -91,14 +92,13 @@ class TieBreakView extends ConsumerWidget {
                     minHeight: 96,
                     maxHeight: math.max(96, contraintes.maxHeight * 0.4),
                   ),
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      card?.text ?? '',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.displayMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                  // Même défaut que la face de carte du jeu, et même
+                  // correctif : sans largeur, le texte se composait sur une
+                  // ligne unique avant d'être écrasé. Voir `TexteDeCarte`.
+                  child: TexteDeCarte(
+                    card?.text ?? '',
+                    style: theme.textTheme.displayMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
