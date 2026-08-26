@@ -27,7 +27,7 @@ reste dans `ROADMAP.md`, les démarches dans `ADMINISTRATIF.md`, les règles dan
 |---|---|
 | Lots | 6 sur 8 faits ; le 5 (contenu) et le 8 (publication) sont en cours |
 | Cartes | 529 sur les 1 200 visées, réparties sur 21 catégories |
-| Écrans à risque de débordement | 0 — cinq écrans mesurés jusqu'à ×3,1 |
+| Écrans à risque de débordement | 0 sur les **quatre surfaces instrumentées**, jusqu'à ×3,1 ; tout le reste plafonne à ×1,3 |
 | Lisibilité de la face de carte | **un texte long y tombe à 8,6 px** — mesuré, non corrigé |
 | Identification d'un build | commit, numéro et date lisibles dans les réglages, et copiables |
 | Longueur des cartes personnalisées | bornée à 60 caractères, comme le contenu officiel |
@@ -83,6 +83,14 @@ recette, pas par du code.
   `main`, ou si la PR porte l'étiquette `ios`. Une régression de pods, de permissions ou de
   signature s'accumule donc jusqu'à la remontée vers `main` — exactement ce que le lot 1
   voulait éviter en branchant la CI iOS tôt.
+- **Le contrôle de géométrie ne couvre que quatre surfaces.** Quatre fichiers de test importent
+  `test/support/geometrie.dart` — tableau des scores, récapitulatif de tour, ossature de
+  configuration, réglages — et vont jusqu'à ×3,1. Partout ailleurs, un test de mise en page ne
+  rougit que sur une exception de `RenderFlex` ou sur un widget introuvable, jamais sur un
+  texte rogné, et s'arrête à ×1,3 : c'est le cas de **l'annonce de tour**, l'écran vu à chaque
+  tour, du contenu réel des étapes de configuration, de l'accueil et de la fin de partie. Les
+  deux écrans de catégories ne posent même jamais d'échelle de texte. Le détail des fichiers
+  est dans `ROADMAP.md`.
 - **Aucun achat in-app réel, aucune vraie publicité.** Le lot 7 tourne de bout en bout sur les
   identifiants de test de Google et un magasin injecté.
 
