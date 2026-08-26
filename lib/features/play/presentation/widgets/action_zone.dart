@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cekoi/app/theme/app_colors.dart';
 import 'package:cekoi/app/theme/app_theme.dart';
+import 'package:cekoi/app/widgets/texte_qui_tient.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
@@ -210,9 +211,16 @@ class _ActionZoneState extends State<ActionZone>
                   horizontal: 12,
                   vertical: 8,
                 ),
-                child: Text(
+                // Trouvé en instrumentant la face de carte : à ×2 sur un 360,
+                // « Trouvé » réclame 161 px et « passe… » 151 dans une boîte
+                // qui en fait 134. Le libellé était rogné sans qu'aucune
+                // exception ne le dise, sur les deux zones qu'on tape sans
+                // regarder. Replier ne suffit pas — c'est un mot seul qui
+                // dépasse —, donc on le ramène, et seulement d'autant qu'il
+                // faut.
+                child: TexteQuiTient(
                   widget.label,
-                  textAlign: TextAlign.center,
+                  alignment: Alignment.center,
                   style: theme.textTheme.titleLarge?.copyWith(
                     color: texte,
                     fontWeight: FontWeight.w800,
