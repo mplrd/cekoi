@@ -95,7 +95,7 @@ class PlayingView extends ConsumerWidget {
               color: AppColors.ink,
             ),
             (_, true) => const _PausePanel(encre: AppColors.ink),
-            _ => _CardZone(game: game),
+            _ => const _CardZone(),
           },
         ),
         Expanded(child: _Actions(game: game)),
@@ -215,16 +215,26 @@ class _RoundPill extends StatelessWidget {
 }
 
 /// La carte, et le glissement horizontal qui double les deux boutons.
+///
+/// Ne reçoit pas la partie, et c'est délibéré : `GameScreen` observe l'état
+/// entier et redescend ici dix fois par seconde, au rythme du chrono. Une zone
+/// construite avec `_CardZone(game: game)` était donc une instance neuve à
+/// chaque tick, et tout son sous-arbre se reconstruisait — y compris la
+/// recherche de taille de `TexteDeCarte`, soit une dizaine de mises en page de
+/// paragraphe par tick. En `const`, l'instance est identique d'un tick à
+/// l'autre et l'élément court-circuite ; ce qui la reconstruit, ce sont les
+/// deux `select` ci-dessous, qui ne bougent qu'aux actions du narrateur.
 class _CardZone extends ConsumerWidget {
-  const _CardZone({required this.game});
-
-  final GameState game;
+  const _CardZone();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final card = game.currentCard;
+    final card = ref.watch(currentGameProvider.select((g) => g?.currentCard));
     if (card == null) return const SizedBox.shrink();
 
+    final canPass = ref.watch(
+      currentGameProvider.select((g) => g?.canPass ?? false),
+    );
     final controller = ref.read(playControllerProvider.notifier);
 
     return _SwipeZone(
@@ -238,7 +248,7 @@ class _CardZone extends ConsumerWidget {
       // qu'ouvrir un raccourci pour les gestes francs. En dessous des deux
       // seuils, le geste n'est pas une intention : on ne fait rien.
       onFound: controller.found,
-      onPassed: game.canPass ? controller.passed : null,
+      onPassed: canPass ? controller.passed : null,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         child: GameCardFace(card: card),
