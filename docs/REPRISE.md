@@ -1,6 +1,6 @@
 # Point de reprise
 
-**État au 24 août 2026** — sur `develop`, CI verte, aucune PR ouverte.
+**État au 26 août 2026** — `develop` au merge de la #49, CI verte dessus.
 
 Pas de SHA ici : un document versionné ne peut pas citer le commit qui le contient sans être
 faux dès son merge. Pour l'état exact, `git log -1 develop`.
@@ -52,6 +52,11 @@ l'écran qu'on lit à bout de bras. `tie_break_view.dart` fait la même chose.
 caractères. Le correctif demande un widget qui cherche la plus grande taille dont le *repli*
 tient dans la boîte, ce qu'aucun de ceux du projet ne fait — et ça change le rendu du
 principal écran du jeu, donc ça se regarde avant de se coder.
+
+Aucun test ne fixe ces quatre chiffres : c'est une observation, pas un verrou. Le seul test qui
+touche à `game_card_face.dart` regarde la présence et la position de la carte, jamais la taille
+du texte — le jour où le correctif tombera, rien ne rougira pour dire qu'il a servi.
+
 ### 2. Le nom d'une catégorie n'est toujours pas borné
 
 La longueur des **cartes** l'est depuis le 25 août : 60 caractères, la borne que
