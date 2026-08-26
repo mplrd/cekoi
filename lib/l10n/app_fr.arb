@@ -866,6 +866,14 @@
     }
   },
 
+  "deckNameTooLong": "{max} caractères au maximum, sans quoi la ligne mange la liste",
+  "@deckNameTooLong": {
+    "description": "Refus opposé à un nom de catégorie trop long dans la boîte de création ou de renommage. Même geste que cardTooLong : une catégorie nommée avant que la borne existe arrive ici trop longue, et la tronquer sous les doigts à la première frappe empêcherait d'en corriger le début.",
+    "placeholders": {
+      "max": { "type": "int", "example": "30" }
+    }
+  },
+
   "settingsAbout": "Cette version",
   "@settingsAbout": {
     "description": "Titre de la dernière section des réglages. « Cette version » plutôt que « À propos » : la section ne parle pas du jeu ni de son éditeur, elle identifie le binaire qu'on est en train d'exécuter."

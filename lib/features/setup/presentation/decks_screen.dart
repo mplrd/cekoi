@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:cekoi/app/ownership.dart';
 import 'package:cekoi/app/router.dart';
+import 'package:cekoi/app/widgets/texte_qui_tient.dart';
 import 'package:cekoi/domain/engine/draw.dart';
 import 'package:cekoi/domain/entities/audience.dart';
 import 'package:cekoi/domain/entities/deck.dart';
@@ -406,7 +407,10 @@ class _DeckTile extends StatelessWidget {
     return CheckboxListTile(
       value: isSelected,
       onChanged: onChanged,
-      title: Text(deck.name),
+      // Même raison que dans « Mes catégories » : un nom d'un seul mot n'a
+      // aucun point de coupure, et l'étape de sélection est plus étroite
+      // encore, cases à cocher comprises.
+      title: TexteQuiTient(deck.name),
       subtitle: Text(
         [
           l10n.cardCount(cardCount),
