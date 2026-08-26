@@ -165,7 +165,7 @@ polices depuis toujours et dont le commentaire disait pourquoi.
 Ce qui reste ouvert et ne dépend pas d'un lot :
 
 - **La face de carte du jeu écrase les textes longs au lieu de les replier.** Mesuré le
-  25 août sur un 360, ` ontSize: 60 ` : « Chat » sort à 60 px, « Zinédine Zidane » à 37,7,
+  25 août sur un 360, `fontSize: 60` : « Chat » sort à 60 px, « Zinédine Zidane » à 37,7,
   « Se cogner le petit orteil dans le meuble » à **15,5**, et une carte de 60 caractères à
   **8,6**. La hauteur du paragraphe reste celle d'une seule ligne dans les quatre cas — c'est
   le mécanisme : `FittedBox` mesure son enfant **sans borne de largeur**, donc le texte ne se
