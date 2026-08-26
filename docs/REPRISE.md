@@ -33,7 +33,7 @@ reste dans `ROADMAP.md`, les démarches dans `ADMINISTRATIF.md`, les règles dan
 | Longueur des cartes personnalisées | bornée à 60 caractères, comme le contenu officiel |
 | Géométrie des icônes | dans la **zone sûre documentée** des deux côtés, verrouillée par un test |
 | iOS | **jamais exécuté**, et compilé seulement vers `main` ou sur étiquette `ios` |
-| Build de release | construit par la CI et vérifié à la main ; **aucune partie complète jouée dessus** |
+| Build de release | construit par la CI — sauf sur une PR de prose seule — et vérifié à la main ; **aucune partie complète jouée dessus** |
 | Achat in-app | jamais effectué en vrai |
 | Clé de signature | `android/key.properties` absent — les APK sortent signés de la clé de debug |
 

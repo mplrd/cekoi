@@ -47,6 +47,12 @@ branché, donc il ne peut pas vivre dans la CI en l'état — **c'est une étape
 faire avant de livrer un artefact à qui que ce soit.** Ne pas la sauter était censé aller de
 soi ; ça n'a pas suffi.
 
+Depuis le 26 août, ce job de release est **sauté sur une PR qui ne change que de la prose** :
+`docs/REPRISE.md` se met à jour à chaque unité de travail, et aucun `.md` ne peut faire changer
+R8 d'avis. Le filtre ne vaut que pour les PR — sur un `push`, `HEAD^` ne montre que le dernier
+commit d'une série qui peut en compter plusieurs — et l'étiquette `android` le force à la main,
+comme `ios` force le sien.
+
 Une deuxième classe de règles est tombée à la même revue, par le même mécanisme et depuis
 la même dépendance : `androidx.work.InputMerger` perdait aussi son constructeur. Là, rien ne
 plante — WorkManager journalise « Could not create Input Merger » et marque la tâche en
