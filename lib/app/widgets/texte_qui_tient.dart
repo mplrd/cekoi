@@ -12,21 +12,33 @@ import 'package:flutter/material.dart';
 /// d'autant qu'il faut — le réglage de l'utilisateur est respecté partout où
 /// il tient, et sur un écran plus large rien n'est raboté.
 ///
+/// **Poser un `textAlign` dès que le parent donne plus de largeur que le
+/// contenu.** Le widget n'en met aucun, et sous un `CrossAxisAlignment.stretch`
+/// ou dans un bouton pleine largeur, un titre centré part alors à gauche —
+/// silencieusement, et pour tout le monde, y compris à taille de texte normale
+/// où il n'y avait rien à corriger. C'est arrivé à « Je passe… », qui a perdu
+/// son centrage en gagnant ce widget : son mot insécable est plus large que sa
+/// boîte, le texte se compose donc sur deux lignes et « Je » s'est retrouvée
+/// collée à gauche. Un libellé d'un seul tenant, comme « Trouvé ! », y
+/// échappe : le `FittedBox` le réduit sans le replier, et [alignment] suffit.
+///
 /// **À ne pas poser là où l'on mesure des intrinsèques** — le titre d'un
 /// `AlertDialog`, une cellule de `Table`, un `IntrinsicHeight`. Le
 /// `LayoutBuilder` ci-dessous ne sait pas répondre à une mesure spéculative et
 /// lève. Le cas s'est présenté sur la confirmation de suppression d'une carte.
 ///
-/// Cinq endroits en ont besoin, et c'est pour ça que ce widget est dans
-/// `app/` : le titre des étapes de configuration, les titres de section des
-/// réglages, l'étiquette d'identité du build, et les textes de carte du
-/// récapitulatif de tour comme de la liste d'une catégorie. Une feature n'en
-/// importe pas une autre.
+/// Il en faut dans `setup/`, `settings/`, `decks/` et `play/` — titres
+/// d'étapes, titres de section, étiquette d'identité du build, textes de carte,
+/// libellés des zones d'action, titres de fin, noms d'équipe. C'est pour ça que
+/// ce widget est dans `app/` : une feature n'en importe pas une autre. La liste
+/// exhaustive n'a plus sa place ici, elle se périme à chaque usage ajouté —
+/// `grep TexteQuiTient lib/` la donne à jour.
 class TexteQuiTient extends StatelessWidget {
   const TexteQuiTient(
     this.texte, {
     this.style,
     this.alignment = Alignment.centerLeft,
+    this.textAlign,
     super.key,
   });
 
@@ -39,6 +51,16 @@ class TexteQuiTient extends StatelessWidget {
 
   /// Le bord auquel le texte reste accroché quand il est réduit.
   final Alignment alignment;
+
+  /// L'alignement du texte **dans sa boîte**, comme sur un `Text` ordinaire.
+  ///
+  /// Distinct d'[alignment], et les deux sont nécessaires : celui-ci décide de
+  /// la position des lignes tant que le texte tient, celui-là de la position du
+  /// bloc réduit quand il ne tient plus. Les oublier tous les deux passe
+  /// inaperçu sous un parent qui ajuste sa largeur au contenu, et décentre en
+  /// silence sous un `CrossAxisAlignment.stretch` — c'est ce qui a failli
+  /// arriver au titre du départage et au nom de manche, tous deux centrés.
+  final TextAlign? textAlign;
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +77,7 @@ class TexteQuiTient extends StatelessWidget {
         peintre.dispose();
 
         if (insecable <= contraintes.maxWidth) {
-          return Text(texte, style: effectif);
+          return Text(texte, style: effectif, textAlign: textAlign);
         }
 
         // Le bloc est composé à la largeur qu'exige son mot le plus large,
@@ -66,7 +88,7 @@ class TexteQuiTient extends StatelessWidget {
           alignment: alignment,
           child: SizedBox(
             width: insecable,
-            child: Text(texte, style: effectif),
+            child: Text(texte, style: effectif, textAlign: textAlign),
           ),
         );
       },

@@ -218,9 +218,16 @@ class _ActionZoneState extends State<ActionZone>
                 // regarder. Replier ne suffit pas — c'est un mot seul qui
                 // dépasse —, donc on le ramène, et seulement d'autant qu'il
                 // faut.
+                //
+                // `alignment` ne remplace pas le `textAlign: TextAlign.center`
+                // qui était ici avant : le premier place le bloc réduit, le
+                // second place les lignes dans leur boîte. Le perdre a suffi à
+                // décaler les libellés à gauche dès qu'ils replient, dans un
+                // bouton qui fait toute la largeur.
                 child: TexteQuiTient(
                   widget.label,
                   alignment: Alignment.center,
+                  textAlign: TextAlign.center,
                   style: theme.textTheme.titleLarge?.copyWith(
                     color: texte,
                     fontWeight: FontWeight.w800,
