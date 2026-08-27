@@ -1,6 +1,6 @@
 # Point de reprise
 
-**État au 26 août 2026** — `develop` au merge de la #49, CI verte dessus.
+**État au 27 août 2026** — `develop` au merge de la #51, CI verte dessus.
 
 Pas de SHA ici : un document versionné ne peut pas citer le commit qui le contient sans être
 faux dès son merge. Pour l'état exact, `git log -1 develop`.
@@ -36,6 +36,7 @@ reste dans `ROADMAP.md`, les démarches dans `ADMINISTRATIF.md`, les règles dan
 | iOS | **jamais exécuté**, et compilé seulement vers `main` ou sur étiquette `ios` |
 | Build de release | construit par la CI — sauf sur une PR de prose seule — et vérifié à la main ; **aucune partie complète jouée dessus** |
 | Achat in-app | jamais effectué en vrai |
+| Jouable sans pub ni achat | oui — un refus de consentement ne ferme aucune partie, et un test le tient |
 | Clé de signature | `android/key.properties` absent — les APK sortent signés de la clé de debug |
 
 ## Ce qui ne dépend de personne
@@ -106,20 +107,6 @@ reste théorique tant qu'aucune catégorie adulte n'est premium : la décision s
 l'arbitrage premium. L'énoncé complet est dans `ADMINISTRATIF.md`, section « Arbitrages
 produit en attente ».
 
-### « Une courte publicité précède la partie » — on la garde affirmative ?
-
-Tu as tranché sa *condition* : elle ne dépend que de ce que le joueur possède, jamais du
-consentement ni du plafond de fréquence, et les tests la verrouillent. Reste sa *formulation*,
-sur laquelle tu ne t'es pas prononcé.
-
-L'argument écrit le 19 août — « elle promet une pub qui, en pratique, ne sort presque
-jamais » — **est faux**, et il t'aurait fait trancher dans le mauvais sens. `MONETISATION.md`
-pose un plafond de trois par heure et cinq minutes d'écart, `ad_frequency.dart` l'implémente
-tel quel, et une partie dure bien plus de cinq minutes : l'interstitiel sortira la plupart du
-temps. Ce qui reste, plus étroit : la mention s'affiche aussi dans les cas où la pub ne sortira
-pas — consentement refusé, plafond atteint. Annoncer une pub qui n'arrive pas est sans risque ;
-l'inverse ne l'est pas.
-
 ### Découper l'achat unique en trois références ?
 
 Aujourd'hui une seule référence, libellée « Plus aucune publicité, et toutes les catégories
@@ -129,7 +116,7 @@ retire pas proprement d'un magasin.
 
 ## Journal
 
-Les PR de la série, du 19 au 26 août.
+Les PR de la série, du 19 au 27 août.
 
 | PR | Ce qui a changé |
 |---|---|
@@ -145,6 +132,7 @@ Les PR de la série, du 19 au 26 août.
 | #49 | La longueur d'une carte est bornée à 60 caractères, la borne que l'import du contenu officiel applique depuis toujours — tenue par le dépôt, pas par le seul champ de saisie. Et parce que soixante caractères en un seul mot n'ont aucun point de coupure, le récapitulatif de tour les compose avec `TexteQuiTient` au lieu de les rogner. Le nom d'une catégorie reste ouvert. |
 | #50 | Le point de reprise redevient exact — il datait du 24 en décrivant le 25, et annonçait cinq écrans mesurés là où il y en a quatre. Une PR de prose seule ne construit plus d'APK de release. |
 | #51 | La face de carte replie son texte au lieu de l'écraser : une situation de 40 caractères passe de 15,5 à **46,6 px**, une carte à la borne de 10,2 à 38,3. Le nom d'une catégorie est borné à 30 caractères, valeur mesurée sur la hauteur de ligne à ×2. Amène `TexteDeCarte`, un aperçu de carte longue au banc de rendu, et deux fichiers de mesure. |
+| #52 | La mention « Une courte publicité précède la partie » disparaît sur un consentement refusé. Un refus UMP tient jusqu'à ce que le joueur rouvre le formulaire depuis les réglages : la ligne lui promettait une pub qui ne viendrait jamais. Le plafond de fréquence, lui, reste hors de la condition — il vaut pour la partie qui commence, pas pour l'appareil. Le bouton et le portillon lisent désormais la même valeur. |
 
 **Deux de ces défauts ont exactement la même forme :** une correction appliquée à un endroit
 sur deux. Les deux fonctions jamais appelées du test de fumée, et les deux variantes de

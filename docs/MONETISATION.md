@@ -22,10 +22,18 @@ configuration que le joueur n'a pas quittée, ce que la section « Ce qui est in
 proscrit.
 
 Une ligne discrète au-dessus du bouton prévient qu'une courte publicité précède la partie.
-Elle ne dépend que de ce que le joueur possède : la version complète retire la publicité, tout
-le monde la voit. Ni le consentement refusé ni le plafond de fréquence ne la font disparaître —
-ils décident du chargement d'une pub à un instant donné, pas de ce qui a été acheté, et taire
-la mention sur cette base laisserait croire qu'on en est débarrassé.
+Elle suit ce qui vaut **durablement** sur l'appareil, et rien d'autre : la version complète
+retire la publicité, et un consentement refusé la retire aussi longtemps que le joueur ne
+rouvre pas le formulaire depuis les réglages. Dans ces deux cas la ligne disparaît — annoncer
+une pub qui ne viendra jamais est faux.
+
+Le plafond de fréquence, lui, ne la fait pas disparaître : il vaut pour la partie qui commence,
+pas pour l'appareil. L'y mettre ferait clignoter la ligne d'une partie à l'autre, et la tairait
+à qui verra une pub dès la suivante. Annoncer une pub qui ne sort pas cette fois-ci est sans
+conséquence ; taire une pub qui sort ne l'est pas.
+
+Le pied de la dernière étape et le portillon lisent la **même** valeur, `launchAdPossible` :
+la ligne ne peut donc pas promettre ce que l'interstitiel refusera.
 
 **Pas d'écran dédié.** Il y en a eu deux, retirés tous les deux après essai en partie réelle.
 Un **récapitulatif** de la configuration — mode, catégories, durée, équipes — qui portait le
@@ -90,6 +98,11 @@ Le formulaire de consentement est présenté **au premier lancement, avant toute
 publicitaire**. Le SDK publicitaire ne s'initialise qu'après une réponse. Le choix doit rester
 modifiable à tout moment depuis les réglages — c'est une exigence légale, souvent oubliée, et
 un motif de rejet côté stores.
+
+**Un refus ne ferme aucune partie.** Le jeu est intégralement jouable sans consentement et sans
+achat : le portillon rend la main immédiatement, la partie se lance sans pub et sans attente. Il
+n'existe aucun chemin où il faut accepter une publicité, ou l'avoir achetée, pour jouer — c'est
+une contrainte de conformité autant qu'un choix de produit.
 
 Une **politique de confidentialité hébergée publiquement** est obligatoire pour les deux
 stores, même sans compte utilisateur. Elle doit mentionner AdMob comme destinataire de
