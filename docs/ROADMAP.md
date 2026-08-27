@@ -238,7 +238,18 @@ Ce qui reste ouvert et ne dépend pas d'un lot :
   en page ne rougit que sur une exception de `RenderFlex` ou sur un widget introuvable, jamais
   sur un texte rogné — le défaut que la série du 24 août a justement trouvé sur trois écrans.
   Reste dans ce cas l'écran des cartes d'une catégorie : `deck_cards_test.dart:32` fixe une
-  taille d'écran et aucune échelle de texte. L'étape des équipes et l'accueil sont sortis de
+  taille d'écran et aucune échelle de texte. Son `SegmentedButton` de difficulté est le suspect
+  sérieux — trois segments de 109 px sur un 360, et « Difficile » composé à 16 px forcés en
+  réclame de l'ordre de 140 à ×2. Attention au correctif : `SegmentedButton` mesure ses segments
+  par leurs intrinsèques, et `TexteQuiTient` lève sur une mesure intrinsèque — c'est le cas déjà
+  documenté du titre d'`AlertDialog`. Il faudra passer l'axe en vertical au-delà d'un seuil, ou
+  autre chose. Même piège dans la boîte de création d'une catégorie
+  (`my_decks_screen.dart:353`), que `deck_name_layout_test.dart` traverse sans jamais la mesurer
+  ouverte.
+
+  Le mode et les réglages, eux, ne sont couverts que **par effet de bord** : `teams_layout_test`
+  traverse leurs écrans et le routeur les laisse montés sous l'étape des équipes. Ça les mesure
+  réellement, mais un échec les nommera depuis un fichier qui ne parle pas d'eux. L'étape des équipes et l'accueil sont sortis de
   cette liste avec la #54, qui les instrumente — et `home_layout_test.dart` a cessé de s'appuyer
   sur `ensureVisible`, qui ne lève rien sans `Scrollable` ancêtre.
 

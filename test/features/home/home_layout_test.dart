@@ -2,6 +2,7 @@ import 'package:cekoi/app/app.dart';
 import 'package:cekoi/app/game_persistence.dart';
 import 'package:cekoi/app/router.dart';
 import 'package:cekoi/app/screen_awake.dart';
+import 'package:cekoi/data/db/database.dart';
 import 'package:cekoi/data/db/seed/deck_seeder.dart';
 import 'package:cekoi/data/providers.dart';
 import 'package:cekoi/domain/engine/game_state.dart';
@@ -38,6 +39,10 @@ void main() {
     await exigerLesVraiesPolices();
   });
 
+  late AppDatabase db;
+  setUp(() => db = AppDatabase.memory());
+  tearDown(() => db.close());
+
   Future<void> pumpHome(
     WidgetTester tester, {
     required Size taille,
@@ -49,6 +54,10 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
+          // Une base en mémoire : le `runAsync` ci-dessous laisse tourner le
+          // vrai asynchrone, et l'ouverture de la base réelle réclame alors
+          // `path_provider`, absent d'un test widget.
+          appDatabaseProvider.overrideWithValue(db),
           // L'accueil ne touche pas la base une fois ces deux-là fournis :
           // c'est la mise en page qu'on teste, pas le chargement.
           deckSeedingProvider.overrideWith((ref) async => const SeedReport()),
@@ -61,8 +70,85 @@ void main() {
         child: CekoiApp(router: createAppRouter()),
       ),
     );
+    // Le décodage d'une image ne se termine jamais sous le temps simulé : sans
+    // ce `runAsync`, le logo est un trou de 0 × 0 et le bloc d'identité ne
+    // pèse que son titre. `tool/apercus/apercu.dart` le fait depuis toujours,
+    // et pour la même raison.
+    await tester.runAsync(() async {
+      await precacheImage(
+        const AssetImage('assets/branding/logo_mark.png'),
+        tester.element(find.byType(MaterialApp).first),
+      );
+    });
     await tester.pumpAndSettle();
   }
+
+  /// Le bloc d'identité se réduit, mais reste un logo — pas un point.
+  ///
+  /// Relevé, avec les quatre entrées : **1,00** à taille normale — le logo
+  /// garde ses 280 px et personne ne perd rien —, 0,87 au maximum d'Android,
+  /// 0,46 sur le même réglage et un petit écran. Au pire cas, AX5 sur un
+  /// 360 × 640, il ne resterait que 17 px : le bloc s'efface plutôt que de
+  /// tomber à 4 %.
+  ///
+  /// `aucunTexteRogne` ne peut pas voir ça : le `FittedBox` compose son enfant
+  /// sans borne, donc le paragraphe a toujours la place qu'il demande et la
+  /// mesure le trouve sain. Réduire est l'autre façon de perdre un texte, et
+  /// c'est celle que la série du 26 au 27 août a installée partout en
+  /// corrigeant les rognages. Elle a besoin de son propre plancher.
+  for (final (libelle, taille, echelle, plancher) in [
+    // Relevé : 1,00 — le bloc garde ses 280 px, personne ne perd rien.
+    ('un ecran courant', const Size(360, 800), 1.0, 0.95),
+    // Relevé : 0,87 puis 0,46. Le logo descend à 244 px, puis à 129.
+    ('le maximum d Android', const Size(360, 800), 2.0, 0.8),
+    ('un petit ecran au maximum d Android', const Size(360, 640), 2.0, 0.4),
+    // Ici il ne reste que 17 px : le bloc s'efface au lieu de tomber à 4 %.
+    ('AX5 sur iOS', const Size(360, 640), 3.1, null),
+  ]) {
+    testWidgets('le bloc d identite reste lisible, ou s efface, sur $libelle', (
+      tester,
+    ) async {
+      await pumpHome(
+        tester,
+        taille: taille,
+        echelleTexte: echelle,
+        // Quatre entrées : c'est la reprise qui serre le bloc d'identité.
+        reprise: testGame(cardCount: 12),
+      );
+
+      final logo = find.byType(Image);
+      if (plancher == null) {
+        expect(
+          logo,
+          findsNothing,
+          reason: 'le bloc devrait avoir cede la place aux entrees',
+        );
+        return;
+      }
+
+      // `getRect` traverse la transformation du `FittedBox`, `getSize` non :
+      // leur rapport **est** l'échelle de peinture.
+      final reduction =
+          tester.getRect(logo).height / tester.getSize(logo).height;
+
+      expect(
+        reduction,
+        greaterThanOrEqualTo(plancher),
+        reason:
+            'le bloc d identite est reduit a '
+            '${(reduction * 100).toStringAsFixed(0)} %',
+      );
+      expect(reduction, lessThanOrEqualTo(1.0));
+    });
+  }
+
+  testWidgets('le logo pese vraiment ses 280 px', (tester) async {
+    // Le temoin de tout ce fichier : si cette assertion tombe, le bloc
+    // d'identite ne fait que la hauteur de son titre et rien de ce qui est
+    // mesure au-dessous ne veut dire quoi que ce soit.
+    await pumpHome(tester, taille: const Size(360, 800));
+    expect(tester.getSize(find.byType(Image)).height, 280);
+  });
 
   for (final (libelle, taille, echelle, avecReprise) in [
     ('un ecran courant', const Size(360, 800), 1.0, false),

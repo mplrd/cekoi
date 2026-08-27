@@ -128,6 +128,14 @@ class _TeamsScreenState extends ConsumerState<TeamsScreen> {
 ///
 /// Le compteur n'a **pas de limite haute** : R8.1 n'en pose aucune, et une
 /// dixième équipe coûte huit taps comme la troisième en coûte un.
+/// La largeur de la case du nombre, entre les deux flèches.
+///
+/// Elle vaut `AppTheme.minTouchTarget` par coïncidence, et n'a rien à voir avec
+/// une cible tactile : c'est la place qu'il faut pour que « 10 » ne pousse pas
+/// les flèches. Les deux valeurs sont nommées pour qu'on ne les « harmonise »
+/// pas un jour.
+const double _largeurDuCompteur = 64;
+
 class _TeamCountSelector extends StatelessWidget {
   const _TeamCountSelector({required this.value, required this.onChanged});
 
@@ -155,7 +163,7 @@ class _TeamCountSelector extends StatelessWidget {
         ),
         _Step(
           icon: Icons.remove,
-          // R8.3 : deux équipes est le minimum d'une partie.
+          // R8.5 : deux équipes est le minimum d'une partie.
           onTap: value > minimumTeamCount ? () => onChanged(value - 1) : null,
           semantics: l10n.teamCountFewer,
         ),
@@ -170,7 +178,7 @@ class _TeamCountSelector extends StatelessWidget {
         // exactement à dix équipes, le maximum que R8.1 promet utilisable,
         // que le nombre passe à deux chiffres.
         SizedBox(
-          width: 64,
+          width: _largeurDuCompteur,
           child: TexteQuiTient(
             '$value',
             alignment: Alignment.center,

@@ -20,6 +20,14 @@ import '../../support/geometrie.dart';
 /// ×1,6 n'est pas un cas extrême : c'est un cran ordinaire du réglage Android.
 /// Et R8.1 promet l'interface utilisable jusqu'à dix équipes — c'est
 /// précisément à dix que le nombre passe à deux chiffres.
+///
+/// **Ce fichier mesure toute la pile, pas seulement l'étape des équipes.** Le
+/// routeur garde montées les routes traversées : l'accueil, le mode et les
+/// réglages sont encore dans l'arbre quand `aucunTexteRogne` passe. C'est
+/// délibéré — c'est comme ça que les défauts de ces trois écrans sont tombés —
+/// mais ça veut dire qu'un échec peut nommer « En famille » ou « Nombre de
+/// cartes », qui ne sont pas ici. Ces deux étapes n'ont pas de fichier à
+/// elles ; le jour où elles en auront un, on pourra restreindre la portée.
 void main() {
   late AppLocalizations l10n;
   late AppDatabase db;

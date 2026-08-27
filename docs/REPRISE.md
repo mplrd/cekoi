@@ -27,7 +27,7 @@ reste dans `ROADMAP.md`, les démarches dans `ADMINISTRATIF.md`, les règles dan
 |---|---|
 | Lots | 6 sur 8 faits ; le 5 (contenu) et le 8 (publication) sont en cours |
 | Cartes | 529 sur les 1 200 visées, réparties sur 21 catégories |
-| Écrans à risque de débordement | 0 sur les **onze surfaces instrumentées** ; il en reste **une** hors mesure |
+| Textes rognés | 0 sur les **onze surfaces instrumentées** ; il en reste **une** hors mesure |
 | Lisibilité de la face de carte | corrigée : une situation de 40 caractères passe de 15,5 à **46,6 px** |
 | Identification d'un build | commit, numéro et date lisibles dans les réglages, et copiables |
 | Longueur des cartes personnalisées | bornée à 60 caractères, comme le contenu officiel |
