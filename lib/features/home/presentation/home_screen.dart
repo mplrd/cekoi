@@ -5,6 +5,7 @@ import 'package:cekoi/app/game_persistence.dart';
 import 'package:cekoi/app/router.dart';
 import 'package:cekoi/app/theme/app_colors.dart';
 import 'package:cekoi/app/theme/app_theme.dart';
+import 'package:cekoi/app/widgets/texte_qui_tient.dart';
 import 'package:cekoi/data/providers.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -94,14 +95,32 @@ class _HomeAction extends StatelessWidget {
           borderRadius: const BorderRadius.all(
             Radius.circular(AppTheme.radius),
           ),
-          child: SizedBox(
-            height: AppTheme.minTouchTarget,
-            child: Center(
-              child: Text(
-                label,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: texte,
-                  fontWeight: FontWeight.w700,
+          // Une hauteur **minimale**, et non une hauteur : 64 px est la cible
+          // tactile que le système exige, pas un plafond. Fixée, elle rognait
+          // le libellé par le bas — mesuré, « Jouer » réclame 87 px de haut à
+          // ×3,1 dans une boîte qui en faisait 64. C'est l'autre façon de
+          // perdre un texte, et `aucunTexteRogne` la voit aussi.
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              minHeight: AppTheme.minTouchTarget,
+            ),
+            // Le liseré corail est peint **à l'intérieur** de la forme : sans
+            // ce rembourrage, un libellé ramené à la largeur exacte du bouton
+            // pose ses glyphes dessus.
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Center(
+                // « Mes catégories » réclamait 324,4 px dans 312 à ×3,1 : le
+                // libellé le plus long des quatre, et il ne replie pas — c'est
+                // « catégories » seul qui dépasse.
+                child: TexteQuiTient(
+                  label,
+                  alignment: Alignment.center,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: texte,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ),
@@ -111,6 +130,13 @@ class _HomeAction extends StatelessWidget {
     );
   }
 }
+
+/// En dessous de cette hauteur disponible, le bloc d'identité s'efface.
+///
+/// Mesuré : il pèse 449 px au naturel — 280 de logo, 8 d'écart, 161 de nom à
+/// ×3,1. À 160 px il est encore réduit à un peu plus du tiers, ce qui reste un
+/// logo ; en dessous, ce n'est plus qu'une tache.
+const double _hauteurMinimaleDeLIdentite = 160;
 
 class _Menu extends ConsumerWidget {
   const _Menu();
@@ -133,41 +159,77 @@ class _Menu extends ConsumerWidget {
         // partie reprenable — la hauteur exacte du bouton qui passait sous le
         // bord. Ici le logo est le seul à pouvoir céder, et il ne cède que
         // quand il n'y a plus le choix : à taille normale, il garde ses 280.
+        // Le bloc d'identité prend ce que les entrées laissent, et s'y réduit
+        // — logo et nom ensemble, pour qu'ils gardent leurs proportions. Le
+        // `Flexible` posé sur le seul logo ne suffisait pas : il laissait
+        // rétrécir le dessin, pas le mot, et à ×3,1 « Cékoi » réclame à lui
+        // seul 139 px de haut. La colonne débordait alors de 130 px.
+        //
+        // Le `scaleDown` ne fait rien tant que ça tient : mesuré avec les
+        // quatre entrées, la réduction vaut 1,00 à taille normale, 0,87 au
+        // maximum d'Android, et 0,46 sur ce réglage et un petit écran.
+        //
+        // En dessous de [_hauteurMinimaleDeLIdentite], il ne reste plus rien
+        // qui vaille d'être regardé : au pire cas mesuré — AX5 sur un
+        // 360 × 640 avec quatre entrées — le bloc tombe à **4 %**, soit un
+        // logo de 13 px et un nom de 6. Il s'efface alors, et les entrées
+        // récupèrent sa place. Un logo illisible ne vaut pas mieux que pas de
+        // logo, et ce sont les entrées qui font cet écran.
         Expanded(
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Le logo annonce les trois manches — la bulle qui parle, le
-                // « 1 » du mot unique, le personnage qui mime. C'est la
-                // version détourée : le dessin se pose directement sur le fond
-                // de l'écran, sans le carré corail qu'il traînait, qui se
-                // serait vu sur ce pastel.
-                Flexible(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      maxHeight: 280,
-                      maxWidth: 280,
-                    ),
-                    child: Image.asset(
-                      'assets/branding/logo_mark.png',
-                      fit: BoxFit.contain,
-                      semanticLabel: l10n.appTitle,
-                    ),
+          child: LayoutBuilder(
+            builder: (context, contraintes) {
+              if (contraintes.maxHeight < _hauteurMinimaleDeLIdentite) {
+                return const SizedBox.shrink();
+              }
+              return Center(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Le logo annonce les trois manches — la bulle qui
+                      // parle, le « 1 » du mot unique, le personnage qui
+                      // mime. C'est la version détourée : le dessin se pose
+                      // sur le fond de l'écran, sans le carré corail qu'il
+                      // traînait, qui se serait vu sur ce pastel.
+                      //
+                      // Pas de `Flexible` : sous un `FittedBox` la colonne
+                      // est composée sous une hauteur infinie, donc
+                      // `RenderFlex` ne distribue rien et un enfant flexible
+                      // reçoit les mêmes contraintes que les autres. C'était
+                      // devenu un filet qui ne retenait plus rien.
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          maxHeight: 280,
+                          maxWidth: 280,
+                        ),
+                        child: Image.asset(
+                          'assets/branding/logo_mark.png',
+                          fit: BoxFit.contain,
+                          semanticLabel: l10n.appTitle,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      // Pas de `TexteQuiTient` ici : le `FittedBox` le rend
+                      // inutile. Il compose son enfant sans borne de largeur
+                      // puis réduit l'ensemble — le nom ne peut donc plus
+                      // être rogné, alors qu'il réclamait 355,5 px dans 312
+                      // à ×3,1.
+                      Text(
+                        l10n.appTitle,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.displayMedium
+                            ?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.ink,
+                              letterSpacing: -1,
+                            ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  l10n.appTitle,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.ink,
-                    letterSpacing: -1,
-                  ),
-                ),
-              ],
-            ),
+              );
+            },
           ),
         ),
         if (resumable != null) ...[

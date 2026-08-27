@@ -227,21 +227,31 @@ catégories et l'étape de sélection les composent avec `TexteQuiTient`.
 
 Ce qui reste ouvert et ne dépend pas d'un lot :
 
-- **Hors des neuf surfaces instrumentées, la géométrie n'est exercée qu'à ×1,3.** Neuf fichiers
+- **Hors des onze surfaces instrumentées, la géométrie n'est exercée qu'à ×1,3.** Onze fichiers
   importent `test/support/geometrie.dart` : `score_table_layout_test.dart`,
   `turn_summary_layout_test.dart`, `setup_scaffold_layout_test.dart`,
   `app_settings_layout_test.dart`, depuis le 26 août `game_card_face_layout_test.dart` et
   `deck_name_layout_test.dart`, et depuis le 27 `tie_break_layout_test.dart`,
-  `turn_intro_layout_test.dart` et `end_of_game_layout_test.dart`. Tous vont jusqu'à ×3,1 sauf
-  les deux du 26, qui s'arrêtent à ×2, le maximum d'Android. Partout ailleurs, un test de mise
+  `turn_intro_layout_test.dart` et `end_of_game_layout_test.dart`, puis `teams_layout_test.dart`
+  et `home_layout_test.dart`. Tous vont jusqu'à ×3,1 sauf les deux du 26, qui s'arrêtent à ×2,
+  le maximum d'Android. Partout ailleurs, un test de mise
   en page ne rougit que sur une exception de `RenderFlex` ou sur un widget introuvable, jamais
   sur un texte rogné — le défaut que la série du 24 août a justement trouvé sur trois écrans.
-  Restent dans ce cas le contenu réel des étapes de configuration
-  (`setup_flow_test.dart:549` et `:945` — l'ossature est mesurée, mais avec une `ListView`
-  factice) et l'accueil (`home_layout_test.dart:90`, dont la boucle d'atteignabilité s'appuie
-  sur `ensureVisible`, qui ne lève rien sans `Scrollable` ancêtre). Les deux écrans de
-  catégories, eux, ne posent jamais d'échelle de texte : `my_decks_test.dart:40` et
-  `deck_cards_test.dart:32` fixent une taille d'écran et rien d'autre.
+  Reste dans ce cas l'écran des cartes d'une catégorie : `deck_cards_test.dart:32` fixe une
+  taille d'écran et aucune échelle de texte. Son `SegmentedButton` de difficulté est le suspect
+  sérieux — trois segments de 109 px sur un 360, et « Difficile » composé à 16 px forcés en
+  réclame de l'ordre de 140 à ×2. Attention au correctif : `SegmentedButton` mesure ses segments
+  par leurs intrinsèques, et `TexteQuiTient` lève sur une mesure intrinsèque — c'est le cas déjà
+  documenté du titre d'`AlertDialog`. Il faudra passer l'axe en vertical au-delà d'un seuil, ou
+  autre chose. Même piège dans la boîte de création d'une catégorie
+  (`my_decks_screen.dart:353`), que `deck_name_layout_test.dart` traverse sans jamais la mesurer
+  ouverte.
+
+  Le mode et les réglages, eux, ne sont couverts que **par effet de bord** : `teams_layout_test`
+  traverse leurs écrans et le routeur les laisse montés sous l'étape des équipes. Ça les mesure
+  réellement, mais un échec les nommera depuis un fichier qui ne parle pas d'eux. L'étape des équipes et l'accueil sont sortis de
+  cette liste avec la #54, qui les instrumente — et `home_layout_test.dart` a cessé de s'appuyer
+  sur `ensureVisible`, qui ne lève rien sans `Scrollable` ancêtre.
 
   Ce que les trois fichiers du 27 août ont trouvé en s'ouvrant, et qui était en production :
 
@@ -281,22 +291,42 @@ Ce qui reste ouvert et ne dépend pas d'un lot :
   ci-dessus reste une liste de trous *connus* : la #53 en a trouvé un qui n'y figurait pas, et
   il n'y a aucune raison qu'il soit le dernier.
 
-  **Deux rognages déjà mesurés attendent leur correctif**, tous deux sur des surfaces non
-  instrumentées, tous deux relevés en marge de la #53 :
+  **Ces deux surfaces sont ouvertes depuis la #54**, et elles cachaient sept défauts de plus —
+  cinq rognages en largeur, un en hauteur, un débordement franc :
 
   | Texte | Écran | Sa boîte | Ce qu'il lui faut |
   |---|---|---|---|
-  | « 10 » | compteur d'équipes, ×1,6 | 64 px | **66,7 px** |
+  | « 10 » | compteur d'équipes, **×1,6** | 64 px | **66,7 px** |
   | « 10 » | compteur d'équipes, ×2 | 64 px | **83,4 px** |
   | « 10 » | compteur d'équipes, ×3,1 | 64 px | **129,3 px** |
+  | « Nombre d'équipes » | étape des équipes, ×2 | 128 px | **137,2 px** |
+  | « Nombre de cartes » | étape des réglages, ×3,1 | 59,3 px | **179,3 px** |
+  | « En famille » | étape du mode, ×3,1 | 196 px | **230,4 px** |
+  | « Mes catégories » | accueil, ×3,1 | 312 px | **324,4 px** |
   | « Cékoi » | accueil, ×3,1 | 312 px | **355,5 px** |
+  | « Jouer » (hauteur) | accueil, ×3,1 | 64 px | **87 px** |
+  | le bloc d'identité | accueil, ×3,1 | — | **déborde de 130 px** |
 
-  Le compteur est le plus urgent des deux : c'est un `SizedBox(width: 64)` autour d'un nombre,
-  qui n'a aucun point de coupure, et il cède dès **×1,6** — un réglage courant sur Android, pas
-  un cas d'accessibilité extrême. R8.1 promet l'interface utilisable jusqu'à dix équipes ; à
-  ×3,1 la moitié du zéro disparaît. Le titre de l'accueil, lui, ne cède qu'à ×3,1, c'est-à-dire
-  sur iOS en AX5, qui n'a jamais tourné. Les deux se corrigent avec `TexteQuiTient`, et
-  demandent d'instrumenter l'étape des équipes et l'accueil.
+  Le compteur est le plus grave : c'est un `SizedBox(width: 64)` autour d'un nombre, qui n'a
+  aucun point de coupure, et il cède dès **×1,6** — un cran ordinaire du réglage Android, pas un
+  cas d'accessibilité extrême. R8.1 promet l'interface utilisable jusqu'à dix équipes ; c'est
+  précisément à dix que le nombre passe à deux chiffres, et à ×3,1 la moitié du zéro
+  disparaissait. La boîte reste à 64 px après correctif : les deux flèches ne doivent pas se
+  déplacer quand le nombre grandit, donc c'est le nombre qui se ramène.
+
+  Deux enseignements de cette série-là. D'abord, **un texte se perd aussi par le bas** : la
+  hauteur des entrées de l'accueil était fixée à 64 px, la cible tactile minimale prise pour un
+  plafond. Ensuite, mesurer une étape de configuration mesure aussi **tout ce qui est empilé
+  dessous** : le routeur garde les routes précédentes montées, si bien que le test de l'étape
+  des équipes a trouvé les défauts du mode, des réglages et de l'accueil sans les viser.
+
+  L'accueil demandait plus qu'un `TexteQuiTient` : son bloc d'identité — logo et nom — débordait
+  de 130 px, le `Flexible` du logo laissant rétrécir le dessin mais pas le mot. Il est composé
+  dans un `FittedBox(scaleDown)`, qui ne fait rien tant que ça tient.
+
+  **Reste une surface non instrumentée** : l'écran des cartes d'une catégorie
+  (`deck_cards_test.dart` fixe un 1000 × 2200 et aucune échelle). Ses textes de carte passent
+  déjà par `TexteQuiTient` depuis la #49 ; c'est le reste de l'écran que rien ne mesure.
 
   Effet de bord de cette instrumentation, et le plus instructif : `TexteQuiTient` ne portait
   **aucun alignement de texte**. Sous un `CrossAxisAlignment.stretch` ou dans un bouton pleine
