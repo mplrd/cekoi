@@ -136,9 +136,16 @@ Cycle d'une unité de travail :
 5. `gh pr create --base develop`, en remplissant honnêtement la section
    *Ce que je n'ai pas fait* du template.
 6. CI verte + revue propre → merge dans `develop`.
-7. Après le merge, republier l'artefact depuis `docs/REPRISE.md` si tu as l'outil de
-   publication. Sinon, le dire dans la PR : le rendu est alors en retard sur la source, et
-   c'est au suivant de le rattraper.
+7. Après le merge, republier l'artefact depuis `docs/REPRISE.md`. **Un merge dont l'artefact
+   n'est pas republié n'est pas terminé**, et le message qui annonce le merge porte le lien —
+   c'est la seule vérification qui tienne, puisque rien dans la CI ne peut voir un rendu qui
+   vit hors du dépôt. Sans l'outil de publication, le dire dans la PR : le rendu est alors en
+   retard sur la source, et c'est au suivant de le rattraper.
+
+   Ça a été oublié deux fois de suite le 27 août. L'artefact annonçait encore que le départage
+   n'était mesuré par rien, alors que treize défauts avaient été trouvés et corrigés depuis —
+   et c'est le seul document que l'auteur du projet lit. Un état de projet faux est pire que
+   pas d'état du tout : il se lit avec confiance.
 8. La remontée de `develop` vers `main` est un arbitrage humain, jamais automatique.
 
 Le code généré (`*.g.dart`, `*.freezed.dart`) n'est pas versionné : après tout clone ou tout

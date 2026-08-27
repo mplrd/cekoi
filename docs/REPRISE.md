@@ -1,9 +1,15 @@
 # Point de reprise
 
-**État au 27 août 2026** — `develop` au merge de la #51, CI verte dessus.
+**État au 27 août 2026.**
 
-Pas de SHA ici : un document versionné ne peut pas citer le commit qui le contient sans être
-faux dès son merge. Pour l'état exact, `git log -1 develop`.
+Ni SHA ni numéro de PR ici. Un document versionné ne peut pas citer le commit qui le contient
+sans être faux dès son merge — c'est la leçon de la #45 — et la ligne « au merge de la #NN »
+retombe dans le même piège d'un cran : elle se périme à chaque merge suivant, y compris ceux
+qui ne touchent pas ce fichier. Elle a annoncé la #51 pendant que `develop` en était à la #54.
+Pour l'état exact, `git log -1 develop` ; pour ce qui a changé, le *Journal* en bas.
+
+**Rien dans ce fichier ne doit exiger d'être mis à jour par une PR qui ne le concerne pas.**
+C'est la seule règle qui le garde vrai.
 
 Ce fichier est le récapitulatif du reste à faire, et il est **la source**. L'artefact publié
 sur claude.ai n'en est qu'un rendu :
