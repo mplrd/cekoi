@@ -560,13 +560,15 @@ void main() {
       // tairait a qui verra une pub des la suivante.
       await installDeck('animaux', easy: 15, medium: 15, hard: 15);
 
-      // Trois impressions dans l heure, la plus recente a dix minutes : le
-      // plafond est atteint et l ecart minimum est franchi.
+      // Trois impressions dans l heure, largement espacees : le plafond est
+      // atteint, et l ecart minimum ne l est jamais. Sans cet espacement le
+      // test resterait vert si `minimumGap` passait au-dessus de dix minutes,
+      // mais pour l autre raison — et il ne mesurerait plus le plafond.
       final instant = DateTime.utc(2026, 8, 27, 20);
       final journal = AdImpressionRepository(db);
-      for (var i = 1; i <= 3; i++) {
+      for (final minutes in const [20, 40, 55]) {
         await journal.record(
-          instant.subtract(Duration(minutes: 10 * i)),
+          instant.subtract(Duration(minutes: minutes)),
           expiredBefore: instant.subtract(const Duration(hours: 1)),
         );
       }
@@ -1262,9 +1264,13 @@ const _accorde = ConsentState(canRequestAds: true, canChangeChoice: true);
 
 /// Un consentement refuse, le formulaire restant joignable.
 ///
-/// Aucune pub ne peut etre chargee dans cet etat. C est exactement pour ca
-/// qu il sert : il separe « pas de pub maintenant » de « pas de pub dans ce
-/// produit », qui est la seule chose que la mention de publicite regarde.
+/// Aucune pub ne peut etre chargee dans cet etat, et ca ne changera pas tant
+/// que le joueur n aura pas rouvert le formulaire depuis les reglages. C est
+/// pour ca qu il sert : depuis le 27 aout 2026, la mention de publicite
+/// regarde ce refus autant qu elle regarde la possession.
+///
+/// `canChangeChoice` reste vrai : sans lui l entree des reglages disparait, et
+/// l etat n aurait plus de sortie.
 const _refuse = ConsentState(canChangeChoice: true);
 
 /// Un interstitiel qui met du temps a repondre.

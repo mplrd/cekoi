@@ -22,11 +22,18 @@ part 'launch_ad.g.dart';
 /// qui a payé. Le parcours actuel garantit qu'elle est lue avant d'arriver
 /// ici ; ce n'est pas une raison pour que le code en dépende.
 ///
-/// Les deux se rejoignent sur un point : elles valent **durablement** pour cet
-/// appareil, jusqu'à un achat ou une réouverture du formulaire. C'est ce qui
-/// permet au bouton de lancement d'annoncer la publicité sur cette seule base.
-/// Le plafond de fréquence n'y est donc pas, et ce n'est pas un oubli : il
-/// vaut pour la partie qui commence, pas pour l'appareil.
+/// C'est aussi ce que lit le bouton de lancement pour annoncer la publicité, et
+/// c'est ce qui fixe la frontière : le plafond de fréquence n'est pas ici, et
+/// ce n'est pas un oubli. Il vaut pour la partie qui commence, pas pour
+/// l'appareil, et l'y mettre ferait clignoter la mention d'une partie à
+/// l'autre.
+///
+/// La frontière est celle du **rattrapage**, pas celle de la durée : ce qui est
+/// ici ne se répare que par un achat ou une réouverture du formulaire. Deux des
+/// états rendus faux sont pourtant passagers — le CMP n'a pas encore répondu,
+/// ou le SDK n'a pas démarré (`ads.dart`) — et se corrigeront d'eux-mêmes au
+/// prochain lancement. Ils vont du bon côté : ils taisent la mention le temps
+/// qu'ils durent, et on ne promet jamais une pub avant de savoir.
 @Riverpod(keepAlive: true)
 bool launchAdPossible(Ref ref) =>
     (ref.watch(adConsentProvider).value?.canRequestAds ?? false) &&

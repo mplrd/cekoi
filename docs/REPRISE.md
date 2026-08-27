@@ -116,7 +116,7 @@ retire pas proprement d'un magasin.
 
 ## Journal
 
-Les PR de la série, du 19 au 26 août.
+Les PR de la série, du 19 au 27 août.
 
 | PR | Ce qui a changé |
 |---|---|
@@ -132,6 +132,7 @@ Les PR de la série, du 19 au 26 août.
 | #49 | La longueur d'une carte est bornée à 60 caractères, la borne que l'import du contenu officiel applique depuis toujours — tenue par le dépôt, pas par le seul champ de saisie. Et parce que soixante caractères en un seul mot n'ont aucun point de coupure, le récapitulatif de tour les compose avec `TexteQuiTient` au lieu de les rogner. Le nom d'une catégorie reste ouvert. |
 | #50 | Le point de reprise redevient exact — il datait du 24 en décrivant le 25, et annonçait cinq écrans mesurés là où il y en a quatre. Une PR de prose seule ne construit plus d'APK de release. |
 | #51 | La face de carte replie son texte au lieu de l'écraser : une situation de 40 caractères passe de 15,5 à **46,6 px**, une carte à la borne de 10,2 à 38,3. Le nom d'une catégorie est borné à 30 caractères, valeur mesurée sur la hauteur de ligne à ×2. Amène `TexteDeCarte`, un aperçu de carte longue au banc de rendu, et deux fichiers de mesure. |
+| #52 | La mention « Une courte publicité précède la partie » disparaît sur un consentement refusé. Un refus UMP tient jusqu'à ce que le joueur rouvre le formulaire depuis les réglages : la ligne lui promettait une pub qui ne viendrait jamais. Le plafond de fréquence, lui, reste hors de la condition — il vaut pour la partie qui commence, pas pour l'appareil. Le bouton et le portillon lisent désormais la même valeur. |
 
 **Deux de ces défauts ont exactement la même forme :** une correction appliquée à un endroit
 sur deux. Les deux fonctions jamais appelées du test de fumée, et les deux variantes de
