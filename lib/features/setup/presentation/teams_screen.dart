@@ -90,6 +90,16 @@ class _TeamsScreenState extends ConsumerState<TeamsScreen> {
           for (var index = 0; index < setup.teamCount; index++)
             Padding(
               padding: const EdgeInsets.only(bottom: 12),
+              // **Pas de `maxLength`, et c'est un arbitrage rendu** (27 août
+              // 2026) : le texte d'une carte est borné à 60 caractères et le
+              // nom d'une catégorie à 30, mais un nom d'équipe est libre. Un
+              // joueur qui en choisit un à rallonge le verra tout petit à
+              // l'écran, et c'est son affaire.
+              //
+              // Ce que ça impose au reste : les quatre endroits qui affichent
+              // ce nom — annonce de tour, bilan de tour, bouton du départage,
+              // podium — le composent avec `TexteQuiTient`, sans quoi il est
+              // rogné. Un nom en un seul mot n'a aucun point de coupure.
               child: TextField(
                 controller: _controllerFor(index, setup.teamNames[index]),
                 textInputAction: TextInputAction.next,

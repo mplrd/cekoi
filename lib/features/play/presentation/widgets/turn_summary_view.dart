@@ -67,7 +67,8 @@ class TurnSummaryView extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
+                    // Même nom non borné qu'au podium et au départage.
+                    TexteQuiTient(
                       l10n.gameTeamScore(
                         game.activeTeam.name,
                         game.scoreOf(game.activeTeam.id),

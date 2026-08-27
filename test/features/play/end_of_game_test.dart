@@ -368,11 +368,19 @@ void main() {
           await tester.ensureVisible(bouton);
           await tester.pump();
 
+          // Un demi-pixel de tolerance, comme `resteAtteignable` de
+          // `test/support/geometrie.dart`, qui ne l accordait qu a deux bords
+          // sur quatre et porte donc corrigee la meme fragilite :
+          // le defilement et la mise en page n arrondissent pas pareil, et un
+          // `top` a -2,8e-14 apres `ensureVisible` n est pas un bouton hors de
+          // l ecran. La borne exacte a rougi le 27 aout sur un decalage de
+          // cette taille, cause par un titre qui s est mis a se replier.
+          const grain = 0.5;
           final rect = tester.getRect(bouton);
-          expect(rect.top, greaterThanOrEqualTo(0.0));
+          expect(rect.top, greaterThanOrEqualTo(-grain));
           expect(
             rect.bottom,
-            lessThanOrEqualTo(taille.height),
+            lessThanOrEqualTo(taille.height + grain),
             reason: 'le bouton de $id sort de l ecran',
           );
         }

@@ -1,4 +1,5 @@
 import 'package:cekoi/app/theme/app_colors.dart';
+import 'package:cekoi/app/widgets/texte_qui_tient.dart';
 import 'package:cekoi/domain/engine/game_state.dart';
 import 'package:cekoi/features/play/presentation/play_controller.dart';
 import 'package:cekoi/features/play/presentation/widgets/action_zone.dart';
@@ -70,8 +71,15 @@ class TurnIntroView extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Text(
+                      // « Description » est un mot, et un mot n'a pas de
+                      // point de coupure : le repli ne peut rien pour lui. À
+                      // ×2 il réclamait 367,7 px dans une ligne de 296 et se
+                      // faisait rogner, à ×3,1 il en réclamait 572,9 — sur
+                      // l'écran vu une fois par équipe et par manche, et par
+                      // quelqu'un qui vient de recevoir le téléphone.
+                      TexteQuiTient(
                         game.round.label(l10n),
+                        alignment: Alignment.center,
                         textAlign: TextAlign.center,
                         style: theme.textTheme.displaySmall?.copyWith(
                           color: encre,
@@ -88,8 +96,12 @@ class TurnIntroView extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(height: 40),
-                      Text(
+                      // Même raison, et un cas que rien ne borne : le nom
+                      // d'équipe est saisi par le joueur. « Au tour de
+                      // Anticonstitution » réclamait 403,3 px à ×2.
+                      TexteQuiTient(
                         l10n.turnIntroTeam(game.activeTeam.name),
+                        alignment: Alignment.center,
                         textAlign: TextAlign.center,
                         style: theme.textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.bold,
