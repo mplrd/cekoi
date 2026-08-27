@@ -227,21 +227,89 @@ catégories et l'étape de sélection les composent avec `TexteQuiTient`.
 
 Ce qui reste ouvert et ne dépend pas d'un lot :
 
-- **Hors des six surfaces instrumentées, la géométrie n'est exercée qu'à ×1,3.** Six fichiers
-  seulement importent `test/support/geometrie.dart` : `score_table_layout_test.dart`,
+- **Hors des neuf surfaces instrumentées, la géométrie n'est exercée qu'à ×1,3.** Neuf fichiers
+  importent `test/support/geometrie.dart` : `score_table_layout_test.dart`,
   `turn_summary_layout_test.dart`, `setup_scaffold_layout_test.dart`,
-  `app_settings_layout_test.dart`, et depuis le 26 août `game_card_face_layout_test.dart` et
-  `deck_name_layout_test.dart` — les quatre premiers vont jusqu'à ×3,1, les deux derniers
-  s'arrêtent à ×2, le maximum d'Android. Partout ailleurs, un test de mise en page ne rougit que sur
-  une exception de `RenderFlex` ou sur un widget introuvable, jamais sur un texte rogné — le
-  défaut que la série du 24 août a justement trouvé sur trois écrans. Sont dans ce cas
-  **l'annonce de tour**, vue à chaque tour (`game_screen_test.dart:211`, plafonné à ×1,3 alors
-  qu'il débordait de 454 px avant correction), le contenu réel des étapes de configuration
+  `app_settings_layout_test.dart`, depuis le 26 août `game_card_face_layout_test.dart` et
+  `deck_name_layout_test.dart`, et depuis le 27 `tie_break_layout_test.dart`,
+  `turn_intro_layout_test.dart` et `end_of_game_layout_test.dart`. Tous vont jusqu'à ×3,1 sauf
+  les deux du 26, qui s'arrêtent à ×2, le maximum d'Android. Partout ailleurs, un test de mise
+  en page ne rougit que sur une exception de `RenderFlex` ou sur un widget introuvable, jamais
+  sur un texte rogné — le défaut que la série du 24 août a justement trouvé sur trois écrans.
+  Restent dans ce cas le contenu réel des étapes de configuration
   (`setup_flow_test.dart:549` et `:945` — l'ossature est mesurée, mais avec une `ListView`
-  factice), l'accueil (`home_layout_test.dart:90`, dont la boucle d'atteignabilité s'appuie sur
-  `ensureVisible`, qui ne lève rien sans `Scrollable` ancêtre) et la fin de partie. Les deux
-  écrans de catégories, eux, ne posent jamais d'échelle de texte : `my_decks_test.dart:40` et
+  factice) et l'accueil (`home_layout_test.dart:90`, dont la boucle d'atteignabilité s'appuie
+  sur `ensureVisible`, qui ne lève rien sans `Scrollable` ancêtre). Les deux écrans de
+  catégories, eux, ne posent jamais d'échelle de texte : `my_decks_test.dart:40` et
   `deck_cards_test.dart:32` fixent une taille d'écran et rien d'autre.
+
+  Ce que les trois fichiers du 27 août ont trouvé en s'ouvrant, et qui était en production :
+
+  | Texte | Écran | Sa boîte | Ce qu'il lui faut |
+  |---|---|---|---|
+  | « Départage » | départage, ×2 | 312 px | **335,8 px** |
+  | « Départage » | départage, ×3,1 | 312 px | **520,5 px** |
+  | « Description libre » | annonce de tour, ×2 | 296 px | **367,7 px** |
+  | « Description libre » | annonce de tour, ×3,1 | 296 px | **572,9 px** |
+  | « Au tour de Anticonstitution » | annonce de tour, ×2 | 296 px | **403,3 px** |
+  | « Anticonstitution gagne » | podium, ×2 | 312 px | **523,2 px** |
+  | « Anticonstitution gagne » | podium, ×3,1 | 312 px | **810,9 px** |
+  | « Fin de la manche 1 » | bilan de manche, ×3,1 | 312 px | **400,0 px** |
+  | « Anticonstitution a trouvé » | bouton du départage, ×2 | 288 px | **290,6 px** |
+  | « Anticonstitution · 2 » | bilan de tour, ×3,5 | 312 px | **405,7 px** |
+
+  Six textes rognés, tous sur un **mot** que le repli ne peut pas couper, tous corrigés par
+  `TexteQuiTient`. Deux familles, et elles se lisent dans le tableau : les libellés de
+  l'application, qu'un traducteur ou un réglage système fait déborder, et le **nom d'équipe**,
+  qui n'est borné par rien — le champ de l'étape des équipes n'a pas de `maxLength`, à la
+  différence du texte de carte (60) et du nom de catégorie (30). **Et il n'en aura pas** : le
+  27 août, l'arbitrage rendu est de laisser saisir ce qu'on veut, un nom à rallonge s'affichant
+  alors tout petit. C'est donc aux quatre écrans qui l'affichent de le replier, et à eux seuls —
+  la saisie ne refuse rien. Ne pas reproposer de borne ici.
+
+  **Compter des fichiers ne mesure rien, et cette dette l'a fait pendant trois jours.** Le
+  départage n'était même pas dans la liste des trous ci-dessus : il avait déjà quatre tests de
+  géométrie (`end_of_game_test.dart`). Ils tournaient en Ahem, montaient l'écran **sans le
+  thème de l'application**, et s'arrêtaient à ×1,3. Trois raisons de ne rien voir, et chacune suffisait. Le bilan de tour, lui, montait bien
+  à ×3,5 avec les vraies polices — mais avec des équipes nommées « team-1 », dont le trait
+  d'union est justement un point de coupure.
+
+  Le critère qui vaut est donc : **un fichier compte s'il charge les vraies polices, pose
+  `AppTheme`, appelle `aucunTexteRogne`, et va au-delà de ×1,3.** Les neuf le font, et depuis
+  la #53 le montage vit dans `test/support/partie.dart` plutôt que recopié dans chaque
+  fichier — c'est la ligne qui, oubliée, rend un fichier vert et aveugle. Ce qui est écrit
+  ci-dessus reste une liste de trous *connus* : la #53 en a trouvé un qui n'y figurait pas, et
+  il n'y a aucune raison qu'il soit le dernier.
+
+  **Deux rognages déjà mesurés attendent leur correctif**, tous deux sur des surfaces non
+  instrumentées, tous deux relevés en marge de la #53 :
+
+  | Texte | Écran | Sa boîte | Ce qu'il lui faut |
+  |---|---|---|---|
+  | « 10 » | compteur d'équipes, ×1,6 | 64 px | **66,7 px** |
+  | « 10 » | compteur d'équipes, ×2 | 64 px | **83,4 px** |
+  | « 10 » | compteur d'équipes, ×3,1 | 64 px | **129,3 px** |
+  | « Cékoi » | accueil, ×3,1 | 312 px | **355,5 px** |
+
+  Le compteur est le plus urgent des deux : c'est un `SizedBox(width: 64)` autour d'un nombre,
+  qui n'a aucun point de coupure, et il cède dès **×1,6** — un réglage courant sur Android, pas
+  un cas d'accessibilité extrême. R8.1 promet l'interface utilisable jusqu'à dix équipes ; à
+  ×3,1 la moitié du zéro disparaît. Le titre de l'accueil, lui, ne cède qu'à ×3,1, c'est-à-dire
+  sur iOS en AX5, qui n'a jamais tourné. Les deux se corrigent avec `TexteQuiTient`, et
+  demandent d'instrumenter l'étape des équipes et l'accueil.
+
+  Effet de bord de cette instrumentation, et le plus instructif : `TexteQuiTient` ne portait
+  **aucun alignement de texte**. Sous un `CrossAxisAlignment.stretch` ou dans un bouton pleine
+  largeur, l'y poser décentre le titre **à taille de texte normale** — c'est-à-dire pour tout
+  le monde, dans le seul cas où il n'y avait rien à corriger. Ce n'était pas un risque : les
+  libellés des zones d'action l'avaient déjà perdu en gagnant ce widget. Précisément : « Je
+  passe… » réclame 151,3 px de mot insécable dans une boîte de 134, se compose donc sur deux
+  lignes, et « Je » se retrouvait collée à gauche au-dessus de « passe… ». « Trouvé ! » y
+  échappe — c'est un bloc insécable de 161,3 px, le `FittedBox` le réduit d'un seul tenant et
+  son `alignment` suffit à le centrer. Le widget accepte désormais un `textAlign`, et `resteCentre` mesure la position
+  réelle des glyphes plutôt que la propriété déclarée — sur un texte d'une seule ligne
+  seulement : replié, la boîte de sélection d'une ligne inclut l'espace de coupure, et une
+  ligne parfaitement centrée sort alors à 15,0 px du bord gauche pour 4,1 du droit.
 - **iOS n'a jamais tourné ailleurs qu'en compilation, et n'est même pas compilé à chaque
   commit.** Le job `ios-build` de `ci.yml` ne se déclenche que sur `main`, sur une PR qui vise
   `main`, ou si la PR porte l'étiquette `ios` — c'est un arbitrage de minutes de runner macOS,

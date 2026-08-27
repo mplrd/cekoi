@@ -27,11 +27,12 @@ reste dans `ROADMAP.md`, les démarches dans `ADMINISTRATIF.md`, les règles dan
 |---|---|
 | Lots | 6 sur 8 faits ; le 5 (contenu) et le 8 (publication) sont en cours |
 | Cartes | 529 sur les 1 200 visées, réparties sur 21 catégories |
-| Écrans à risque de débordement | 0 sur les **six surfaces instrumentées** ; tout le reste plafonne à ×1,3 |
+| Écrans à risque de débordement | 0 sur les **neuf surfaces instrumentées** ; tout le reste plafonne à ×1,3 |
 | Lisibilité de la face de carte | corrigée : une situation de 40 caractères passe de 15,5 à **46,6 px** |
 | Identification d'un build | commit, numéro et date lisibles dans les réglages, et copiables |
 | Longueur des cartes personnalisées | bornée à 60 caractères, comme le contenu officiel |
 | Nom d'une catégorie | borné à 30 caractères, mesurés sur la hauteur de ligne à ×2 |
+| Nom d'une équipe | **libre**, par arbitrage — replié sur les quatre écrans qui l'affichent |
 | Géométrie des icônes | dans la **zone sûre documentée** des deux côtés, verrouillée par un test |
 | iOS | **jamais exécuté**, et compilé seulement vers `main` ou sur étiquette `ios` |
 | Build de release | construit par la CI — sauf sur une PR de prose seule — et vérifié à la main ; **aucune partie complète jouée dessus** |
@@ -62,16 +63,23 @@ recette, pas par du code.
   `main`, ou si la PR porte l'étiquette `ios`. Une régression de pods, de permissions ou de
   signature s'accumule donc jusqu'à la remontée vers `main` — exactement ce que le lot 1
   voulait éviter en branchant la CI iOS tôt.
-- **Le contrôle de géométrie ne couvre que six surfaces.** Six fichiers de test importent
-  `test/support/geometrie.dart` — tableau des scores, récapitulatif de tour, ossature de
-  configuration, réglages, et depuis le 26 août la face de carte et le nom d'une catégorie ;
-  les quatre premiers vont jusqu'à ×3,1, les deux derniers s'arrêtent à ×2.
-  Partout ailleurs, un test de mise en page ne
-  rougit que sur une exception de `RenderFlex` ou sur un widget introuvable, jamais sur un
-  texte rogné, et s'arrête à ×1,3 : c'est le cas de **l'annonce de tour**, l'écran vu à chaque
-  tour, du contenu réel des étapes de configuration, de l'accueil et de la fin de partie. Les
-  deux écrans de catégories ne posent même jamais d'échelle de texte. Le détail des fichiers
+- **Le contrôle de géométrie ne couvre que neuf surfaces.** Neuf fichiers de test importent
+  `test/support/geometrie.dart` — tableau des scores, bilan de tour, ossature de
+  configuration, réglages, la face de carte et le nom d'une catégorie depuis le 26 août, le
+  départage, l'annonce de tour et les deux écrans de fin depuis le 27. Partout ailleurs, un
+  test de mise en page ne rougit que sur une exception de `RenderFlex` ou sur un widget
+  introuvable, jamais sur un texte rogné, et s'arrête à ×1,3 : restent le contenu réel des
+  étapes de configuration et l'accueil. Les deux écrans de catégories ne posent même jamais
+  d'échelle de texte. Le détail des fichiers est dans `ROADMAP.md`.
+
+  Ce que ces trous coûtent n'a rien de théorique : ouvrir les trois dernières surfaces a
+  trouvé **six textes rognés en production**, dont deux sur l'annonce de tour — l'écran vu une
+  fois par équipe et par manche — et le nom du vainqueur sur le podium. Le tableau des mesures
   est dans `ROADMAP.md`.
+
+  Et la liste ci-dessus est celle des trous **connus**, pas des trous. Le départage n'y était
+  pas : il avait quatre tests de géométrie, qui ne mesuraient rien. Compter des fichiers ne
+  vaut que si l'on sait ce qu'ils regardent — le critère est dans `ROADMAP.md`.
 - **Aucun achat in-app réel, aucune vraie publicité.** Le lot 7 tourne de bout en bout sur les
   identifiants de test de Google et un magasin injecté.
 
@@ -133,6 +141,7 @@ Les PR de la série, du 19 au 27 août.
 | #50 | Le point de reprise redevient exact — il datait du 24 en décrivant le 25, et annonçait cinq écrans mesurés là où il y en a quatre. Une PR de prose seule ne construit plus d'APK de release. |
 | #51 | La face de carte replie son texte au lieu de l'écraser : une situation de 40 caractères passe de 15,5 à **46,6 px**, une carte à la borne de 10,2 à 38,3. Le nom d'une catégorie est borné à 30 caractères, valeur mesurée sur la hauteur de ligne à ×2. Amène `TexteDeCarte`, un aperçu de carte longue au banc de rendu, et deux fichiers de mesure. |
 | #52 | La mention « Une courte publicité précède la partie » disparaît sur un consentement refusé. Un refus UMP tient jusqu'à ce que le joueur rouvre le formulaire depuis les réglages : la ligne lui promettait une pub qui ne viendrait jamais. Le plafond de fréquence, lui, reste hors de la condition — il vaut pour la partie qui commence, pas pour l'appareil. Le bouton et le portillon lisent désormais la même valeur. |
+| #53 | Le départage, l'annonce de tour et les deux écrans de fin sont mesurés pour la première fois avec les vraies polices, le thème livré et jusqu'à ×3,1. Six textes étaient rognés — « Départage », « Description libre », le nom de l'équipe qui joue, celui du vainqueur, « Fin de la manche 1 » et le bouton de vainqueur du départage — tous sur un mot que le repli ne peut pas couper. `TexteQuiTient` reçoit un `textAlign` : il n'en portait aucun, et les libellés des zones d'action avaient déjà perdu leur centrage en gagnant ce widget. |
 
 **Deux de ces défauts ont exactement la même forme :** une correction appliquée à un endroit
 sur deux. Les deux fonctions jamais appelées du test de fumée, et les deux variantes de
