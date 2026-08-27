@@ -3,12 +3,14 @@ import 'dart:async';
 import 'package:cekoi/app/app.dart';
 import 'package:cekoi/app/clock.dart';
 import 'package:cekoi/app/current_game.dart';
+import 'package:cekoi/app/game_persistence.dart';
 import 'package:cekoi/app/preferences.dart';
 import 'package:cekoi/app/router.dart';
 import 'package:cekoi/app/screen_awake.dart';
 import 'package:cekoi/data/db/database.dart';
 import 'package:cekoi/data/db/seed/deck_seeder.dart';
 import 'package:cekoi/data/providers.dart';
+import 'package:cekoi/data/repositories/ad_impression_repository.dart';
 import 'package:cekoi/data/repositories/entitlement_repository.dart';
 import 'package:cekoi/domain/engine/game_state.dart';
 import 'package:cekoi/domain/entities/audience.dart';
@@ -114,6 +116,10 @@ void main() {
     /// Remplace l interstitiel. Par defaut aucune pub : c est l etat d un
     /// build sans publicite, et celui de la quasi-totalite des parcours.
     ShowInterstitial? interstitiel,
+
+    /// Fige l horloge murale, pour dater des impressions publicitaires sans
+    /// dependre de l heure a laquelle la suite tourne.
+    Now? horloge,
   }) async {
     // Écran volontairement très haut : une `ListView` ne construit pas ses
     // enfants hors champ, et un test qui commence par faire défiler teste
@@ -144,6 +150,7 @@ void main() {
           showInterstitialProvider.overrideWithValue(
             interstitiel ?? showNoInterstitial,
           ),
+          if (horloge != null) nowProvider.overrideWithValue(horloge),
           if (catalogueAdulte != null)
             deckCatalogProvider(
               Audience.adult,
@@ -506,19 +513,16 @@ void main() {
       expect(interstitiels, 1);
     });
 
-    testWidgets('consentement refuse, la mention reste affichee', (
-      tester,
-    ) async {
-      // L arbitrage de l utilisateur, et le seul test qui le verrouille : la
-      // mention ne depend **que** de la possession. Remettre le consentement
-      // dans la condition — ce qui parait plus honnete au premier abord —
-      // rend ce test rouge et lui seul.
+    testWidgets('consentement refuse, la mention disparait', (tester) async {
+      // Un refus UMP est **durable** : il tient jusqu a ce que le joueur
+      // rouvre le formulaire depuis les reglages. La ligne annoncerait alors
+      // une pub qui ne viendra jamais.
       //
-      // La raison : un refus de consentement empeche de charger une pub a cet
-      // instant, il ne retire pas la publicite du produit. Taire la mention
-      // sur cette base ferait croire a qui n a pas paye qu il en est
-      // debarrasse, alors qu il en verra a la prochaine partie ou le
-      // chargement aboutira.
+      // C etait l inverse jusqu au 27 aout 2026, au motif qu il en verrait
+      // une « a la prochaine partie ou le chargement aboutira ». Cet argument
+      // vaut pour le plafond de frequence et pour un chargement rate, pas
+      // pour un refus : rien ne repartira tant que le choix n aura pas ete
+      // change.
       await installDeck('animaux', easy: 15, medium: 15, hard: 15);
 
       var interstitiels = 0;
@@ -536,12 +540,60 @@ void main() {
       await tapText(tester, l10n.actionContinue);
       await tapText(tester, l10n.actionContinue);
 
+      expect(find.text(l10n.launchAdNotice), findsNothing);
+
+      await tapText(tester, l10n.actionStartGame);
+
+      // Et rien ne retient la partie : il n existe aucun chemin ou il faut
+      // accepter la pub, ou l avoir achetee, pour jouer.
+      expect(interstitiels, 0);
+      expect(launchedGame(tester).deck, hasLength(GameConfig.defaultCardCount));
+    });
+
+    testWidgets('le plafond de frequence, lui, ne tait pas la mention', (
+      tester,
+    ) async {
+      // L autre moitie de l arbitrage, et ce qui distingue la condition d un
+      // simple « la pub sortira-t-elle ? ». Le plafond vaut pour la partie qui
+      // commence, pas pour l appareil : le mettre dans la condition ferait
+      // apparaitre et disparaitre la ligne d une partie a l autre, et la
+      // tairait a qui verra une pub des la suivante.
+      await installDeck('animaux', easy: 15, medium: 15, hard: 15);
+
+      // Trois impressions dans l heure, la plus recente a dix minutes : le
+      // plafond est atteint et l ecart minimum est franchi.
+      final instant = DateTime.utc(2026, 8, 27, 20);
+      final journal = AdImpressionRepository(db);
+      for (var i = 1; i <= 3; i++) {
+        await journal.record(
+          instant.subtract(Duration(minutes: 10 * i)),
+          expiredBefore: instant.subtract(const Duration(hours: 1)),
+        );
+      }
+
+      var interstitiels = 0;
+      await pumpApp(
+        tester,
+        passerelle: fakeConsentGateway(_accorde),
+        horloge: () => instant,
+        interstitiel: ({required loadTimeout}) async {
+          interstitiels++;
+          return true;
+        },
+      );
+
+      await tapText(tester, l10n.homePlay);
+      await tapText(tester, l10n.modeFamily);
+      await tapText(tester, l10n.actionContinue);
+      await tapText(tester, l10n.actionContinue);
+
       expect(find.text(l10n.launchAdNotice), findsOneWidget);
 
       await tapText(tester, l10n.actionStartGame);
 
-      // Et la coherence de l ensemble : la mention est la, la pub ne part pas.
-      expect(interstitiels, 0);
+      // Le temoin : sans lui, un plafond qui ne bloquerait rien laisserait ce
+      // test vert pour la mauvaise raison.
+      expect(interstitiels, 0, reason: 'le plafond doit bien bloquer la pub');
       expect(launchedGame(tester).deck, hasLength(GameConfig.defaultCardCount));
     });
   });
@@ -569,7 +621,14 @@ void main() {
         // declenche le second (R6.2) ; ne rien acheter garde la premiere.
         // `launchImpossible` est exclusif des deux, il ne s ajoute jamais.
         await installDeck('animaux', easy: 6, medium: 6, hard: 4);
-        await pumpApp(tester, taille: taille, echelleTexte: echelle);
+        await pumpApp(
+          tester,
+          taille: taille,
+          echelleTexte: echelle,
+          // La mention suit desormais le consentement : sans lui, ce test
+          // mesurerait un pied de page a un seul avertissement.
+          passerelle: fakeConsentGateway(_accorde),
+        );
 
         await tapText(tester, l10n.homePlay);
         await tapText(tester, l10n.modeFamily);

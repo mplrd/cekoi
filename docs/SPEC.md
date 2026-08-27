@@ -131,8 +131,8 @@ Il y en a eu deux, et les deux ont été retirés après essai en partie réelle
 **récapitulatif** — mode, catégories, durée, équipes — qui n'apprenait rien à qui venait de
 tout choisir : « le récap qui liste les catégories sélectionnées, je m'en fiche ». Puis un
 écran **« Installez-vous, la partie commence »** pour porter la publicité, qui redisait ce que
-l'annonce du tour affiche immédiatement après, et qu'on traversait même quand aucune pub ne
-sortait — c'est-à-dire presque toujours.
+l'annonce du tour affiche immédiatement après, et qu'on traversait aussi quand aucune pub ne
+sortait.
 
 L'interstitiel se déclenche donc au tap sur **Lancer la partie** (voir `MONETISATION.md`). Une
 pub interstitielle est un plein écran : elle recouvre ce qui est dessous et n'a besoin
@@ -140,10 +140,14 @@ d'aucune page à elle. Le temps mort est réel — le groupe s'installe et se pa
 on ne le fabrique pas.
 
 Une ligne discrète au-dessus du bouton prévient qu'une courte publicité précède la partie.
-Elle ne dépend que de ce que le joueur possède : la version complète retire la publicité, tout
-le monde la voit. Le consentement refusé et le plafond de fréquence décident du chargement
-d'une pub à un instant donné, pas de ce qui a été acheté — s'y fier ferait taire la mention à
-qui verra quand même des pubs à la partie suivante.
+Elle suit ce qui vaut **durablement** sur l'appareil : la version complète retire la publicité,
+et un consentement refusé la retire tant que le joueur ne rouvre pas le formulaire depuis les
+réglages. Le plafond de fréquence, lui, ne la fait pas disparaître — il vaut pour la partie qui
+commence, et la ligne clignoterait d'une partie à l'autre. Le détail du raisonnement est dans
+`MONETISATION.md`.
+
+Refuser le consentement ne ferme aucune partie : le jeu se lance sans pub et sans attente. Il
+n'existe aucun chemin où il faut accepter une publicité, ou l'avoir achetée, pour jouer.
 
 Le bouton tourne le temps du chargement, trois secondes au pire, et le retour est fermé pendant
 ce temps-là — sans quoi la pub s'afficherait par-dessus une étape de configuration.

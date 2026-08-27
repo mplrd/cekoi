@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:cekoi/app/clock.dart';
 import 'package:cekoi/app/current_game.dart';
 import 'package:cekoi/app/launch_ad.dart';
-import 'package:cekoi/app/ownership.dart';
 import 'package:cekoi/app/router.dart';
 import 'package:cekoi/domain/engine/draw.dart';
 import 'package:cekoi/domain/entities/card.dart' as domain;
@@ -76,20 +75,19 @@ class _LaunchButtonState extends ConsumerState<LaunchButton> {
       requested: setup.resolvedCardCount,
     );
 
-    // La mention ne dépend que de ce que le joueur possède : la version
-    // complète retire la publicité, tout le monde l'a.
+    // La mention suit ce qui vaut durablement sur cet appareil : la version
+    // complète retire la publicité, et un consentement refusé la retire aussi
+    // longtemps que le joueur ne rouvre pas le formulaire depuis les réglages.
+    // Lui annoncer une pub qui ne viendra jamais serait faux.
     //
-    // Et de rien d'autre. Le consentement refusé et le plafond de fréquence
-    // sont des raisons de ne pas *charger* une pub à cet instant — pas des
-    // raisons de laisser croire qu'on en est débarrassé.
+    // Le plafond de fréquence, lui, reste hors de la condition : il vaut pour
+    // la partie qui commence, et l'y mettre ferait apparaître et disparaître
+    // la ligne d'une partie à l'autre. Annoncer une pub qui ne sort pas cette
+    // fois-ci est sans conséquence ; taire une pub qui sort ne l'est pas.
     //
-    // Le repli tait la mention plutôt que de l'afficher : c'est la convention
-    // de `launch_ad.dart`, où l'absence de réponse ne doit jamais valoir
-    // autorisation. Il est de toute façon inatteignable ici — le garde sur
-    // `pool` ci-dessus a déjà attendu `deckCatalogProvider`, qui attend
-    // lui-même la possession — mais l'afficher par défaut ferait clignoter la
-    // ligne chez qui a payé si cet ordre changeait.
-    final avecPub = ref.watch(ownershipProvider).value?.showsAds ?? false;
+    // C'est la valeur que lit le portillon, et non une expression recopiée :
+    // la ligne ne peut donc pas promettre ce que l'interstitiel refusera.
+    final avecPub = ref.watch(launchAdPossibleProvider);
 
     return PopScope(
       // Le retour est fermé le temps du chargement — trois secondes au pire.
