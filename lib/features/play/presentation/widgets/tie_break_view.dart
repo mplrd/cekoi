@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:cekoi/app/theme/app_colors.dart';
+import 'package:cekoi/app/widgets/texte_qui_tient.dart';
 import 'package:cekoi/domain/engine/game_state.dart';
 import 'package:cekoi/features/play/presentation/play_controller.dart';
 import 'package:cekoi/features/play/presentation/widgets/texte_de_carte.dart';
@@ -55,8 +56,14 @@ class TieBreakView extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
+                // « Départage » est un mot, et un mot n'a pas de point de
+                // coupure : à ×2 il réclamait 335,8 px dans une ligne de 312
+                // et se faisait rogner, à ×3,1 il en réclamait 520,5. Sans
+                // exception, sans trace, et seulement chez qui a agrandi le
+                // texte du système — c'est-à-dire chez qui en a besoin.
+                TexteQuiTient(
                   l10n.tieBreakTitle,
+                  alignment: Alignment.center,
                   textAlign: TextAlign.center,
                   style: theme.textTheme.displaySmall?.copyWith(
                     color: AppColors.ink,
@@ -113,7 +120,16 @@ class TieBreakView extends ConsumerWidget {
                       foregroundColor: AppColors.onTeam(team.colorId),
                     ),
                     onPressed: () => controller.tieBreakWon(team.id),
-                    child: Text(l10n.tieBreakWinner(team.name)),
+                    // Le nom est saisi par le joueur. Le bouton reste tapable
+                    // quoi qu'il arrive — donc R5.3 reste tranchable — mais
+                    // deux noms longs de même début deviendraient
+                    // indiscernables, et c'est le seul écran où l'on choisit
+                    // une équipe par son nom.
+                    child: TexteQuiTient(
+                      l10n.tieBreakWinner(team.name),
+                      alignment: Alignment.center,
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                   const SizedBox(height: 8),
                 ],

@@ -193,4 +193,34 @@ void main() {
     expect(find.text('b' * maxCardTextLength), findsOneWidget);
     aucunTexteRogne(tester);
   });
+
+  testWidgets('un nom d équipe long ne se fait pas rogner', (tester) async {
+    // Le texte de carte est borné à soixante caractères ; le **nom d équipe**
+    // n est borné par rien — le champ de l étape des équipes n a pas de
+    // `maxLength`. Ce fichier montait jusqu à ×3,5 sans jamais le voir, parce
+    // que « team-1 » porte un trait d union, qui est un point de coupure.
+    //
+    // Mesuré au pire cas du fichier : « Anticonstitution · 2 » réclamait
+    // 405,7 px dans 312. À ×2 il passe — ce n est donc pas une précaution,
+    // c est un rognage, et il fallait aller jusqu au pire cas pour le voir.
+    const nom = 'Anticonstitution';
+    final base = recapitulatif(tranchees: 4);
+    final game = base.copyWith(
+      teams: [
+        base.teams.first.copyWith(name: nom),
+        ...base.teams.skip(1),
+      ],
+    );
+
+    await pumpRecapitulatif(
+      tester,
+      game: game,
+      taille: const Size(360, 640),
+      echelleTexte: 3.5,
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(find.textContaining(nom), findsWidgets);
+    aucunTexteRogne(tester);
+  });
 }

@@ -2,6 +2,7 @@ import 'package:cekoi/app/clock.dart';
 import 'package:cekoi/app/current_game.dart';
 import 'package:cekoi/app/router.dart';
 import 'package:cekoi/app/theme/app_colors.dart';
+import 'package:cekoi/app/widgets/texte_qui_tient.dart';
 import 'package:cekoi/data/providers.dart';
 import 'package:cekoi/domain/engine/game_state.dart';
 import 'package:cekoi/domain/setup/game_launch.dart';
@@ -57,9 +58,14 @@ class _PodiumViewState extends ConsumerState<PodiumView> {
                 ),
               ),
               const SizedBox(height: 8),
+              // Le nom d'équipe est saisi par le joueur et rien ne le borne :
+              // un mot un peu long tient ici sur le dernier écran de la
+              // partie, en `displaySmall`, dans une liste de 312 px. Il n'a
+              // pas de point de coupure, donc le repli ne peut rien pour lui.
               for (final team in vainqueurs)
-                Text(
+                TexteQuiTient(
                   l10n.podiumWinner(team.name),
+                  alignment: Alignment.center,
                   textAlign: TextAlign.center,
                   style: theme.textTheme.displaySmall?.copyWith(
                     fontWeight: FontWeight.w800,
