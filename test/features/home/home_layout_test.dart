@@ -15,6 +15,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fixtures.dart';
+import '../../support/geometrie.dart';
 import '../../support/providers.dart';
 
 /// L'accueil doit tenir sur les écrans qui existent.
@@ -31,6 +32,10 @@ void main() {
 
   setUpAll(() async {
     l10n = await AppLocalizations.delegate.load(const Locale('fr'));
+    // Sans les vraies polices, toute mesure de largeur est fausse : Ahem rend
+    // chaque glyphe comme un carré du corps. Ce fichier ne mesurait rien
+    // jusqu'au 27 août.
+    await exigerLesVraiesPolices();
   });
 
   Future<void> pumpHome(
@@ -39,12 +44,7 @@ void main() {
     double echelleTexte = 1,
     GameState? reprise,
   }) async {
-    tester.view.physicalSize = taille;
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.reset);
-
-    tester.platformDispatcher.textScaleFactorTestValue = echelleTexte;
-    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    poserEcran(tester, taille: taille, echelleTexte: echelleTexte);
 
     await tester.pumpWidget(
       ProviderScope(
@@ -73,6 +73,14 @@ void main() {
     ('un texte agrandi', const Size(360, 800), 1.3, true),
     // Le pire cas atteignable : petit écran, texte agrandi, quatre entrées.
     ('un petit ecran au texte agrandi', const Size(360, 640), 1.3, true),
+    // Le maximum d'Android, puis AX5 sur iOS. Les deux étaient hors de portée
+    // de ce fichier, et ils cachaient trois défauts : « Cékoi » réclamait
+    // 355,5 px dans 312, « Mes catégories » 324,4 dans 312, et les entrées
+    // rognaient leur libellé **par le bas** — 87 px de haut demandés dans une
+    // boîte fixée à 64.
+    ('le maximum d Android', const Size(360, 800), 2.0, true),
+    ('un petit ecran au maximum d Android', const Size(360, 640), 2.0, true),
+    ('AX5 sur iOS', const Size(360, 640), 3.1, true),
   ]) {
     testWidgets("l'accueil tient sur $libelle", (tester) async {
       await pumpHome(
@@ -93,10 +101,15 @@ void main() {
         l10n.homeSettings,
         if (avecReprise) l10n.homeResumeGame,
       ]) {
-        final cible = find.text(entree);
-        expect(cible, findsOneWidget, reason: '« $entree » a disparu');
-        await tester.ensureVisible(cible);
+        // `ensureVisible` ne protégeait de rien : sans `Scrollable` ancêtre il
+        // ne lève pas, il ne fait rien. C'est le défaut que `resteAtteignable`
+        // corrige — elle cherche la cible dans le chemin du toucher.
+        await resteAtteignable(tester, find.text(entree));
       }
+
+      // Et ce qu'aucune exception ne signale : un texte plus large ou plus
+      // haut que sa boîte est coupé, et l'écran reste vert.
+      aucunTexteRogne(tester);
     });
   }
 }

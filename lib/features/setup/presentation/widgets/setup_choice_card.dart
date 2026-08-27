@@ -1,3 +1,4 @@
+import 'package:cekoi/app/widgets/texte_qui_tient.dart';
 import 'package:flutter/material.dart';
 
 /// Une bifurcation de la configuration : une icône, un titre, une phrase.
@@ -38,7 +39,12 @@ class SetupChoiceCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    // Le titre partage la ligne avec une icône de 48 px : ce
+                    // qui lui reste rétrécit quand le texte grossit, alors que
+                    // l'icône, elle, ne bouge pas. Mesuré, « En famille »
+                    // réclamait 230,4 px dans 196 à ×3,1 — et « famille » seul
+                    // n'a pas de point de coupure.
+                    TexteQuiTient(
                       title,
                       style: theme.textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,

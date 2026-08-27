@@ -1,5 +1,6 @@
 import 'package:cekoi/app/theme/app_colors.dart';
 import 'package:cekoi/app/theme/app_theme.dart';
+import 'package:cekoi/app/widgets/texte_qui_tient.dart';
 import 'package:cekoi/domain/engine/team_builder.dart';
 import 'package:cekoi/features/setup/presentation/setup_controller.dart';
 import 'package:cekoi/features/setup/presentation/setup_steps.dart';
@@ -140,8 +141,11 @@ class _TeamCountSelector extends StatelessWidget {
 
     return Row(
       children: [
+        // La ligne se partage entre ce libellé et un compteur de largeur fixe :
+        // ce qui reste au libellé rétrécit à mesure que le texte grossit.
+        // Mesuré, « équipes » réclamait 137,2 px dans 128 à ×2.
         Expanded(
-          child: Text(
+          child: TexteQuiTient(
             l10n.teamCountLabel,
             style: theme.textTheme.titleMedium?.copyWith(
               color: AppColors.ink,
@@ -155,10 +159,21 @@ class _TeamCountSelector extends StatelessWidget {
           onTap: value > minimumTeamCount ? () => onChanged(value - 1) : null,
           semantics: l10n.teamCountFewer,
         ),
+        // La boîte reste à 64 px : les deux flèches ne doivent pas se
+        // déplacer quand le nombre passe à deux chiffres. C'est donc le
+        // nombre qui se ramène, et pas la boîte qui s'élargit.
+        //
+        // Un nombre n'a **aucun** point de coupure : il était écrêté, sans
+        // exception ni trace. Mesuré, « 10 » réclamait 66,7 px dès ×1,6 —
+        // un cran ordinaire du réglage Android, pas un cas extrême — 83,4 à
+        // ×2 et 129,3 à ×3,1, où la moitié du zéro disparaissait. Or c'est
+        // exactement à dix équipes, le maximum que R8.1 promet utilisable,
+        // que le nombre passe à deux chiffres.
         SizedBox(
           width: 64,
-          child: Text(
+          child: TexteQuiTient(
             '$value',
+            alignment: Alignment.center,
             textAlign: TextAlign.center,
             style: theme.textTheme.displaySmall?.copyWith(
               color: AppColors.ink,

@@ -5,6 +5,7 @@ import 'package:cekoi/app/game_persistence.dart';
 import 'package:cekoi/app/router.dart';
 import 'package:cekoi/app/theme/app_colors.dart';
 import 'package:cekoi/app/theme/app_theme.dart';
+import 'package:cekoi/app/widgets/texte_qui_tient.dart';
 import 'package:cekoi/data/providers.dart';
 import 'package:cekoi/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
@@ -94,11 +95,23 @@ class _HomeAction extends StatelessWidget {
           borderRadius: const BorderRadius.all(
             Radius.circular(AppTheme.radius),
           ),
-          child: SizedBox(
-            height: AppTheme.minTouchTarget,
+          // Une hauteur **minimale**, et non une hauteur : 64 px est la cible
+          // tactile que le système exige, pas un plafond. Fixée, elle rognait
+          // le libellé par le bas — mesuré, « Jouer » réclame 87 px de haut à
+          // ×3,1 dans une boîte qui en faisait 64. C'est l'autre façon de
+          // perdre un texte, et `aucunTexteRogne` la voit aussi.
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              minHeight: AppTheme.minTouchTarget,
+            ),
             child: Center(
-              child: Text(
+              // « Mes catégories » réclamait 324,4 px dans 312 à ×3,1 : le
+              // libellé le plus long des quatre, et il ne replie pas — c'est
+              // « catégories » seul qui dépasse.
+              child: TexteQuiTient(
                 label,
+                alignment: Alignment.center,
+                textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   color: texte,
                   fontWeight: FontWeight.w700,
@@ -135,38 +148,51 @@ class _Menu extends ConsumerWidget {
         // quand il n'y a plus le choix : à taille normale, il garde ses 280.
         Expanded(
           child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Le logo annonce les trois manches — la bulle qui parle, le
-                // « 1 » du mot unique, le personnage qui mime. C'est la
-                // version détourée : le dessin se pose directement sur le fond
-                // de l'écran, sans le carré corail qu'il traînait, qui se
-                // serait vu sur ce pastel.
-                Flexible(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      maxHeight: 280,
-                      maxWidth: 280,
-                    ),
-                    child: Image.asset(
-                      'assets/branding/logo_mark.png',
-                      fit: BoxFit.contain,
-                      semanticLabel: l10n.appTitle,
+            // Le bloc entier se réduit s'il le faut, logo et nom ensemble.
+            // Le `Flexible` du logo ne suffisait pas : il laisse le logo
+            // rétrécir, pas le nom, et à ×3,1 « Cékoi » réclame à lui seul
+            // 139 px de haut. La colonne débordait alors de 130 px, sur
+            // l'écran qui accueille tout le monde. Le `scaleDown` ne fait rien
+            // tant que ça tient — à taille normale le logo garde ses 280 px.
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Le logo annonce les trois manches — la bulle qui parle, le
+                  // « 1 » du mot unique, le personnage qui mime. C'est la
+                  // version détourée : le dessin se pose directement sur le
+                  // fond de l'écran, sans le carré corail qu'il traînait, qui
+                  // se serait vu sur ce pastel.
+                  Flexible(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        maxHeight: 280,
+                        maxWidth: 280,
+                      ),
+                      child: Image.asset(
+                        'assets/branding/logo_mark.png',
+                        fit: BoxFit.contain,
+                        semanticLabel: l10n.appTitle,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  l10n.appTitle,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.ink,
-                    letterSpacing: -1,
+                  const SizedBox(height: 8),
+                  // Pas de `TexteQuiTient` ici : le `FittedBox` ci-dessus le
+                  // rend inutile. Il compose son enfant sans borne de largeur,
+                  // puis réduit l'ensemble — le nom ne peut donc plus être
+                  // rogné, alors qu'il réclamait 355,5 px dans 312 à ×3,1.
+                  Text(
+                    l10n.appTitle,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.ink,
+                      letterSpacing: -1,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

@@ -1,6 +1,7 @@
 import 'package:cekoi/app/router.dart';
 import 'package:cekoi/app/theme/app_colors.dart';
 import 'package:cekoi/app/theme/app_theme.dart';
+import 'package:cekoi/app/widgets/texte_qui_tient.dart';
 import 'package:cekoi/domain/entities/game_config.dart';
 import 'package:cekoi/features/setup/presentation/setup_controller.dart';
 import 'package:cekoi/features/setup/presentation/setup_steps.dart';
@@ -96,8 +97,14 @@ class _Setting extends StatelessWidget {
         children: [
           Row(
             children: [
+              // La pastille de valeur, à droite, grossit avec le réglage
+              // système ; ce qui reste au libellé fond d'autant. À ×3,1 il ne
+              // lui restait que 59,3 px pour « cartes », qui en réclame 179,3.
+              // Il est donc ramené — petit, mais lisible plutôt que coupé.
+              // Le passer sous la pastille serait mieux : c'est un choix de
+              // mise en page, pas un correctif de rognage.
               Expanded(
-                child: Text(
+                child: TexteQuiTient(
                   label,
                   style: theme.textTheme.titleMedium?.copyWith(
                     color: AppColors.ink,
