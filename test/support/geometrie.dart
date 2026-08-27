@@ -139,10 +139,16 @@ Future<void> resteAtteignable(WidgetTester tester, Finder cible) async {
   final rect = tester.getRect(cible);
   final ecran = tester.view.physicalSize / tester.view.devicePixelRatio;
 
+  // Le demi-pixel vaut pour les **quatre** bords. Il ne valait que pour deux,
+  // et le 27 août un `top` à -2,8e-14 a fait rougir un test de départage après
+  // un simple changement de titre : `ensureVisible` et la mise en page
+  // n'arrondissent pas pareil, et treize ordres de grandeur sous le pixel ne
+  // sont pas un bouton hors de l'écran. Un vrai débordement se compte en
+  // dizaines de pixels.
   expect(
-    rect.top >= 0 &&
+    rect.top >= -_epsilon &&
         rect.bottom <= ecran.height + _epsilon &&
-        rect.left >= 0 &&
+        rect.left >= -_epsilon &&
         rect.right <= ecran.width + _epsilon,
     isTrue,
     reason:
@@ -156,5 +162,57 @@ Future<void> resteAtteignable(WidgetTester tester, Finder cible) async {
     chemin.any((entree) => identical(entree.target, vise)),
     isTrue,
     reason: 'la cible est visible, mais quelque chose la recouvre',
+  );
+}
+
+/// Vérifie qu'un texte est réellement centré dans sa boîte.
+///
+/// Mesuré sur le rendu, et non sur la propriété déclarée : sous un
+/// `CrossAxisAlignment.stretch`, la boîte du paragraphe fait toute la largeur
+/// que le texte soit centré ou non — `getRect` rend donc la même chose dans les
+/// deux cas, et une assertion qui s'y fierait ne pourrait pas échouer.
+///
+/// Elle est ici et non chez les textes coupés parce que ce fichier est
+/// l'outillage de la **mise en page** : `resteAtteignable` y mesure elle aussi
+/// un choix, pas un défaut silencieux. Et parce qu'un centrage se perd de la
+/// même façon qu'un texte se rogne — sans exception et sans trace :
+/// `TexteQuiTient` n'aligne rien par défaut, et le poser sur un titre centré le
+/// décale.
+///
+/// Elle mesure la **dernière** ligne, et seulement elle. Sur les autres, la
+/// boîte de sélection inclut l'espace qui a servi de point de coupure : mesuré,
+/// une première ligne parfaitement centrée sort à 15,0 px du bord gauche pour
+/// 4,1 du droit, soit exactement la largeur d'une espace, et la mesure dirait
+/// « décalé » d'un texte qui ne l'est pas. La dernière ligne, elle, se termine
+/// sur un glyphe.
+///
+/// Elle exige aussi que cette ligne soit **plus étroite que la boîte**, sans
+/// quoi il n'y a rien à mesurer : les deux marges valent alors zéro, que le
+/// texte soit centré ou non. C'est le cas d'un texte sous un parent qui ajuste
+/// sa largeur au contenu, et celui du bloc qu'un `FittedBox` compose à la
+/// largeur de sa ligne la plus large. Refuser de conclure vaut mieux qu'un vert
+/// gratuit.
+void resteCentre(WidgetTester tester, Finder cible) {
+  final para = tester.renderObject<RenderParagraph>(cible);
+  final boites = para.getBoxesForSelection(
+    TextSelection(baseOffset: 0, extentOffset: para.text.toPlainText().length),
+  );
+  expect(boites, isNotEmpty, reason: 'le texte ne peint aucun glyphe');
+
+  final boite = boites.last;
+  final droite = para.size.width - boite.right;
+  expect(
+    boite.right - boite.left,
+    lessThan(para.size.width - 1),
+    reason:
+        'la dernière ligne occupe toute la boîte : son centrage est '
+        'indécidable, la mesure serait verte quoi qu il arrive',
+  );
+  expect(
+    boite.left,
+    closeTo(droite, 1),
+    reason:
+        'la dernière ligne est à ${boite.left.toStringAsFixed(1)} px du bord '
+        'gauche et ${droite.toStringAsFixed(1)} du droit : elle est décalée',
   );
 }
