@@ -1,6 +1,6 @@
 # Point de reprise
 
-**État au 26 août 2026** — `develop` au merge de la #49, CI verte dessus.
+**État au 27 août 2026** — `develop` au merge de la #51, CI verte dessus.
 
 Pas de SHA ici : un document versionné ne peut pas citer le commit qui le contient sans être
 faux dès son merge. Pour l'état exact, `git log -1 develop`.
@@ -36,6 +36,7 @@ reste dans `ROADMAP.md`, les démarches dans `ADMINISTRATIF.md`, les règles dan
 | iOS | **jamais exécuté**, et compilé seulement vers `main` ou sur étiquette `ios` |
 | Build de release | construit par la CI — sauf sur une PR de prose seule — et vérifié à la main ; **aucune partie complète jouée dessus** |
 | Achat in-app | jamais effectué en vrai |
+| Jouable sans pub ni achat | oui — un refus de consentement ne ferme aucune partie, et un test le tient |
 | Clé de signature | `android/key.properties` absent — les APK sortent signés de la clé de debug |
 
 ## Ce qui ne dépend de personne
@@ -105,20 +106,6 @@ catégorie adulte marquée premium y serait donc **invisible et impossible à ou
 reste théorique tant qu'aucune catégorie adulte n'est premium : la décision se prend avec
 l'arbitrage premium. L'énoncé complet est dans `ADMINISTRATIF.md`, section « Arbitrages
 produit en attente ».
-
-### « Une courte publicité précède la partie » — on la garde affirmative ?
-
-Tu as tranché sa *condition* : elle ne dépend que de ce que le joueur possède, jamais du
-consentement ni du plafond de fréquence, et les tests la verrouillent. Reste sa *formulation*,
-sur laquelle tu ne t'es pas prononcé.
-
-L'argument écrit le 19 août — « elle promet une pub qui, en pratique, ne sort presque
-jamais » — **est faux**, et il t'aurait fait trancher dans le mauvais sens. `MONETISATION.md`
-pose un plafond de trois par heure et cinq minutes d'écart, `ad_frequency.dart` l'implémente
-tel quel, et une partie dure bien plus de cinq minutes : l'interstitiel sortira la plupart du
-temps. Ce qui reste, plus étroit : la mention s'affiche aussi dans les cas où la pub ne sortira
-pas — consentement refusé, plafond atteint. Annoncer une pub qui n'arrive pas est sans risque ;
-l'inverse ne l'est pas.
 
 ### Découper l'achat unique en trois références ?
 
